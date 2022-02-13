@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>API Docs</title>
+    <style>
+        body{
+            margin: 0;
+            font-family: ClearSans;
+            font-style: normal;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 22px;
+        }
+        ul {
+            list-style: none;
+        }
+        li {
+            box-sizing: border-box;
+            display: list-item;
+            height: 30px;
+            width: 100%;
+        }
+        li:hover {
+            background-color: #b1dbf8
+;
+        }
+        .root {
+            display: flex;
+            flex-direction: row;
+            width: 100vh;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+            background-color: #f4f8fa;
+            height: 100vh;
+            color: #66b0e5
+        }
+    </style>
+</head>
+<body>
+    <div class="root">
+        <div class="sidebar">
+            <ul>
+                <li>РЕКЛАМНЫЕ КОМПАНИИ</li>
+                <li>СОТРУДНИКИ</li>
+            </ul>
+        </div>
+        <div class="content">
+            <div class="row">
+                <div class="text">
+                    <h2>Рекламные компании</h2>
+                    <p class="url_title">Url:</p>
+                    <p class = 'url'>http://192.168.1.48:5005/ad_campaign</p>
+                </div>
+                <div class="example"></div>
+            </div>
+            <div class="row">
+                <div class="text">
+                    <h3>Oписание запроса GET</h3>
+                    <p class="desc">Возвращат список рекламных компаний</p>
+                    <p class="params">Параметры:</p>
+                    <p class="par"><span>id:</span> int - идентификатор записи - полное совпадение</p>
+                    <p class="par"><span>name:</span> str - называник рекламной компании - частичное совпадение</p>
+                </div>
+                <div class="example"></div>
+            </div>
+            <div class="row">
+                <div class="text">
+                    <h3>Oписание запроса POST</h3>
+                    <p class="desc">Создает рекламную компанию</p>
+                    <p class="params">Параметры:</p>
+                    <p class="par"><span>name:</span> str - называние рекламной компании</p>
+                </div>
+                <div class="example"></div>
+            </div>
+             <div class="row">
+                <div class="text"></div>
+                <div class="example"></div>
+            </div>
+             <div class="row">
+                <div class="text"></div>
+                <div class="example"></div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
