@@ -20,3 +20,5 @@ hours = int(dtime // 3600)
 minutes = int((dtime % 3600) // 60)
 seconds = int((dtime % 3600) % 60)
 print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
+
+# загрузка
