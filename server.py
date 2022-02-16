@@ -3,6 +3,9 @@ from datetime import timedelta
 from pprint import pprint
 import time
 import os
+# from base64 import b64decode
+from urllib.request import urlopen
+
 
 from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
 from flask_cors import CORS, cross_origin
@@ -3639,6 +3642,17 @@ def equipment_subtype():
         return {'success': False, 'message': "equipment_brand_id is not integer"}, 400
     if equipment_brand_id and db_iteraction.get_equipment_brand(id=equipment_brand_id)['count'] == 0:
         return {'success': False, 'message': 'equipment_brand_id is not defined'}, 400
+
+    # загрузка/замена изображения
+    img_uri = request_body.get('img')
+    if img_uri:
+        with urlopen(img_uri) as response:
+            data = response.read()
+        url = f'build/static/data/PCB/subtype{id}.jpeg'
+        with open(url, 'wb') as f:
+            f.write(data)
+        url = f'data/PCB/subtype{id}.jpeg'
+
 
     if request.method == 'POST':
 

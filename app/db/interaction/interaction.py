@@ -3022,7 +3022,7 @@ class DbInteraction():
 
         self.pgsql_connetction.session.query(EquipmentType).filter_by(id=id).update({
             'title': title if title else EquipmentType.title,
-            'icon': icon if icon else EquipmentType.icon,
+            'icon': icon if icon else None,
             'url': url if url else EquipmentType.url,
             'branches': branches if branches else EquipmentType.branches,
             'deleted': deleted if deleted != None else EquipmentType.deleted

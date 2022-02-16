@@ -65,7 +65,7 @@ services:
     ports:
       - 80:80
 #    volumes:
-#      - .:/app
+#      - /build/static/data:/app/data
     networks:
       - postgres
 
