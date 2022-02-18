@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
+VOLUME /app/build/static/data
+
 RUN pip install -r requirements.txt
 
 CMD ["python", "server.py"]

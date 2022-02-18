@@ -92,7 +92,7 @@ def run_server():
     # server = threading.Thread(target=app.run, kwargs={'host': host, 'port': port})
     # server.start()
     app.run(
-        debug=False,
+        debug=True,
         host=host,
         port=port,
         # ssl_context=context
@@ -3407,6 +3407,13 @@ def equipment_type():
     if deleted and type(deleted) != bool:
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
+    list_for_join = request_body.get('list_for_join')
+    if list_for_join and type(list_for_join) != list:
+        return {'success': False, 'message': "list_for_join is not list"}, 400
+    if list_for_join:
+        if not all([type(join) == int for join in list_for_join]):
+            return {'success': False, 'message': "list_for_join has not integer"}, 400
+
     if request.method == 'POST':
 
         if not title:
@@ -3434,6 +3441,18 @@ def equipment_type():
             branches=branches,
             deleted=deleted
         )
+        if list_for_join:
+            for equipment_type in list_for_join:
+                db_iteraction.edit_equipment_type(
+                    id=equipment_type,
+                    deleted=True
+                )
+                list_brands = db_iteraction.get_equipment_brand(equipment_type_id=equipment_type)['data']
+                for equipment_brand in list_brands:
+                    db_iteraction.edit_equipment_brand(
+                        id=equipment_brand['id'],
+                        equipment_type_id=id
+                    )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
@@ -3523,6 +3542,13 @@ def equipment_brand():
     if equipment_type_id and db_iteraction.get_equipment_type(id=equipment_type_id)['count'] == 0:
         return {'success': False, 'message': 'equipment_type_id is not defined'}, 400
 
+    list_for_join = request_body.get('list_for_join')
+    if list_for_join and type(list_for_join) != list:
+        return {'success': False, 'message': "list_for_join is not list"}, 400
+    if list_for_join:
+        if not all([type(join) == int for join in list_for_join]):
+            return {'success': False, 'message': "list_for_join has not integer"}, 400
+
     if request.method == 'POST':
 
         if not equipment_type_id:
@@ -3555,6 +3581,18 @@ def equipment_brand():
             deleted=deleted,
             equipment_type_id=equipment_type_id     # int - id типа изделия
         )
+        if list_for_join:
+            for equipment_brand in list_for_join:
+                db_iteraction.edit_equipment_brand(
+                    id=equipment_brand,
+                    deleted=True
+                )
+                list_subtypes = db_iteraction.get_equipment_subtype(equipment_brand_id=equipment_brand)['data']
+                for equipment_subtype in list_subtypes:
+                    db_iteraction.edit_equipment_subtype(
+                        id=equipment_subtype['id'],
+                        equipment_brand_id=id
+                    )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
@@ -3643,6 +3681,13 @@ def equipment_subtype():
     if equipment_brand_id and db_iteraction.get_equipment_brand(id=equipment_brand_id)['count'] == 0:
         return {'success': False, 'message': 'equipment_brand_id is not defined'}, 400
 
+    list_for_join = request_body.get('list_for_join')
+    if list_for_join and type(list_for_join) != list:
+        return {'success': False, 'message': "list_for_join is not list"}, 400
+    if list_for_join:
+        if not all([type(join) == int for join in list_for_join]):
+            return {'success': False, 'message': "list_for_join has not integer"}, 400
+
     # загрузка/замена изображения
     img_uri = request_body.get('img')
     if img_uri:
@@ -3686,6 +3731,18 @@ def equipment_subtype():
             deleted=deleted,
             equipment_brand_id=equipment_brand_id   # int - id типа изделия
         )
+        if list_for_join:
+            for equipment_subtype in list_for_join:
+                db_iteraction.edit_equipment_subtype(
+                    id=equipment_subtype,
+                    deleted=True
+                )
+                list_models = db_iteraction.get_equipment_model(equipment_subtype_id=equipment_subtype)['data']
+                for equipment_model in list_models:
+                    db_iteraction.edit_equipment_model(
+                        id=equipment_model['id'],
+                        equipment_subtype_id=id
+                    )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':

@@ -34,7 +34,7 @@ services:
 #      - "-c"
 #      - "pg_stat_statements.track=all"
     environment:
-      POSTGRES_DB: "one_two"
+      PUBLIC_URL: "one_two"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "225567"
       PGDATA: "/var/lib/postgresql/data/pgdata"
@@ -62,10 +62,14 @@ services:
     container_name: onetwoapi_container
     restart: unless-stopped
     image: stanislavkay/onetwoapi:latest
+#    environment:
+#      POSTGRES_DB: "one_two"
+#      POSTGRES_USER: "postgres"
+#      POSTGRES_PASSWORD: "225567"
     ports:
       - 80:80
-#    volumes:
-#      - /build/static/data:/app/data
+    volumes:
+      - ./datapi:/app/build/static/data
     networks:
       - postgres
 

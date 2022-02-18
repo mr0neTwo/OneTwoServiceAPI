@@ -3018,7 +3018,7 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_equipment_type(self, id, title, icon, url, branches, deleted):
+    def edit_equipment_type(self, id, title=None, icon=None, url=None, branches=None, deleted=None):
 
         self.pgsql_connetction.session.query(EquipmentType).filter_by(id=id).update({
             'title': title if title else EquipmentType.title,
@@ -3111,7 +3111,7 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_equipment_brand(self, id, title, icon, url, branches, deleted, equipment_type_id):
+    def edit_equipment_brand(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_type_id=None):
 
         self.pgsql_connetction.session.query(EquipmentBrand).filter_by(id=id).update({
             'title': title if title else EquipmentBrand.title,
@@ -3197,7 +3197,7 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_equipment_subtype(self, id, title, icon, url, branches, deleted, equipment_brand_id):
+    def edit_equipment_subtype(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_brand_id=None):
 
         self.pgsql_connetction.session.query(EquipmentSubtype).filter_by(id=id).update({
             'title': title if title else EquipmentSubtype.title,
@@ -3273,7 +3273,7 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_equipment_model(self, id, title, icon, url, branches, deleted, equipment_subtype_id):
+    def edit_equipment_model(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_subtype_id=None):
 
         self.pgsql_connetction.session.query(EquipmentModel).filter_by(id=id).update({
             'title': title if title else EquipmentModel.title,
