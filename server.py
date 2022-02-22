@@ -92,7 +92,7 @@ def run_server():
     # server = threading.Thread(target=app.run, kwargs={'host': host, 'port': port})
     # server.start()
     app.run(
-        debug=True,
+        debug=False,
         host=host,
         port=port,
         # ssl_context=context
@@ -3360,9 +3360,14 @@ def get_equipment_type():
     if title:
         title = str(title)
 
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
     result = db_iteraction.get_equipment_type(
         id=id,                            # int - id типа изделия - полное совпадение
         title=title,                      # str - Тип изделия - частичное совпадение
+        deleted=deleted,
         page=page                         # int - Старница погинации
     )
     return result, 200
@@ -3481,6 +3486,10 @@ def get_equipment_brand():
     if title:
         title = str(title)
 
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
     equipment_type_id = request_body.get('equipment_type_id')
     if equipment_type_id and type(equipment_type_id) != int:
         return {'success': False, 'message': "equipment_type_id is not integer"}, 400
@@ -3492,6 +3501,7 @@ def get_equipment_brand():
         id=id,                                  # int - id бренда изделия - полное совпадение
         title=title,                            # str - Бренд - частичное совпадение
         equipment_type_id=equipment_type_id,    # int - id типа изделия
+        deleted=deleted,
         page=page                               # int - Старница погинации
     )
     return result, 200
@@ -3621,6 +3631,10 @@ def get_equipment_subtype():
     if title:
         title = str(title)
 
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
     equipment_brand_id = request_body.get('equipment_brand_id')
     if equipment_brand_id and type(equipment_brand_id) != int:
         return {'success': False, 'message': "equipment_brand_id is not integer"}, 400
@@ -3631,6 +3645,7 @@ def get_equipment_subtype():
         id=id,                                  # int - id модификации изделия - полное совпадение
         title=title,                            # str - Модификация изделия - частичное совпадение
         equipment_brand_id=equipment_brand_id,  # int - id бренда изделия
+        deleted=deleted,
         page=page                               # int - Старница погинации
     )
     return result, 200
@@ -3771,6 +3786,10 @@ def get_equipment_model():
     if title:
         title = str(title)
 
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
     equipment_subtype_id = request_body.get('equipment_subtype_id')
     if equipment_subtype_id and type(equipment_subtype_id) != int:
         return {'success': False, 'message': "equipment_subtype_id is not integer"}, 400
@@ -3781,6 +3800,7 @@ def get_equipment_model():
         id=id,                                      # int - id модели изделия - полное совпадение
         title=title,                                # str - Модель изделия - частичное совпадение
         equipment_subtype_id=equipment_subtype_id,  # int - id модификации изделия
+        deleted=deleted,
         page=page                                   # int - Старница погинации
     )
     return result, 200
@@ -5825,6 +5845,570 @@ def service_prices():
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_parts', methods=['POST'])
+@jwt_required()
+def get_parts():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    marking = request_body.get('marking')
+    if marking:
+        marking = str(marking)
+
+    article = request_body.get('article')
+    if article:
+        article = str(article)
+
+    barcode = request_body.get('barcode')
+    if barcode:
+        barcode = str(barcode)
+
+    code = request_body.get('code')
+    if code:
+        code = str(code)
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_parts(
+        id=id,                                      # int - id  - полное совпадение
+        title=title,
+        marking=marking,
+        article=article,
+        barcode=barcode,
+        code=code,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/parts', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def parts():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    description = request_body.get('description')
+    if description:
+        description = str(description)
+
+    marking = request_body.get('marking')
+    if marking:
+        marking = str(marking)
+
+    article = request_body.get('article')
+    if article:
+        article = str(article)
+
+    barcode = request_body.get('barcode')
+    if barcode:
+        barcode = str(barcode)
+
+    code = request_body.get('code')
+    if code:
+        code = str(code)
+
+    image_url = request_body.get('image_url')
+    if image_url:
+        image_url = str(image_url)
+
+    doc_url = request_body.get('doc_url')
+    if doc_url:
+        doc_url = str(doc_url)
+
+    specifications = request_body.get('specifications')
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_parts(
+            title=title,
+            description=description,
+            marking=marking,
+            article=article,
+            barcode=barcode,
+            code=code,
+            image_url=image_url,
+            doc_url=doc_url,
+            specifications=specifications,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_parts(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+
+    if request.method == 'PUT':
+        db_iteraction.edit_parts(
+            id=id,                          # int - id записи - полное совпаден
+            title=title,
+            description=description,
+            marking=marking,
+            article=article,
+            barcode=barcode,
+            code=code,
+            image_url=image_url,
+            doc_url=doc_url,
+            specifications=specifications,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+
+        db_iteraction.del_parts(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_warehouse', methods=['POST'])
+@jwt_required()
+def get_warehouse():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    branch_id = request_body.get('branch_id')
+    if branch_id and type(branch_id) != int:
+        return {'success': False, 'message': "branch_id is not integer"}, 400
+    if branch_id and db_iteraction.get_branch(id=branch_id)['count'] == 0:
+        return {'success': False, 'message': 'branch_id is not defined'}, 400
+
+    isGlobal = request_body.get('isGlobal')
+    if isGlobal and type(isGlobal) != bool:
+        return {'success': False, 'message': 'isGlobal is not boolean'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_warehouse(
+        id=id,                                      # int - id  - полное совпадение
+        title=title,
+        branch_id=branch_id,
+        isGlobal=isGlobal,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/warehouse', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def warehouse():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    description = request_body.get('description')
+    if description:
+        description = str(description)
+
+    branch_id = request_body.get('branch_id')
+    if branch_id and type(branch_id) != int:
+        return {'success': False, 'message': "branch_id is not integer"}, 400
+    if branch_id and db_iteraction.get_branch(id=branch_id)['count'] == 0:
+        return {'success': False, 'message': 'branch_id is not defined'}, 400
+
+    permissions = request_body.get('permissions')
+    if permissions and type(permissions) != list:
+        return {'success': False, 'message': "permissions is not list"}, 400
+    if permissions:
+        if not all([type(permission) == str for permission in permissions]):
+            return {'success': False, 'message': "permissions has not string"}, 400
+
+    employees = request_body.get('employees')
+
+    isGlobal = request_body.get('isGlobal')
+    if isGlobal and type(isGlobal) != bool:
+        return {'success': False, 'message': 'isGlobal is not boolean'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_warehouse(
+            title=title,
+            description=description,
+            isGlobal=isGlobal,
+            permissions=permissions,
+            employees=employees,
+            branch_id=branch_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_warehouse(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+    if request.method == 'PUT':
+        db_iteraction.edit_warehouse(
+            id=id,                          # int - id записи - полное совпаден
+            title=title,
+            description=description,
+            isGlobal=isGlobal,
+            permissions=permissions,
+            employees=employees,
+            branch_id=branch_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+
+        db_iteraction.del_warehouse(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_warehouse_category', methods=['POST'])
+@jwt_required()
+def get_warehouse_category():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    parent_category_id = request_body.get('parent_category_id')
+    if parent_category_id and type(parent_category_id) != int:
+        return {'success': False, 'message': "parent_category_id is not integer"}, 400
+    if parent_category_id and db_iteraction.get_warehouse_category(id=parent_category_id)['count'] == 0:
+        return {'success': False, 'message': 'parent_category_id is not defined'}, 400
+
+    warehouse_id = request_body.get('warehouse_id')
+    if warehouse_id and type(warehouse_id) != int:
+        return {'success': False, 'message': "warehouse_id is not integer"}, 400
+    if warehouse_id and db_iteraction.get_warehouse(id=warehouse_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_warehouse_category(
+        id=id,  # int - id  - полное совпадение
+        title=title,
+        parent_category_id=parent_category_id,
+        warehouse_id=warehouse_id,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/warehouse_category', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def warehouse_category():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    parent_category_id = request_body.get('parent_category_id')
+    if parent_category_id and type(parent_category_id) != int:
+        return {'success': False, 'message': "parent_category_id is not integer"}, 400
+    if parent_category_id and db_iteraction.get_warehouse_category(id=parent_category_id)['count'] == 0:
+        return {'success': False, 'message': 'parent_category_id is not defined'}, 400
+
+    warehouse_id = request_body.get('warehouse_id')
+    if warehouse_id and type(warehouse_id) != int:
+        return {'success': False, 'message': "warehouse_id is not integer"}, 400
+    if warehouse_id and db_iteraction.get_warehouse(id=warehouse_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_warehouse_category(
+            title=title,
+            parent_category_id=parent_category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_warehouse_category(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+    if request.method == 'PUT':
+        db_iteraction.edit_warehouse_category(
+            id=id,  # int - id записи - полное совпаден
+            title=title,
+            parent_category_id=parent_category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+        db_iteraction.del_warehouse_category(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_warehouse_parts', methods=['POST'])
+@jwt_required()
+def get_warehouse_parts():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    cell = request_body.get('cell')
+    if cell:
+        cell = str(cell)
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    marking = request_body.get('marking')
+    if marking:
+        marking = str(marking)
+
+    count = request_body.get('count')
+    if count and type(count) != int:
+        return {'success': False, 'message': "count is not integer"}, 400
+
+    min_residue = request_body.get('min_residue')
+    if min_residue and type(min_residue) != int:
+        return {'success': False, 'message': "min_residue is not integer"}, 400
+
+    part_id = request_body.get('part_id')
+    if part_id and type(part_id) != int:
+        return {'success': False, 'message': "part_id is not integer"}, 400
+    if part_id and part_id.get_parts(id=part_id)['count'] == 0:
+        return {'success': False, 'message': 'part_id is not defined'}, 400
+
+    category_id = request_body.get('category_id')
+    if category_id and type(category_id) != int:
+        return {'success': False, 'message': "category_id is not integer"}, 400
+    if category_id and db_iteraction.get_warehouse_category(id=category_id)['count'] == 0:
+        return {'success': False, 'message': 'category_id is not defined'}, 400
+
+    warehouse_id = request_body.get('warehouse_id')
+    if warehouse_id and type(warehouse_id) != int:
+        return {'success': False, 'message': "warehouse_id is not integer"}, 400
+    if warehouse_id and db_iteraction.get_warehouse(id=warehouse_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_warehouse_parts(
+        id=id,  # int - id  - полное совпадение
+        cell=cell,
+        title=title,
+        marking=marking,
+        count=count,
+        min_residue=min_residue,
+        part_id=part_id,
+        category_id=category_id,
+        warehouse_id=warehouse_id,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/warehouse_parts', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def warehouse_parts():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    where_to_buy = request_body.get('where_to_buy')
+    if where_to_buy:
+        where_to_buy = str(where_to_buy)
+
+    cell = request_body.get('cell')
+    if cell:
+        cell = str(cell)
+
+    count = request_body.get('count')
+    if count and type(count) != int:
+        return {'success': False, 'message': "count is not integer"}, 400
+
+    min_residue = request_body.get('min_residue')
+    if min_residue and type(min_residue) != int:
+        return {'success': False, 'message': "min_residue is not integer"}, 400
+
+    warranty_period = request_body.get('warranty_period')
+    if warranty_period and type(warranty_period) != int:
+        return {'success': False, 'message': "warranty_period is not integer"}, 400
+
+    necessary_amount = request_body.get('necessary_amount')
+    if necessary_amount and type(necessary_amount) != int:
+        return {'success': False, 'message': "necessary_amount is not integer"}, 400
+
+    part_id = request_body.get('part_id')
+    if part_id and type(part_id) != int:
+        return {'success': False, 'message': "part_id is not integer"}, 400
+    if part_id and part_id.get_parts(id=part_id)['count'] == 0:
+        return {'success': False, 'message': 'part_id is not defined'}, 400
+
+    category_id = request_body.get('category_id')
+    if category_id and type(category_id) != int:
+        return {'success': False, 'message': "category_id is not integer"}, 400
+    if category_id and db_iteraction.get_warehouse_category(id=category_id)['count'] == 0:
+        return {'success': False, 'message': 'category_id is not defined'}, 400
+
+    warehouse_id = request_body.get('warehouse_id')
+    if warehouse_id and type(warehouse_id) != int:
+        return {'success': False, 'message': "warehouse_id is not integer"}, 400
+    if warehouse_id and db_iteraction.get_warehouse(id=warehouse_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_warehouse_parts(
+            where_to_buy=where_to_buy,
+            cell=cell,
+            count=count,
+            min_residue=min_residue,
+            warranty_period=warranty_period,
+            necessary_amount=necessary_amount,
+            part_id=part_id,
+            category_id=category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_warehouse_parts(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+    if request.method == 'PUT':
+        db_iteraction.edit_warehouse_parts(
+            id=id,  # int - id записи - полное совпаден
+            where_to_buy=where_to_buy,
+            cell=cell,
+            count=count,
+            min_residue=min_residue,
+            warranty_period=warranty_period,
+            necessary_amount=necessary_amount,
+            part_id=part_id,
+            category_id=category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+        db_iteraction.del_warehouse_parts(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 app.add_url_rule('/shutdown', view_func=shutdown)
 app.register_error_handler(404, page_not_found)

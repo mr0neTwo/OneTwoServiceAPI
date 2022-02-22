@@ -625,7 +625,7 @@ class Payments(Base):
 
     client = relationship('Clients', foreign_keys=[client_id])
     employee = relationship('Employees', foreign_keys=[employee_id])
-    order = relationship('Orders', foreign_keys=[order_id])
+    # order = relationship('Orders', foreign_keys=[order_id])
     cashbox = relationship('Cashboxs', foreign_keys=[cashbox_id])
 
 class Payrolls(Base):
@@ -689,6 +689,7 @@ class Payrules(Base):
     employee_id = Column(INTEGER, ForeignKey(id_employee_ref), nullable=False)  # Сотрудник
 
 
+
 # Типы начачисления
 # 1 - За создания заказа
 # 2 - За закрытие заказа
@@ -699,3 +700,64 @@ class Payrules(Base):
 # 7 - За рабочие часы
 # 8 - За рабочие дни
 
+class Parts(Base):
+    __tablename__ = 'parts'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    title = Column(TEXT)            # Наименование
+    description = Column(TEXT)      # Описание
+    marking = Column(TEXT)          # Маркировка
+    article = Column(TEXT)          # Артикул
+    barcode = Column(TEXT)          # Штрихкод
+    code = Column(TEXT)             # Код
+    image_url = Column(TEXT)        # Ссылка на изображение
+    doc_url = Column(TEXT)          # Ссылка на документацию
+    specifications = Column(JSON)   # Характеристики
+    deleted = Column(BOOLEAN)       # Удален
+
+class Warehouse(Base):
+    __tablename__ = 'warehouse'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    title = Column(TEXT)                                                        # Наименование
+    description = Column(TEXT)                                                  # Описание
+    deleted = Column(BOOLEAN)                                                   # Удален
+    isGlobal = Column(BOOLEAN)                                                  # Склад компании (общий)
+    permissions = Column(ARRAY(TEXT))                                           # Разрешиния
+    employees = Column(JSON)                                                    # Специальные разрешения для сотрудников
+    id_branch_ref = f'{Branch.__tablename__}.{Branch.id.name}'
+    branch_id = Column(INTEGER, ForeignKey(id_branch_ref, ondelete='CASCADE'))  # Филиал
+
+    categories = relationship('WarehouseCategory', backref='warehouse_category', passive_deletes=True)
+    branch = relationship('Branch', foreign_keys=[branch_id])
+
+class WarehouseCategory(Base):
+    __tablename__ = 'warehouse_category'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    title = Column(TEXT)                    # Наименование
+    parent_category_id = Column(INTEGER)    # Родельская категория
+    deleted = Column(BOOLEAN)               # Удален
+    id_warehouse_ref = f'{Warehouse.__tablename__}.{Warehouse.id.name}'
+    warehouse_id = Column(INTEGER, ForeignKey(id_warehouse_ref), nullable=True)  # Склады
+
+class WarehouseParts(Base):
+    __tablename__ = 'warehouse_parts'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    where_to_buy = Column(TEXT)                 # Ссылка на поставщиков
+    cell = Column(TEXT)                         # Адрес хранения
+    count = Column(INTEGER)                     # Количество
+    min_residue = Column(INTEGER)               # Минимально допустимое количество
+    warranty_period = Column(INTEGER)           # Гарантийный период
+    necessary_amount = Column(INTEGER)          # Необходимое количество для заказа
+    deleted = Column(BOOLEAN)                   # Удален
+
+    id_part_ref = f'{Parts.__tablename__}.{Parts.id.name}'
+    part_id = Column(INTEGER,  ForeignKey(id_part_ref), nullable=True)                              # Деталь
+    id_warehouse_category_ref = f'{WarehouseCategory.__tablename__}.{WarehouseCategory.id.name}'
+    category_id = Column(INTEGER,  ForeignKey(id_warehouse_category_ref), nullable=True)            # Категория
+    id_warehouse_ref = f'{Warehouse.__tablename__}.{Warehouse.id.name}'
+    warehouse_id = Column(INTEGER, ForeignKey(id_warehouse_ref), nullable=True)                     # Склады
+
+    part = relationship('Parts', foreign_keys=[part_id])

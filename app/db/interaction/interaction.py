@@ -2,7 +2,7 @@ import time
 from pprint import pprint
 import re
 
-from sqlalchemy import or_, and_, desc, func
+from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON
 from sqlalchemy.orm import contains_eager
 from werkzeug.security import generate_password_hash
 
@@ -11,7 +11,7 @@ from app.db.models.models import Base, AdCampaign, Employees, Attachments, Branc
     StatusGroup, Status, Operations, OderParts, Clients, Orders, time_now, MenuRows, TableHeaders, Badges, \
     CustomFilters, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
     GenerallyInfo, Counts, Schedule, DictMalfunction, DictPackagelist, Cashboxs, Payments, ItemPayments, Payrolls, \
-    Payrules, GroupDictService, DictService, ServicePrices
+    Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts
 
 from tqdm import tqdm
 
@@ -70,6 +70,14 @@ class DbInteraction():
         Base.metadata.create_all(self.engine)
         # else:
         #     Base.metadata.create_all(self.engine)
+
+    def create_tables(self, list_tables):
+        Base.metadata.create_all(self.engine, tables=list_tables)
+
+    def add_column(self, table_name, column):
+        column_name = column.compile(dialect=self.engine.dialect)
+        column_type = column.type.compile(self.engine.dialect)
+        self.engine.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}')
 
     def drop_all_tables(self):
         '''
@@ -2954,13 +2962,14 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(equipment_type)
         return equipment_type.id
 
-    def get_equipment_type(self, id=None, title=None, page=0):
+    def get_equipment_type(self, id=None, title=None, deleted=None, page=0):
 
-        if id or title:
+        if any([id, title, deleted != None]):
             equipment_type = self.pgsql_connetction.session.query(EquipmentType).filter(
                 and_(
                     EquipmentType.id == id if id else True,
                     EquipmentType.title.ilike(f'%{title}%') if title else True,
+                    (deleted or EquipmentType.deleted.is_(False)) if deleted!=None else True
                 )
             ).order_by(EquipmentType.title)
         else:
@@ -3055,14 +3064,15 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(equipment_brand)
         return equipment_brand.id
 
-    def get_equipment_brand(self, id=None, title=None, equipment_type_id=None, page=0):
+    def get_equipment_brand(self, id=None, title=None, equipment_type_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_type_id]):
+        if any([id, title, equipment_type_id, deleted!=None]):
             equipment_brand = self.pgsql_connetction.session.query(EquipmentBrand).filter(
                 and_(
                     EquipmentBrand.id == id if id else True,
                     EquipmentBrand.equipment_type_id == equipment_type_id if equipment_type_id else True,
                     EquipmentBrand.title.ilike(f'%{title}%') if title else True,
+                    (deleted or EquipmentBrand.deleted.is_(False)) if deleted!=None else True
                 )
             ).order_by(EquipmentBrand.title)
         else:
@@ -3150,14 +3160,15 @@ class DbInteraction():
         # return self.get_equipment_subtype()
         return equipment_subtype.id
 
-    def get_equipment_subtype(self, id=None, title=None, equipment_brand_id=None, page=0):
+    def get_equipment_subtype(self, id=None, title=None, equipment_brand_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_brand_id]):
+        if any([id, title, equipment_brand_id, deleted!=None]):
             equipment_subtype = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
                 and_(
                     EquipmentSubtype.id == id if id else True,
                     EquipmentSubtype.equipment_brand_id == equipment_brand_id if equipment_brand_id else True,
                     EquipmentSubtype.title.ilike(f'%{title}%') if title else True,
+                    (deleted or EquipmentSubtype.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(EquipmentSubtype.title)
         else:
@@ -3235,14 +3246,15 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(equipment_model)
         return equipment_model.id
 
-    def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, page=0):
+    def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_subtype_id]):
+        if any([id, title, equipment_subtype_id, deleted!=None]):
             equipment_model = self.pgsql_connetction.session.query(EquipmentModel).filter(
                 and_(
                     EquipmentModel.id == id if id else True,
                     EquipmentModel.equipment_subtype_id == equipment_subtype_id if equipment_subtype_id else True,
                     EquipmentModel.title.ilike(f'%{title}%') if title else True,
+                    (deleted or EquipmentModel.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(EquipmentModel.title)
         else:
@@ -4729,6 +4741,448 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
+# Таблица ТОВАРОВ/ЗАПЧАСТЕЙ ===============================================================
+
+    def add_parts(self, title, description, marking, article, barcode, code, image_url, doc_url, specifications, deleted):
+
+        parts = Parts(
+            title=title,
+            description=description,
+            marking=marking,
+            article=article,
+            barcode=barcode,
+            code=code,
+            image_url=image_url,
+            doc_url=doc_url,
+            specifications=specifications,
+            deleted=deleted
+        )
+        self.pgsql_connetction.session.add(parts)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(parts)
+        return parts.id
+
+    def get_parts(self,
+                  id=None,
+                  title=None,
+                  marking=None,
+                  article=None,
+                  barcode=None,
+                  code=None,
+                  page=0,
+                  deleted=None):
+
+        if any([id, title, marking, article, barcode, code, deleted != None]):
+            parts = self.pgsql_connetction.session.query(Parts).filter(
+                and_(
+                    Parts.id == id if id else True,
+                    Parts.title.ilike(f'%{title}%') if title else True,
+                    Parts.marking.ilike(f'%{marking}%') if marking else True,
+                    Parts.article == article if article else True,
+                    Parts.barcode == barcode if barcode else True,
+                    Parts.code == code if code else True,
+                    Parts.deleted == deleted if deleted != None else True
+                )
+            ).order_by(Parts.title)
+        else:
+            parts = self.pgsql_connetction.session.query(Parts).order_by(Parts.title)
+
+        result = {'success': True}
+        count = parts.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in parts[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'description': row.description,
+                'marking': row.marking,
+                'article': row.article,
+                'barcode': row.barcode,
+                'code': row.code,
+                'image_url': row.image_url,
+                'doc_url': row.doc_url,
+                'specifications': row.specifications,
+                'deleted': row.deleted
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_parts(self,
+                   id,
+                   title=None,
+                   description=None,
+                   marking=None,
+                   article=None,
+                   barcode=None,
+                   code=None,
+                   image_url=None,
+                   doc_url=None,
+                   specifications=None,
+                   deleted=None):
+
+        self.pgsql_connetction.session.query(Parts).filter_by(id=id).update({
+            'title': title if title else Parts.title,
+            'description': description if description else Parts.description,
+            'marking': marking if marking else Parts.marking,
+            'article': article if article else Parts.article,
+            'barcode': barcode if barcode else Parts.barcode,
+            'code': code if code else Parts.code,
+            'image_url': image_url if image_url else Parts.image_url,
+            'doc_url': doc_url if doc_url else Parts.doc_url,
+            'specifications': specifications if specifications else Parts.specifications,
+            'deleted': deleted if deleted != None else Parts.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_parts(self, id):
+
+        parts = self.pgsql_connetction.session.query(Parts).get(id)
+        if parts:
+            self.pgsql_connetction.session.delete(parts)
+            self.pgsql_connetction.session.commit()
+            return id
+
+# Таблица СКЛАДОВ ===============================================================
+
+    def add_warehouse(self, title, description, isGlobal, permissions, employees, branch_id, deleted):
+
+        warehouse = Warehouse(
+            title=title,
+            description=description,
+            isGlobal=isGlobal,
+            permissions=permissions,
+            employees=employees,
+            branch_id=branch_id,
+            deleted=deleted
+        )
+        self.pgsql_connetction.session.add(warehouse)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(warehouse)
+        return warehouse.id
+
+    def get_warehouse(self,
+                      id=None,
+                      title=None,
+                      branch_id=None,
+                      isGlobal=None,
+                      deleted=None,
+                      page=0):
+
+        if any([id, title, branch_id, isGlobal != None, deleted != None]):
+            warehouse = self.pgsql_connetction.session.query(Warehouse).filter(
+                and_(
+                    Warehouse.id == id if id else True,
+                    Warehouse.title.ilike(f'%{title}%') if title else True,
+                    Warehouse.branch_id == branch_id if branch_id else True,
+                    Warehouse.isGlobal == isGlobal if isGlobal != None else True,
+                    Warehouse.deleted == deleted if deleted != None else True
+                )
+            ).order_by(Warehouse.title)
+        else:
+            warehouse = self.pgsql_connetction.session.query(Warehouse).order_by(Warehouse.title)
+
+        result = {'success': True}
+        count = warehouse.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in warehouse[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'description': row.description,
+                'isGlobal': row.isGlobal,
+                'permissions': row.permissions,
+                'employees': row.employees,
+                'deleted': row.deleted,
+                'branch': {
+                    'id': row.branch.id,
+                    'name': row.branch.name,
+                    'color': row.branch.color,
+                    'icon': row.branch.icon
+                } if row.branch else {}
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_warehouse(self,
+                   id,
+                   title=None,
+                   description=None,
+                   isGlobal=None,
+                   permissions=None,
+                   employees=None,
+                   branch_id=None,
+                   deleted=None):
+
+        self.pgsql_connetction.session.query(Warehouse).filter_by(id=id).update({
+            'title': title if title else Warehouse.title,
+            'description': description if description else Warehouse.description,
+            'branch_id': branch_id if branch_id else Warehouse.branch_id,
+            'permissions': permissions if permissions else Warehouse.permissions,
+            'employees': employees if employees else Warehouse.employees,
+            'isGlobal': isGlobal if isGlobal != None else Warehouse.isGlobal,
+            'deleted': deleted if deleted != None else Warehouse.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_warehouse(self, id):
+
+        warehouse = self.pgsql_connetction.session.query(Warehouse).get(id)
+        if warehouse:
+            self.pgsql_connetction.session.delete(warehouse)
+            self.pgsql_connetction.session.commit()
+            return id
+
+# Таблица КАТЕГОРИЙ СКЛАДОВ ===============================================================
+
+    def add_warehouse_category(self, title, parent_category_id, warehouse_id, deleted):
+
+        warehouse_category = WarehouseCategory(
+            title=title,
+            parent_category_id=parent_category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+        self.pgsql_connetction.session.add(warehouse_category)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(warehouse_category)
+        return warehouse_category.id
+
+    def get_warehouse_category(self,
+                      id=None,
+                      title=None,
+                      parent_category_id=None,
+                      warehouse_id=None,
+                      deleted=None,
+                      page=0):
+
+        if any([id, title, parent_category_id, warehouse_id, deleted != None]):
+            warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).filter(
+                and_(
+                    WarehouseCategory.id == id if id else True,
+                    WarehouseCategory.title.ilike(f'%{title}%') if title else True,
+                    WarehouseCategory.parent_category_id == parent_category_id if parent_category_id else True,
+                    WarehouseCategory.warehouse_id == warehouse_id if warehouse_id else True,
+                    WarehouseCategory.deleted == deleted if deleted != None else True
+                )
+            ).order_by(WarehouseCategory.title)
+        else:
+            warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).order_by(WarehouseCategory.title)
+
+        result = {'success': True}
+        count = warehouse_category.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in warehouse_category[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'parent_category_id': row.parent_category_id,
+                'warehouse_id': row.warehouse_id,
+                'deleted': row.deleted
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_warehouse_category(self,
+                               id,
+                               title=None,
+                               parent_category_id=None,
+                               warehouse_id=None,
+                               deleted=None):
+
+        self.pgsql_connetction.session.query(WarehouseCategory).filter_by(id=id).update({
+            'title': title if title else WarehouseCategory.title,
+            'parent_category_id': parent_category_id if parent_category_id else WarehouseCategory.parent_category_id,
+            'warehouse_id': warehouse_id if warehouse_id else WarehouseCategory.warehouse_id,
+            'deleted': deleted if deleted != None else WarehouseCategory.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_warehouse_category(self, id):
+
+        warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).get(id)
+        if warehouse_category:
+            self.pgsql_connetction.session.delete(warehouse_category)
+            self.pgsql_connetction.session.commit()
+            return id
+
+# Таблица ЗАПЧАСТЕЙ НА СКЛАДЕ ===============================================================
+
+    def add_warehouse_parts(self,
+                            where_to_buy,
+                            cell,
+                            count,
+                            min_residue,
+                            warranty_period,
+                            necessary_amount,
+                            part_id,
+                            category_id,
+                            warehouse_id,
+                            deleted):
+
+        warehouse_parts = WarehouseParts(
+            where_to_buy=where_to_buy,
+            cell=cell,
+            count=count,
+            min_residue=min_residue,
+            warranty_period=warranty_period,
+            necessary_amount=necessary_amount,
+            part_id=part_id,
+            category_id=category_id,
+            warehouse_id=warehouse_id,
+            deleted=deleted
+        )
+        self.pgsql_connetction.session.add(warehouse_parts)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(warehouse_parts)
+        return warehouse_parts.id
+
+    def get_warehouse_parts(self,
+                          id=None,
+                          title=None,
+                          cell=None,
+                          marking=None,
+                          count=None,
+                          min_residue=None,
+                          part_id=None,
+                          category_id=None,
+                          warehouse_id=None,
+                          page=0,
+                          deleted=None):
+
+        if any([id, cell, title, marking, count, min_residue, part_id, category_id, warehouse_id, deleted != None]):
+            warehouse_parts = self.pgsql_connetction.session.query(WarehouseParts).join(WarehouseParts.part).filter(
+                and_(
+                    WarehouseParts.id == id if id else True,
+                    WarehouseParts.cell == cell if cell else True,
+                    WarehouseParts.part.property.mapper.class_.title.ilike(f'%{title}%'),
+                    WarehouseParts.part.property.mapper.class_.marking.ilike(f'%{marking}%'),
+                    WarehouseParts.count == count if count else True,
+                    WarehouseParts.min_residue == min_residue if min_residue else True,
+                    WarehouseParts.part_id == part_id if part_id else True,
+                    WarehouseParts.category_id == category_id if category_id else True,
+                    WarehouseParts.warehouse_id == warehouse_id if warehouse_id else True,
+                    WarehouseParts.deleted == deleted if deleted != None else True
+                )
+            ).order_by(WarehouseParts.title)
+        else:
+            warehouse_parts = self.pgsql_connetction.session.query(WarehouseParts).order_by(WarehouseParts.title)
+
+        result = {'success': True}
+        count = warehouse_parts.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in warehouse_parts[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'where_to_buy': row.where_to_buy,
+                'cell': row.cell,
+                'count': row.count,
+                'min_residue': row.min_residue,
+                'warranty_period': row.warranty_period,
+                'necessary_amount': row.necessary_amount,
+                'part_id': row.part_id,
+                'category_id': row.category_id,
+                'warehouse_id': row.warehouse_id,
+                'deleted': row.deleted,
+                'title': row.part.title,
+                'description': row.part.description,
+                'marking': row.part.marking,
+                'article': row.part.article,
+                'barcode': row.part.barcode,
+                'code': row.part.code,
+                'image_url': row.part.image_url,
+                'doc_url': row.part.doc_url
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_warehouse_parts(self,
+                           id,
+                           where_to_buy=None,
+                           cell=None,
+                           count=None,
+                           min_residue=None,
+                           warranty_period=None,
+                           necessary_amount=None,
+                           part_id=None,
+                           category_id=None,
+                           warehouse_id=None,
+                           specifications=None,
+                           deleted=None):
+
+        self.pgsql_connetction.session.query(WarehouseParts).filter_by(id=id).update({
+            'where_to_buy': where_to_buy if where_to_buy else WarehouseParts.where_to_buy,
+            'cell': cell if cell else WarehouseParts.cell,
+            'count': count if count else WarehouseParts.count,
+            'min_residue': min_residue if min_residue else WarehouseParts.min_residue,
+            'warranty_period': warranty_period if warranty_period else WarehouseParts.warranty_period,
+            'necessary_amount': necessary_amount if necessary_amount else WarehouseParts.necessary_amount,
+            'part_id': part_id if part_id else WarehouseParts.part_id,
+            'category_id': category_id if category_id else WarehouseParts.category_id,
+            'warehouse_id': warehouse_id if warehouse_id else WarehouseParts.warehouse_id,
+            'deleted': deleted if deleted != None else WarehouseParts.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_warehouse_parts(self, id):
+
+        warehouse_parts = self.pgsql_connetction.session.query(WarehouseParts).get(id)
+        if warehouse_parts:
+            self.pgsql_connetction.session.delete(warehouse_parts)
+            self.pgsql_connetction.session.commit()
+            return id
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     start_time = time.time()
     db = DbInteraction(
@@ -4739,16 +5193,24 @@ if __name__ == '__main__':
         db_name='one_two',
         rebuild_db=False
     )
-    db.create_all_tables()
-    db.initial_data()
-    db.update_date_from_remonline()
-    db.reset_dict()
 
-    dtime = time.time() - start_time
-    hours = int(dtime // 3600)
-    minutes = int((dtime % 3600) // 60)
-    seconds = int((dtime % 3600) % 60)
-    print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
+    # Создание новых таблиц
+    # db.create_tables([Parts.__table__, Warehouse.__table__, WarehouseCategory.__table__, WarehouseParts.__table__])
+
+    # Добавление столбца
+    column = Column('employees', JSON)
+    db.add_column(Warehouse.__table__, column)
+
+    # db.create_all_tables()
+    # db.initial_data()
+    # db.update_date_from_remonline()
+    # db.reset_dict()
+    #
+    # dtime = time.time() - start_time
+    # hours = int(dtime // 3600)
+    # minutes = int((dtime % 3600) // 60)
+    # seconds = int((dtime % 3600) % 60)
+    # print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
 
 
     # pages = db.get_orders()['count']/50
