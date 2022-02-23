@@ -736,8 +736,9 @@ class WarehouseCategory(Base):
 
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     title = Column(TEXT)                    # Наименование
-    parent_category_id = Column(INTEGER)    # Родельская категория
     deleted = Column(BOOLEAN)               # Удален
+    parent_category_id = Column(INTEGER)  # Родельская категория
+
     id_warehouse_ref = f'{Warehouse.__tablename__}.{Warehouse.id.name}'
     warehouse_id = Column(INTEGER, ForeignKey(id_warehouse_ref), nullable=True)  # Склады
 

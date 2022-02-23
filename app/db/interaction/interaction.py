@@ -4981,10 +4981,10 @@ class DbInteraction():
             warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).filter(
                 and_(
                     WarehouseCategory.id == id if id else True,
-                    WarehouseCategory.title.ilike(f'%{title}%') if title else True,
-                    WarehouseCategory.parent_category_id == parent_category_id if parent_category_id else True,
-                    WarehouseCategory.warehouse_id == warehouse_id if warehouse_id else True,
-                    WarehouseCategory.deleted == deleted if deleted != None else True
+                    # WarehouseCategory.title.ilike(f'%{title}%') if title else True,
+                    # WarehouseCategory.parent_category_id == parent_category_id if parent_category_id else True,
+                    # WarehouseCategory.warehouse_id == warehouse_id if warehouse_id else True,
+                    # WarehouseCategory.deleted == deleted if deleted != None else True
                 )
             ).order_by(WarehouseCategory.title)
         else:
@@ -4994,21 +4994,14 @@ class DbInteraction():
         count = warehouse_category.count()
         result['count'] = count
 
-        item_of_page = 50
-
-        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
-
-        if page > max_page and max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
-
         data = []
-        for row in warehouse_category[item_of_page * page: item_of_page * (page + 1)]:
+        for row in warehouse_category:
             data.append({
                 'id': row.id,
                 'title': row.title,
                 'parent_category_id': row.parent_category_id,
                 'warehouse_id': row.warehouse_id,
-                'deleted': row.deleted
+                'deleted': row.deleted,
             })
 
         result['data'] = data

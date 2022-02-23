@@ -6167,6 +6167,19 @@ def get_warehouse_category():
         deleted=deleted,
         page=page
     )
+
+    # рекурсивная функция которя возвращает список категорий используя текущюю категория и общий список категрий
+    def getcat(cat, categories):
+        list_cat = list(filter(lambda x: x['parent_category_id'] == cat['id'], categories))
+        if list_cat:
+            for catn in list_cat:
+                catn['categories'] = getcat(catn, categories)
+        return list_cat
+
+    categories = db_iteraction.get_warehouse_category()['data']
+    for cat in result['data']:
+        cat['categories'] = getcat(cat, categories)
+
     return result, 200
 
 @app.route('/warehouse_category', methods=['POST', 'PUT', 'DELETE'])
