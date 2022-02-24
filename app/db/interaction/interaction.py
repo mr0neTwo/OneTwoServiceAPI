@@ -4984,7 +4984,7 @@ class DbInteraction():
                     # WarehouseCategory.title.ilike(f'%{title}%') if title else True,
                     # WarehouseCategory.parent_category_id == parent_category_id if parent_category_id else True,
                     # WarehouseCategory.warehouse_id == warehouse_id if warehouse_id else True,
-                    # WarehouseCategory.deleted == deleted if deleted != None else True
+                    (deleted or WarehouseCategory.deleted.is_(False)) if deleted!=None else True
                 )
             ).order_by(WarehouseCategory.title)
         else:

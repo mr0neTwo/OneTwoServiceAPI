@@ -6176,7 +6176,7 @@ def get_warehouse_category():
                 catn['categories'] = getcat(catn, categories)
         return list_cat
 
-    categories = db_iteraction.get_warehouse_category()['data']
+    categories = db_iteraction.get_warehouse_category(deleted=deleted)['data']
     for cat in result['data']:
         cat['categories'] = getcat(cat, categories)
 
