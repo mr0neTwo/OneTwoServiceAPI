@@ -700,21 +700,6 @@ class Payrules(Base):
 # 7 - За рабочие часы
 # 8 - За рабочие дни
 
-class Parts(Base):
-    __tablename__ = 'parts'
-
-    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
-    title = Column(TEXT)            # Наименование
-    description = Column(TEXT)      # Описание
-    marking = Column(TEXT)          # Маркировка
-    article = Column(TEXT)          # Артикул
-    barcode = Column(TEXT)          # Штрихкод
-    code = Column(TEXT)             # Код
-    image_url = Column(TEXT)        # Ссылка на изображение
-    doc_url = Column(TEXT)          # Ссылка на документацию
-    specifications = Column(JSON)   # Характеристики
-    deleted = Column(BOOLEAN)       # Удален
-
 class Warehouse(Base):
     __tablename__ = 'warehouse'
 
@@ -741,6 +726,27 @@ class WarehouseCategory(Base):
 
     id_warehouse_ref = f'{Warehouse.__tablename__}.{Warehouse.id.name}'
     warehouse_id = Column(INTEGER, ForeignKey(id_warehouse_ref), nullable=True)  # Склады
+
+class Parts(Base):
+    __tablename__ = 'parts'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    title = Column(TEXT)  # Наименование
+    description = Column(TEXT)  # Описание
+    marking = Column(TEXT)  # Маркировка
+    article = Column(TEXT)  # Артикул
+    barcode = Column(TEXT)  # Штрихкод
+    code = Column(TEXT)  # Код
+    image_url = Column(TEXT)  # Ссылка на изображение
+    doc_url = Column(TEXT)  # Ссылка на документацию
+    specifications = Column(JSON)  # Характеристики
+    deleted = Column(BOOLEAN)  # Удален
+
+    id_warehouse_category_ref = f'{WarehouseCategory.__tablename__}.{WarehouseCategory.id.name}'
+    warehouse_category_id = Column(INTEGER, ForeignKey(id_warehouse_category_ref), nullable=True)  # Категория товара
+
+    warehouse_category = relationship('WarehouseCategory', foreign_keys=[warehouse_category_id])
+
 
 class WarehouseParts(Base):
     __tablename__ = 'warehouse_parts'

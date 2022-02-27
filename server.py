@@ -3194,7 +3194,6 @@ def change_order_status():
 
     return {'success': True, 'message': f'{id} changed'}, 202
 
-
 @app.route('/get_menu_rows', methods=['POST'])
 @jwt_required()
 def get_menu_rows():
@@ -5887,6 +5886,12 @@ def get_parts():
     if deleted and type(deleted) != bool:
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
+    warehouse_category_id = request_body.get('warehouse_category_id')
+    if warehouse_category_id and type(warehouse_category_id) != int:
+        return {'success': False, 'message': "warehouse_category_id is not integer"}, 400
+    if warehouse_category_id and db_iteraction.get_warehouse_category(id=warehouse_category_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_category_id is not defined'}, 400
+
     result = db_iteraction.get_parts(
         id=id,                                      # int - id  - полное совпадение
         title=title,
@@ -5895,6 +5900,7 @@ def get_parts():
         barcode=barcode,
         code=code,
         deleted=deleted,
+        warehouse_category_id=warehouse_category_id,
         page=page
     )
     return result, 200
@@ -5950,6 +5956,43 @@ def parts():
     if deleted and type(deleted) != bool:
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
+    warehouse_category_id = request_body.get('warehouse_category_id')
+    if warehouse_category_id and type(warehouse_category_id) != int:
+        return {'success': False, 'message': "warehouse_category_id is not integer"}, 400
+    if warehouse_category_id and db_iteraction.get_warehouse_category(id=warehouse_category_id)['count'] == 0:
+        return {'success': False, 'message': 'warehouse_category_id is not defined'}, 400
+
+    # загрузка/замена изображения
+    img_uri = request_body.get('img')
+    if img_uri:
+        # открываем файл с помощью urlopen
+        with urlopen(img_uri) as response:
+            # читаем данные файла в переменную data
+            data = response.read()
+        # определяем место для хранения данного файла и его имя
+        url = f'build/static/data/Parts/part_{title}_{id}.jpeg'
+        # сохраняем файл по дному адресу
+        with open(url, 'wb') as f:
+            f.write(data)
+        # создаем ссылку для для занесения ее в БД
+        image_url = f'data/Parts/part_{title}_{id}.jpeg'
+
+        # загрузка/замена PDF
+    doc_uri = request_body.get('doc')
+    if doc_uri:
+        # открываем файл с помощью urlopen
+        with urlopen(doc_uri) as response:
+            # читаем данные файла в переменную data
+            data = response.read()
+        # определяем место для хранения данного файла и его имя
+        url = f'build/static/data/Datasheets/datasheet_{title}_{id}.pdf'
+        # сохраняем файл по дному адресу
+        with open(url, 'wb') as f:
+            f.write(data)
+        # создаем ссылку для для занесения ее в БД
+        doc_url = f'data/Datasheets/datasheet_{title}_{id}.pdf'
+
+
     if request.method == 'POST':
         id = db_iteraction.add_parts(
             title=title,
@@ -5961,7 +6004,8 @@ def parts():
             image_url=image_url,
             doc_url=doc_url,
             specifications=specifications,
-            deleted=deleted
+            deleted=deleted,
+            warehouse_category_id=warehouse_category_id
         )
 
         return {'success': True, 'message': f'{id} added'}, 201
@@ -5983,7 +6027,8 @@ def parts():
             image_url=image_url,
             doc_url=doc_url,
             specifications=specifications,
-            deleted=deleted
+            deleted=deleted,
+            warehouse_category_id=warehouse_category_id
         )
 
         return {'success': True, 'message': f'{id} changed'}, 202

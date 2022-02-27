@@ -2,7 +2,7 @@ import time
 from pprint import pprint
 import re
 
-from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON
+from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey
 from sqlalchemy.orm import contains_eager
 from werkzeug.security import generate_password_hash
 
@@ -1326,7 +1326,7 @@ class DbInteraction():
                     DiscountMargin.id == id if id else True,
                     DiscountMargin.margin_type == margin_type if margin_type else True,
                     DiscountMargin.title.like(f'%{title}%') if title else True,
-                    DiscountMargin.deleted == deleted if deleted != None else True,
+                    (deleted or DiscountMargin.deleted.is_(False)) if deleted != None else True
                 )
             )
         else:
@@ -1659,7 +1659,7 @@ class DbInteraction():
                     Operations.total == total if total else True,
                     Operations.discount_value == discount_value if discount_value else True,
                     Operations.warranty == warranty if warranty != None else True,
-                    Operations.deleted == deleted if deleted != None else True,
+                    (deleted or Operations.deleted.is_(False)) if deleted != None else True,
                     Operations.order_id == order_id if order_id else True,
                     Operations.dict_id == dict_id if dict_id else True,
                     Operations.warranty_period == warranty_period if warranty_period else True,
@@ -1808,7 +1808,7 @@ class DbInteraction():
                     OderParts.price == price if price else True,
                     OderParts.discount_value == discount_value if discount_value else True,
                     OderParts.total == total if total else True,
-                    OderParts.deleted == deleted if deleted != None else True,
+                    (deleted or OderParts.deleted.is_(False)) if deleted != None else True,
                     OderParts.warranty_period == warranty_period if warranty_period else True,
                     OderParts.order_id == order_id if order_id else True,
                     (OderParts.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
@@ -2087,7 +2087,7 @@ class DbInteraction():
                     # (Clients.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
                     # (Clients.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
                     Clients.juridical == juridical if juridical != None else True,
-                    Clients.deleted == deleted if deleted != None else True,
+                    (deleted or Clients.deleted.is_(False)) if deleted != None else True,
                     # Clients.notes.like(f'%{notes}%') if notes else True,
                     Clients.supplier == supplier if supplier != None else True,
                     Clients.phone.property.mapper.class_.number.ilike(f'%{phone}%') if phone else True,
@@ -3843,7 +3843,7 @@ class DbInteraction():
                     Cashboxs.title.like(f'%{title}%') if title else True,
                     Cashboxs.isGlobal == isGlobal if isGlobal != None else True,
                     Cashboxs.isVirtual == isVirtual if isVirtual != None else True,
-                    Cashboxs.deleted == deleted if deleted != None else True,
+                    (deleted or Cashboxs.deleted.is_(False)) if deleted != None else True,
                     Cashboxs.branch_id == branch_id if branch_id else True
                 )
             ).order_by(Cashboxs.id)
@@ -3967,7 +3967,7 @@ class DbInteraction():
                     Payments.id == id if id else True,
                     Payments.cashflow_category.like(f'%{cashflow_category}%') if cashflow_category else True,
                     Payments.direction == direction if direction else True,
-                    Payments.deleted == deleted if deleted != None else True,
+                    (deleted or Payments.deleted.is_(False)) if deleted != None else True,
                     (Payments.custom_created_at >= custom_created_at[0] if custom_created_at[0] else True) if custom_created_at else True,
                     (Payments.custom_created_at <= custom_created_at[1] if custom_created_at[1] else True) if custom_created_at else True,
                     tags._in(Payments.tags) if tags else True,
@@ -4285,7 +4285,7 @@ class DbInteraction():
                 and_(
                     Payrolls.id == id if id else True,
                     Payrolls.direction == direction if direction else True,
-                    Payrolls.deleted == deleted if deleted != None else True,
+                    (deleted or Payrolls.deleted.is_(False)) if deleted != None else True,
                     Payrolls.reimburse == reimburse if reimburse != None else True,
                     (Payrolls.custom_created_at >= custom_created_at[0] if custom_created_at[0] else True) if custom_created_at else True,
                     (Payrolls.custom_created_at <= custom_created_at[1] if custom_created_at[1] else True) if custom_created_at else True,
@@ -4435,7 +4435,7 @@ class DbInteraction():
                     Payrules.type_rule == type_rule if type_rule else True,
                     Payrules.order_type == order_type if order_type else True,
                     Payrules.check_status == check_status if check_status else True,
-                    Payrules.deleted == deleted if deleted != None else True,
+                    (deleted or Payrules.deleted.is_(False)) if deleted != None else True,
                     Payrules.employee_id == employee_id if employee_id else True,
                 )
             ).order_by(desc(Payrules.created_at))
@@ -4525,7 +4525,7 @@ class DbInteraction():
                 and_(
                     GroupDictService.id == id if id else True,
                     GroupDictService.title.like(f'%{title}%') if title else True,
-                    GroupDictService.deleted == deleted if deleted != None else True
+                    (deleted or GroupDictService.deleted.is_(False)) if deleted != None else True,
                 )
             ).order_by(GroupDictService.title)
         else:
@@ -4612,7 +4612,7 @@ class DbInteraction():
                         DictService.title.like(f'%{title}%') if title else True,
                         DictService.warranty == warranty if warranty else True,
                         DictService.code == code if code else True,
-                        DictService.deleted == deleted if deleted != None else True,
+                        (deleted or DictService.deleted.is_(False)) if deleted != None else True,
                         DictService.category_id == category_id if category_id else True,
                     )
                 ).order_by(desc(DictService.title))
@@ -4699,7 +4699,7 @@ class DbInteraction():
                     ServicePrices.id == id if id else True,
                     ServicePrices.discount_margin_id == discount_margin_id if discount_margin_id else True,
                     ServicePrices.service_id == service_id if service_id else True,
-                    ServicePrices.deleted == deleted if deleted != None else True
+                    (deleted or ServicePrices.deleted.is_(False)) if deleted != None else True
                 )
             )
         else:
@@ -4743,7 +4743,18 @@ class DbInteraction():
 
 # Таблица ТОВАРОВ/ЗАПЧАСТЕЙ ===============================================================
 
-    def add_parts(self, title, description, marking, article, barcode, code, image_url, doc_url, specifications, deleted):
+    def add_parts(self,
+                  title,
+                  description,
+                  marking,
+                  article,
+                  barcode,
+                  code,
+                  image_url,
+                  doc_url,
+                  specifications,
+                  deleted,
+                  warehouse_category_id):
 
         parts = Parts(
             title=title,
@@ -4755,7 +4766,8 @@ class DbInteraction():
             image_url=image_url,
             doc_url=doc_url,
             specifications=specifications,
-            deleted=deleted
+            deleted=deleted,
+            warehouse_category_id=warehouse_category_id
         )
         self.pgsql_connetction.session.add(parts)
         self.pgsql_connetction.session.commit()
@@ -4770,7 +4782,8 @@ class DbInteraction():
                   barcode=None,
                   code=None,
                   page=0,
-                  deleted=None):
+                  deleted=None,
+                  warehouse_category_id=None):
 
         if any([id, title, marking, article, barcode, code, deleted != None]):
             parts = self.pgsql_connetction.session.query(Parts).filter(
@@ -4781,7 +4794,8 @@ class DbInteraction():
                     Parts.article == article if article else True,
                     Parts.barcode == barcode if barcode else True,
                     Parts.code == code if code else True,
-                    Parts.deleted == deleted if deleted != None else True
+                    (deleted or Parts.deleted.is_(False)) if deleted != None else True,
+                    Parts.warehouse_category_id == warehouse_category_id if warehouse_category_id else True
                 )
             ).order_by(Parts.title)
         else:
@@ -4811,7 +4825,12 @@ class DbInteraction():
                 'image_url': row.image_url,
                 'doc_url': row.doc_url,
                 'specifications': row.specifications,
-                'deleted': row.deleted
+                'deleted': row.deleted,
+                'warehouse_category': {
+                    'id': row.warehouse_category.id,
+                    'title': row.warehouse_category.title,
+                    'deleted': row.warehouse_category.deleted
+                } if row.warehouse_category else {}
             })
 
         result['data'] = data
@@ -4828,7 +4847,8 @@ class DbInteraction():
                    image_url=None,
                    doc_url=None,
                    specifications=None,
-                   deleted=None):
+                   deleted=None,
+                   warehouse_category_id=None):
 
         self.pgsql_connetction.session.query(Parts).filter_by(id=id).update({
             'title': title if title else Parts.title,
@@ -4840,7 +4860,8 @@ class DbInteraction():
             'image_url': image_url if image_url else Parts.image_url,
             'doc_url': doc_url if doc_url else Parts.doc_url,
             'specifications': specifications if specifications else Parts.specifications,
-            'deleted': deleted if deleted != None else Parts.deleted
+            'deleted': deleted if deleted != None else Parts.deleted,
+            'warehouse_category_id': warehouse_category_id if warehouse_category_id else Parts.warehouse_category_id
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4886,7 +4907,7 @@ class DbInteraction():
                     Warehouse.title.ilike(f'%{title}%') if title else True,
                     Warehouse.branch_id == branch_id if branch_id else True,
                     Warehouse.isGlobal == isGlobal if isGlobal != None else True,
-                    Warehouse.deleted == deleted if deleted != None else True
+                    (deleted or Warehouse.deleted.is_(False)) if deleted!=None else True
                 )
             ).order_by(Warehouse.title)
         else:
@@ -5087,7 +5108,7 @@ class DbInteraction():
                     WarehouseParts.part_id == part_id if part_id else True,
                     WarehouseParts.category_id == category_id if category_id else True,
                     WarehouseParts.warehouse_id == warehouse_id if warehouse_id else True,
-                    WarehouseParts.deleted == deleted if deleted != None else True
+                    (deleted or WarehouseParts.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(WarehouseParts.title)
         else:
@@ -5191,8 +5212,9 @@ if __name__ == '__main__':
     # db.create_tables([Parts.__table__, Warehouse.__table__, WarehouseCategory.__table__, WarehouseParts.__table__])
 
     # Добавление столбца
-    column = Column('employees', JSON)
-    db.add_column(Warehouse.__table__, column)
+    # column = Column('employees', JSON)
+    # db.add_column(Warehouse.__table__, column)
+
 
     # db.create_all_tables()
     # db.initial_data()
