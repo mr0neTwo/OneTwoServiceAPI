@@ -1,4 +1,4 @@
-tinkoff2021 = [
+tinkoff = [
     {
         "id": 47473103,
         "cashbox_id": 159703,

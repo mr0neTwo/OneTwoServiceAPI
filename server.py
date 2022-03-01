@@ -1602,9 +1602,9 @@ def operations():
             id=id)                              # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/get_oder_parts', methods=['POST'])
+@app.route('/get_order_parts', methods=['POST'])
 @jwt_required()
-def get_oder_parts():
+def get_order_parts():
     # Проверим содежит ли запрос тело json
     try:
         request_body = dict(request.json)
@@ -1704,9 +1704,9 @@ def get_oder_parts():
     )
     return result, 200
 
-@app.route('/oder_parts', methods=['POST', 'GET', 'PUT', 'DELETE'])
+@app.route('/order_parts', methods=['POST', 'GET', 'PUT', 'DELETE'])
 @jwt_required()
-def oder_parts():
+def order_parts():
     # Проверим содежит ли запрос тело json
     try:
         request_body = dict(request.json)

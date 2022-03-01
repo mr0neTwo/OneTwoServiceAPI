@@ -366,7 +366,7 @@ class Orders(Base):
     model = relationship('EquipmentModel', foreign_keys=[model_id])
 
     operations = relationship('Operations', backref='operations', passive_deletes=True)
-    parts = relationship('OderParts', backref='oder_parts', passive_deletes=True)
+    parts = relationship('OrderParts', backref='oder_parts', passive_deletes=True)
     attachments = relationship('Attachments', backref='attachments', passive_deletes=True)
     payments = relationship('Payments', backref='payments', passive_deletes=True)
 
@@ -433,7 +433,7 @@ class Operations(Base):
     dict_service = relationship('DictService', foreign_keys=[dict_id])
 
 # Таблица запчастей и материалов заказа
-class OderParts(Base):
+class OrderParts(Base):
 
     __tablename__ = 'oder_parts'
 
@@ -625,7 +625,7 @@ class Payments(Base):
 
     client = relationship('Clients', foreign_keys=[client_id])
     employee = relationship('Employees', foreign_keys=[employee_id])
-    # order = relationship('Orders', foreign_keys=[order_id])
+    order = relationship('Orders', foreign_keys=[order_id])
     cashbox = relationship('Cashboxs', foreign_keys=[cashbox_id])
 
 class Payrolls(Base):

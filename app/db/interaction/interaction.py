@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash
 
 from app.db.client.client import PGSQL_connetction
 from app.db.models.models import Base, AdCampaign, Employees, Attachments, Branch, DiscountMargin, OrderType, \
-    StatusGroup, Status, Operations, OderParts, Clients, Orders, time_now, MenuRows, TableHeaders, Badges, \
+    StatusGroup, Status, Operations, OrderParts, Clients, Orders, time_now, MenuRows, TableHeaders, Badges, \
     CustomFilters, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
     GenerallyInfo, Counts, Schedule, DictMalfunction, DictPackagelist, Cashboxs, Payments, ItemPayments, Payrolls, \
     Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts
@@ -20,7 +20,7 @@ from data import data_menu_rows, dataTableHeader, bages, equipment_type, equipme
     data_cashboxes, data_item_payments, data_group_service, data_service, data_margin
 
 from payments.alfa import alfa
-from payments.tinkoff import tinkoff2021
+from payments.tinkoff import tinkoff
 from payments.fedreserv import fedreserv
 from payments.kassa import kassa
 from payments.obus import obus
@@ -402,7 +402,6 @@ class DbInteraction():
                 )
         print('Клиенты синхронизированы')
 
-
         # Обновим заказы
         n = 0
         list_orders = GetOders()
@@ -633,7 +632,7 @@ class DbInteraction():
                 'title': 'Транзакции Сейф',
                 'cashbox_id': 5
             }, {
-                'data': tinkoff2021,
+                'data': tinkoff,
                 'title': 'Транзакции Тинькофф',
                 'cashbox_id': 2
             }, {
@@ -1763,7 +1762,7 @@ class DbInteraction():
                        created_at,
                        order_id):
 
-        oder_parts = OderParts(
+        oder_parts = OrderParts(
             amount=amount,
             cost=cost,
             discount_value=discount_value,
@@ -1799,24 +1798,24 @@ class DbInteraction():
 
         if any([id, cost, discount_value, engineer_id, price, total, title, deleted != None,
                 warranty_period, created_at, updated_at, order_id]):
-            oder_parts = self.pgsql_connetction.session.query(OderParts).filter(
+            oder_parts = self.pgsql_connetction.session.query(OrderParts).filter(
                 and_(
-                    OderParts.id == id if id else True,
-                    OderParts.title.like(f'%{title}%') if title else True,
-                    OderParts.cost == cost if cost else True,
-                    OderParts.discount_value == discount_value if discount_value else True,
-                    OderParts.price == price if price else True,
-                    OderParts.discount_value == discount_value if discount_value else True,
-                    OderParts.total == total if total else True,
-                    (deleted or OderParts.deleted.is_(False)) if deleted != None else True,
-                    OderParts.warranty_period == warranty_period if warranty_period else True,
-                    OderParts.order_id == order_id if order_id else True,
-                    (OderParts.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
-                    (OderParts.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
+                    OrderParts.id == id if id else True,
+                    OrderParts.title.like(f'%{title}%') if title else True,
+                    OrderParts.cost == cost if cost else True,
+                    OrderParts.discount_value == discount_value if discount_value else True,
+                    OrderParts.price == price if price else True,
+                    OrderParts.discount_value == discount_value if discount_value else True,
+                    OrderParts.total == total if total else True,
+                    (deleted or OrderParts.deleted.is_(False)) if deleted != None else True,
+                    OrderParts.warranty_period == warranty_period if warranty_period else True,
+                    OrderParts.order_id == order_id if order_id else True,
+                    (OrderParts.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
+                    (OrderParts.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
                 )
             )
         else:
-            oder_parts = self.pgsql_connetction.session.query(OderParts)
+            oder_parts = self.pgsql_connetction.session.query(OrderParts)
 
         self.pgsql_connetction.session.expire_all()
         result = {'success': True}
@@ -1867,26 +1866,26 @@ class DbInteraction():
                        created_at,
                        order_id):
 
-        self.pgsql_connetction.session.query(OderParts).filter_by(id=id).update({
-            'amount': amount if amount else OderParts.amount,
-            'cost': cost if cost else OderParts.cost,
-            'discount_value': discount_value if discount_value else OderParts.discount_value,
-            'engineer_id': engineer_id if engineer_id else OderParts.engineer_id,
-            'price': price if price else OderParts.price,
-            'total': total if total else OderParts.total,
-            'title': title if title else OderParts.title,
-            'comment': comment if comment else OderParts.comment,
-            'deleted': deleted if deleted != None else OderParts.deleted,
-            'warranty_period': warranty_period if warranty_period else OderParts.warranty_period,
-            'created_at': created_at if created_at else OderParts.created_at,
-            'order_id': order_id if order_id else OderParts.order_id,
+        self.pgsql_connetction.session.query(OrderParts).filter_by(id=id).update({
+            'amount': amount if amount else OrderParts.amount,
+            'cost': cost if cost else OrderParts.cost,
+            'discount_value': discount_value if discount_value else OrderParts.discount_value,
+            'engineer_id': engineer_id if engineer_id else OrderParts.engineer_id,
+            'price': price if price else OrderParts.price,
+            'total': total if total else OrderParts.total,
+            'title': title if title else OrderParts.title,
+            'comment': comment if comment else OrderParts.comment,
+            'deleted': deleted if deleted != None else OrderParts.deleted,
+            'warranty_period': warranty_period if warranty_period else OrderParts.warranty_period,
+            'created_at': created_at if created_at else OrderParts.created_at,
+            'order_id': order_id if order_id else OrderParts.order_id,
         })
         self.pgsql_connetction.session.commit()
         return self.get_oder_parts()
 
     def del_oder_parts(self, id):
 
-        oder_parts = self.pgsql_connetction.session.query(OderParts).get(id)
+        oder_parts = self.pgsql_connetction.session.query(OrderParts).get(id)
         if oder_parts:
             self.pgsql_connetction.session.delete(oder_parts)
             self.pgsql_connetction.session.commit()
