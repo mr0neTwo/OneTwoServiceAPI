@@ -3943,7 +3943,9 @@ class DbInteraction():
         self.pgsql_connetction.session.add(payments)
         self.pgsql_connetction.session.commit()
         self.pgsql_connetction.session.refresh(payments)
-        return payments.id
+        payment_id = payments.id
+        self.pgsql_connetction.session.close()
+        return payment_id
 
     def get_payments(self,
                      id=None,
