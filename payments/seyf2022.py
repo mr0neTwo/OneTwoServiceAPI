@@ -1,5 +1,59 @@
 seyf2022 = [
     {
+        "id": 50164769,
+        "cashbox_id": 53830,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 14000,
+        "income": 14000,
+        "outcome": 0,
+        "created_at": 1646491451000,
+        "custom_created_at": 1646491451000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"OneTwoService > Сейф\". перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"OneTwoService > Сейф\". перемещение",
+        "deposit": 14000,
+        "balance": 14000,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031028,
+        "cashbox_id": 53830,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -31000,
+        "income": 0,
+        "outcome": -31000,
+        "created_at": 1646119074000,
+        "custom_created_at": 1646119074000,
+        "description": "Перемещение денег из \"OneTwoService > Сейф\" в кассу \"OneTwoService > Касса\". перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сейф\" в кассу \"OneTwoService > Касса\". перемещение",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
         "id": 50006365,
         "cashbox_id": 53830,
         "tags": [],

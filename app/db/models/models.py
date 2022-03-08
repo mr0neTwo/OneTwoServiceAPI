@@ -220,6 +220,7 @@ class Phones(Base):
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID телефона
     number = Column(TEXT)                                                       # Номер телефона
     title = Column(TEXT)                                                        # Тип номера
+    notify = Column(BOOLEAN)
     id_ref = f'{Clients.__tablename__}.{Clients.id.name}'
     client_id = Column(INTEGER, ForeignKey(id_ref, ondelete='CASCADE'), nullable=False)             # Клиент
 
@@ -768,3 +769,38 @@ class WarehouseParts(Base):
     warehouse_id = Column(INTEGER, ForeignKey(id_warehouse_ref), nullable=True)                     # Склады
 
     part = relationship('Parts', foreign_keys=[part_id])
+
+
+class NotificationTemplate(Base):
+    __tablename__ = 'notification_template'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    title = Column(TEXT)
+    template = Column(TEXT)
+    deleted = Column(BOOLEAN)
+
+class NotificationEvents(Base):
+    __tablename__ = 'notification_events'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+    event = Column(TEXT)
+    target_audience = Column(INTEGER)
+    statuses = Column(ARRAY(INTEGER))
+    deleted = Column(BOOLEAN)
+    notification_type = Column(INTEGER)
+    id_notification_template_ref = f'{NotificationTemplate.__tablename__}.{NotificationTemplate.id.name}'
+    notification_template_id = Column(INTEGER, ForeignKey(id_notification_template_ref), nullable=True)
+
+    template = relationship('NotificationTemplate', foreign_keys=[notification_template_id])
+
+# notification_type:
+# 1 - SMS
+# 2 - Email
+
+# target_audience:
+# 1 - Заказы: для клиентов
+# 2 - Заказы: для менеджеров
+# 3 - Заказы: для исполнителей
+# 4 - Обращения: для клиентов
+# 5 - Обращения: для менеджеров
+# 6 - Задачи: для исполнителей

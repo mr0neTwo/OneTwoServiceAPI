@@ -1,5 +1,475 @@
 sber2022 = [
     {
+        "id": 50173228,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -7000,
+        "income": 0,
+        "outcome": -7000,
+        "created_at": 1646553435000,
+        "custom_created_at": 1646550180000,
+        "description": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "deposit": 11479.13,
+        "balance": 11479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173214,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 7000,
+        "income": 7000,
+        "outcome": 0,
+        "created_at": 1646553398000,
+        "custom_created_at": 1646550120000,
+        "description": "Перемещение денег из \"Тинькофф\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "comment": "Перемещение денег из \"Тинькофф\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "deposit": 18479.13,
+        "balance": 18479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173107,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 18532.68,
+        "income": 18532.68,
+        "outcome": 0,
+        "created_at": 1646553129000,
+        "custom_created_at": 1646472540000,
+        "description": "Перемещение денег из \"OneTwoService > Федеральный резерв\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Федеральный резерв\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "deposit": 23011.81,
+        "balance": 23011.81,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173146,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Аренда",
+        "sum": -7500,
+        "income": 0,
+        "outcome": -7500,
+        "created_at": 1646553250000,
+        "custom_created_at": 1646466780000,
+        "description": "Аренда",
+        "comment": "Аренда",
+        "deposit": 4479.13,
+        "balance": 4479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50173141,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Аренда",
+        "sum": -7500,
+        "income": 0,
+        "outcome": -7500,
+        "created_at": 1646553232000,
+        "custom_created_at": 1646466780000,
+        "description": "Аренда",
+        "comment": "Аренда",
+        "deposit": 11979.13,
+        "balance": 11979.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50173128,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Коммунальные расходы",
+        "sum": -3532.68,
+        "income": 0,
+        "outcome": -3532.68,
+        "created_at": 1646553195000,
+        "custom_created_at": 1646466720000,
+        "description": "Коммуналка",
+        "comment": "Коммуналка",
+        "deposit": 19479.13,
+        "balance": 19479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50127971,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 2325,
+        "income": 2325,
+        "outcome": 0,
+        "created_at": 1646393463000,
+        "custom_created_at": 1646393463000,
+        "description": "Оплата по заказу #OTS-20236",
+        "comment": "Оплата по заказу #OTS-20236",
+        "deposit": 4404.13,
+        "balance": 4404.13,
+        "client": {
+            "id": 18334984,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1612873822000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Шипицин Сергей Сергеевич",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79090859990",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": True,
+        "deleted_at": 1646553987000,
+        "deleted_by": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35096747,
+        "relation_type": 0
+    },
+    {
+        "id": 50173425,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Предоплата",
+        "sum": 2300,
+        "income": 2300,
+        "outcome": 0,
+        "created_at": 1646553981000,
+        "custom_created_at": 1646393460000,
+        "description": "Предоплата по заказу №OTS-20236",
+        "comment": "Предоплата по заказу №OTS-20236",
+        "deposit": 6604.13,
+        "balance": 6604.13,
+        "client": {
+            "id": 18334984,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1612873822000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Шипицин Сергей Сергеевич",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79090859990",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0,
+        "relation_id": 35096747,
+        "relation_type": 0
+    },
+    {
+        "id": 50122199,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Предоплата",
+        "sum": 2000,
+        "income": 2000,
+        "outcome": 0,
+        "created_at": 1646381094000,
+        "custom_created_at": 1646381094000,
+        "description": "Предоплата по заказу №OTS-20271",
+        "comment": "Предоплата по заказу №OTS-20271",
+        "deposit": 2079.13,
+        "balance": 2079.13,
+        "client": {
+            "id": 21008834,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1630153773000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Гогуа Давид Нугзабович",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79619705734",
+                    "title": "Мобильный",
+                    "notify": False
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": True,
+        "deleted_at": 1646553789000,
+        "deleted_by": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35154568,
+        "relation_type": 0
+    },
+    {
+        "id": 50173348,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Предоплата",
+        "sum": 1900,
+        "income": 1900,
+        "outcome": 0,
+        "created_at": 1646553777000,
+        "custom_created_at": 1646381040000,
+        "description": "Предоплата по заказу №OTS-20271",
+        "comment": "Предоплата по заказу №OTS-20271",
+        "deposit": 6304.13,
+        "balance": 6304.13,
+        "client": {
+            "id": 21008834,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1630153773000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Гогуа Давид Нугзабович",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79619705734",
+                    "title": "Мобильный",
+                    "notify": False
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35154568,
+        "relation_type": 0
+    },
+    {
+        "id": 50173085,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 75,
+        "income": 75,
+        "outcome": 0,
+        "created_at": 1646553043000,
+        "custom_created_at": 1646380200000,
+        "description": "Клиент переплатил по заказу",
+        "comment": "Клиент переплатил по заказу",
+        "deposit": 4479.13,
+        "balance": 4479.13,
+        "client": {},
+        "is_deleted": True,
+        "deleted_at": 1646553644000,
+        "deleted_by": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50173285,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -7000,
+        "income": 0,
+        "outcome": -7000,
+        "created_at": 1646553573000,
+        "custom_created_at": 1646207700000,
+        "description": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "deposit": 4479.13,
+        "balance": 4479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173183,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 7000,
+        "income": 7000,
+        "outcome": 0,
+        "created_at": 1646553331000,
+        "custom_created_at": 1646207640000,
+        "description": "Перемещение денег из \"Тинькофф\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "comment": "Перемещение денег из \"Тинькофф\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "deposit": 11479.13,
+        "balance": 11479.13,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
         "id": 49988988,
         "cashbox_id": 83913,
         "tags": [],
@@ -923,33 +1393,6 @@ sber2022 = [
         "type": 0
     },
     {
-        "id": 49538835,
-        "cashbox_id": 83913,
-        "tags": [],
-        "cashflow_category": "Прочий приход денег",
-        "sum": 220,
-        "income": 220,
-        "outcome": 0,
-        "created_at": 1644749997000,
-        "custom_created_at": 1644074700000,
-        "description": "Альбина перевела за кофе",
-        "comment": "Альбина перевела за кофе",
-        "deposit": 13795.36,
-        "balance": 13795.36,
-        "client": {},
-        "is_deleted": False,
-        "employee": {
-            "id": 68021,
-            "fullname": "Станислав Кайгородов"
-        },
-        "is_fiscal": False,
-        "can_print_fiscal": False,
-        "fiscal": {
-            "is_fiscal": False
-        },
-        "type": 0
-    },
-    {
         "id": 49538808,
         "cashbox_id": 83913,
         "tags": [],
@@ -970,6 +1413,33 @@ sber2022 = [
             "id": 68021,
             "fullname": "Станислав Кайгородов"
         },
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 49538835,
+        "cashbox_id": 83913,
+        "tags": [],
+        "cashflow_category": "Прочий приход денег",
+        "sum": 220,
+        "income": 220,
+        "outcome": 0,
+        "created_at": 1644749997000,
+        "custom_created_at": 1644074700000,
+        "description": "Альбина перевела за кофе",
+        "comment": "Альбина перевела за кофе",
+        "deposit": 13795.36,
+        "balance": 13795.36,
+        "client": {},
+        "is_deleted": False,
         "employee": {
             "id": 68021,
             "fullname": "Станислав Кайгородов"

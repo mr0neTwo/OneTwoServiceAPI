@@ -1,5 +1,113 @@
 alba2022 = [
     {
+        "id": 50031079,
+        "cashbox_id": 142660,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 4500,
+        "income": 4500,
+        "outcome": 0,
+        "created_at": 1646119126000,
+        "custom_created_at": 1646119126000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "deposit": 13500,
+        "balance": 13500,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031049,
+        "cashbox_id": 142660,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 9000,
+        "income": 9000,
+        "outcome": 0,
+        "created_at": 1646119099000,
+        "custom_created_at": 1646119099000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "deposit": 9000,
+        "balance": 9000,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031303,
+        "cashbox_id": 142660,
+        "tags": [],
+        "cashflow_category": "Зарплата менеджера",
+        "sum": -9000,
+        "income": 0,
+        "outcome": -9000,
+        "created_at": 1646119421000,
+        "custom_created_at": 1646032980000,
+        "description": "ЗП Альбина",
+        "comment": "ЗП Альбина",
+        "deposit": 4500,
+        "balance": 4500,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50031329,
+        "cashbox_id": 142660,
+        "tags": [],
+        "cashflow_category": "Зарплата инженеров",
+        "sum": -4500,
+        "income": 0,
+        "outcome": -4500,
+        "created_at": 1646119446000,
+        "custom_created_at": 1646032980000,
+        "description": "ЗП Альбина",
+        "comment": "ЗП Альбина",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
         "id": 49630305,
         "cashbox_id": 142660,
         "tags": [],
@@ -106,6 +214,33 @@ alba2022 = [
             "is_fiscal": False
         },
         "type": 1
+    },
+    {
+        "id": 50031013,
+        "cashbox_id": 142660,
+        "tags": [],
+        "cashflow_category": "Зарплата инженеров",
+        "sum": -5700,
+        "income": 0,
+        "outcome": -5700,
+        "created_at": 1646119061000,
+        "custom_created_at": 1644909420000,
+        "description": "ЗП Альбина",
+        "comment": "ЗП Альбина",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
     },
     {
         "id": 49181808,

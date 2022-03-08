@@ -1,5 +1,1453 @@
 kassa2022 = [
     {
+        "id": 50164809,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Прочий расход денег",
+        "sum": -1000,
+        "income": 0,
+        "outcome": -1000,
+        "created_at": 1646491524000,
+        "custom_created_at": 1646491524000,
+        "description": "уборка",
+        "comment": "уборка",
+        "deposit": 5210,
+        "balance": 5210,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50164768,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -14000,
+        "income": 0,
+        "outcome": -14000,
+        "created_at": 1646491451000,
+        "custom_created_at": 1646491451000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"OneTwoService > Сейф\". перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"OneTwoService > Сейф\". перемещение",
+        "deposit": 6210,
+        "balance": 6210,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50159403,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 2000,
+        "income": 2000,
+        "outcome": 0,
+        "created_at": 1646482957000,
+        "custom_created_at": 1646482957000,
+        "description": "Оплата по заказу #OTS-20123",
+        "comment": "Оплата по заказу #OTS-20123",
+        "deposit": 20210,
+        "balance": 20210,
+        "client": {
+            "id": 7953074,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Игорь Краснюк",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79184166532",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 34774334,
+        "relation_type": 0
+    },
+    {
+        "id": 50152971,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646472454000,
+        "custom_created_at": 1646472454000,
+        "description": "Оплата по заказу #OTS-20295",
+        "comment": "Оплата по заказу #OTS-20295",
+        "deposit": 18210,
+        "balance": 18210,
+        "client": {
+            "id": 18767637,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1615798203000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Басенцян Армен",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79996330602",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35186973,
+        "relation_type": 0
+    },
+    {
+        "id": 50149472,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1300,
+        "income": 1300,
+        "outcome": 0,
+        "created_at": 1646466266000,
+        "custom_created_at": 1646466266000,
+        "description": "Оплата по заказу #OTS-20270",
+        "comment": "Оплата по заказу #OTS-20270",
+        "deposit": 16710,
+        "balance": 16710,
+        "client": {
+            "id": 7952963,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Александр Альбов",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79604777440",
+                    "title": "Домашний",
+                    "notify": False
+                },
+                {
+                    "phone": "79094517171",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35153317,
+        "relation_type": 0
+    },
+    {
+        "id": 50148512,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 3225,
+        "income": 3225,
+        "outcome": 0,
+        "created_at": 1646464256000,
+        "custom_created_at": 1646464256000,
+        "description": "Оплата по заказу #OTS-19702",
+        "comment": "Оплата по заказу #OTS-19702",
+        "deposit": 15410,
+        "balance": 15410,
+        "client": {
+            "id": 8937281,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1545731780000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Шабельский Николай",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79385328912",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 33842643,
+        "relation_type": 0
+    },
+    {
+        "id": 50147552,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1300,
+        "income": 1300,
+        "outcome": 0,
+        "created_at": 1646461250000,
+        "custom_created_at": 1646461250000,
+        "description": "Оплата по заказу #OTS-20222",
+        "comment": "Оплата по заказу #OTS-20222",
+        "deposit": 12185,
+        "balance": 12185,
+        "client": {
+            "id": 9916883,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1553932506000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Воробьев Дмитрий",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79002810593",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35051391,
+        "relation_type": 0
+    },
+    {
+        "id": 50147547,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 130,
+        "income": 130,
+        "outcome": 0,
+        "created_at": 1646461239000,
+        "custom_created_at": 1646461239000,
+        "description": "Оплата по заказу #OTS-20223",
+        "comment": "Оплата по заказу #OTS-20223",
+        "deposit": 10885,
+        "balance": 10885,
+        "client": {
+            "id": 9916883,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1553932506000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Воробьев Дмитрий",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79002810593",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35051433,
+        "relation_type": 0
+    },
+    {
+        "id": 50147257,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646459957000,
+        "custom_created_at": 1646459957000,
+        "description": "Оплата по заказу #OTS-20280",
+        "comment": "Оплата по заказу #OTS-20280",
+        "deposit": 10755,
+        "balance": 10755,
+        "client": {
+            "id": 7953180,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Андрей Федотов",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79673025854",
+                    "title": "Домашний",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35170978,
+        "relation_type": 0
+    },
+    {
+        "id": 50133740,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Буфет, плюшки",
+        "sum": -140,
+        "income": 0,
+        "outcome": -140,
+        "created_at": 1646399740000,
+        "custom_created_at": 1646399740000,
+        "description": "Кокакола",
+        "comment": "Кокакола",
+        "deposit": 9255,
+        "balance": 9255,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50128078,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 260,
+        "income": 260,
+        "outcome": 0,
+        "created_at": 1646393718000,
+        "custom_created_at": 1646393718000,
+        "description": "Оплата по заказу #OTS-20246",
+        "comment": "Оплата по заказу #OTS-20246",
+        "deposit": 9395,
+        "balance": 9395,
+        "client": {
+            "id": 7952968,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Сергей Гарькавый",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79531144002",
+                    "title": "Домашний",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35120641,
+        "relation_type": 0
+    },
+    {
+        "id": 50127486,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646389830000,
+        "custom_created_at": 1646389830000,
+        "description": "Оплата по заказу #OTS-20286",
+        "comment": "Оплата по заказу #OTS-20286",
+        "deposit": 9135,
+        "balance": 9135,
+        "client": {
+            "id": 18274730,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1612522561000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Алтухов Сергей Григорьевич",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79181442589",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68023,
+            "fullname": "Антон Слюсарев"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35174633,
+        "relation_type": 0
+    },
+    {
+        "id": 50127122,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 2000,
+        "income": 2000,
+        "outcome": 0,
+        "created_at": 1646388347000,
+        "custom_created_at": 1646388347000,
+        "description": "Оплата по заказу #OTS-20258",
+        "comment": "Оплата по заказу #OTS-20258",
+        "deposit": 7635,
+        "balance": 7635,
+        "client": {
+            "id": 23767519,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1646126443000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Феденко Евгений Сергеевич",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79181585558",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 0,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35135025,
+        "relation_type": 0
+    },
+    {
+        "id": 50126337,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 225,
+        "income": 225,
+        "outcome": 0,
+        "created_at": 1646387318000,
+        "custom_created_at": 1646387318000,
+        "description": "Оплата по заказу #OTS-20237",
+        "comment": "Оплата по заказу #OTS-20237",
+        "deposit": 5635,
+        "balance": 5635,
+        "client": {
+            "id": 7952959,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Виктор Жуков",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79604778248",
+                    "title": "Домашний",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35097547,
+        "relation_type": 0
+    },
+    {
+        "id": 50125268,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646385892000,
+        "custom_created_at": 1646385892000,
+        "description": "Оплата по заказу #OTS-20104",
+        "comment": "Оплата по заказу #OTS-20104",
+        "deposit": 5410,
+        "balance": 5410,
+        "client": {
+            "id": 9298408,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1549010253000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Яцков Алексей",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79181570310",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 34733040,
+        "relation_type": 0
+    },
+    {
+        "id": 50123270,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646382981000,
+        "custom_created_at": 1646382981000,
+        "description": "Оплата по заказу #OTS-20284",
+        "comment": "Оплата по заказу #OTS-20284",
+        "deposit": 3910,
+        "balance": 3910,
+        "client": {
+            "id": 19944880,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1622880691000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Смолиенко Роман",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79282016051",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35172543,
+        "relation_type": 0
+    },
+    {
+        "id": 50119276,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -2000,
+        "income": 0,
+        "outcome": -2000,
+        "created_at": 1646375379000,
+        "custom_created_at": 1646375366000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "deposit": 2410,
+        "balance": 2410,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50105421,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 500,
+        "income": 500,
+        "outcome": 0,
+        "created_at": 1646315231000,
+        "custom_created_at": 1646315231000,
+        "description": "Оплата по заказу #OTS-20260",
+        "comment": "Оплата по заказу #OTS-20260",
+        "deposit": 4410,
+        "balance": 4410,
+        "client": {
+            "id": 7953000,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Алексей Белкин",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79892606086",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68025,
+            "fullname": "Юрий Степаненко"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35140163,
+        "relation_type": 0
+    },
+    {
+        "id": 50103000,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Выплата",
+        "sum": -1500,
+        "income": 0,
+        "outcome": -1500,
+        "created_at": 1646312763000,
+        "custom_created_at": 1646312763000,
+        "description": "Выплата денег по заказу №OTS-20193",
+        "comment": "Выплата денег по заказу №OTS-20193",
+        "deposit": 3910,
+        "balance": 3910,
+        "client": {
+            "id": 7953299,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Владимир Пономаренко",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79184910110",
+                    "title": "Домашний",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68025,
+            "fullname": "Юрий Степаненко"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 34969389,
+        "relation_type": 0
+    },
+    {
+        "id": 50098246,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646305003000,
+        "custom_created_at": 1646305003000,
+        "description": "Оплата по заказу #OTS-20247",
+        "comment": "Оплата по заказу #OTS-20247",
+        "deposit": 5410,
+        "balance": 5410,
+        "client": {
+            "id": 19944880,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1622880691000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Смолиенко Роман",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79282016051",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 68025,
+            "fullname": "Юрий Степаненко"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35128905,
+        "relation_type": 0
+    },
+    {
+        "id": 50068951,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Буфет, плюшки",
+        "sum": -2855,
+        "income": 0,
+        "outcome": -2855,
+        "created_at": 1646212965000,
+        "custom_created_at": 1646212965000,
+        "description": "хоз нужды+буфет",
+        "comment": "хоз нужды+буфет",
+        "deposit": 3910,
+        "balance": 3910,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50068585,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1600,
+        "income": 1600,
+        "outcome": 0,
+        "created_at": 1646212425000,
+        "custom_created_at": 1646212425000,
+        "description": "Оплата по заказу #OTS-20249",
+        "comment": "Оплата по заказу #OTS-20249",
+        "deposit": 6765,
+        "balance": 6765,
+        "client": {
+            "id": 7952989,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1537748422000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Дмитрий Фидирко",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79530873517",
+                    "title": "Домашний",
+                    "notify": True
+                },
+                {
+                    "phone": "79615959517",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 35,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35128978,
+        "relation_type": 0
+    },
+    {
+        "id": 50065474,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 2715,
+        "income": 2715,
+        "outcome": 0,
+        "created_at": 1646207353000,
+        "custom_created_at": 1646207353000,
+        "description": "Оплата по заказу #OTS-20144",
+        "comment": "Оплата по заказу #OTS-20144",
+        "deposit": 5165,
+        "balance": 5165,
+        "client": {
+            "id": 22423410,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1638338606000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Кучеренко Михаил",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79184614394",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 34835027,
+        "relation_type": 0
+    },
+    {
+        "id": 50052083,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -1500,
+        "income": 0,
+        "outcome": -1500,
+        "created_at": 1646144762000,
+        "custom_created_at": 1646144762000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "deposit": 2450,
+        "balance": 2450,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50052056,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646144726000,
+        "custom_created_at": 1646144726000,
+        "description": "Оплата по заказу #OTS-20225",
+        "comment": "Оплата по заказу #OTS-20225",
+        "deposit": 3950,
+        "balance": 3950,
+        "client": {
+            "id": 23281944,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1642691417000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Безуглый Сергей",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79180487709",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35055016,
+        "relation_type": 0
+    },
+    {
+        "id": 50051952,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -2000,
+        "income": 0,
+        "outcome": -2000,
+        "created_at": 1646144607000,
+        "custom_created_at": 1646144607000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". Антон ЗП",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". Антон ЗП",
+        "deposit": 2450,
+        "balance": 2450,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50048189,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Оплата покупателя за услугу, товар",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646139802000,
+        "custom_created_at": 1646139802000,
+        "description": "Оплата по заказу #OTS-20219",
+        "comment": "Оплата по заказу #OTS-20219",
+        "deposit": 4450,
+        "balance": 4450,
+        "client": {
+            "id": 18245933,
+            "address": "",
+            "conflicted": False,
+            "created_at": 1612431272000,
+            "deleted": False,
+            "discount_code": "",
+            "email": "",
+            "juridical": False,
+            "ad_campaign": {},
+            "name": "Коровин Павел",
+            "notes": "",
+            "phone": [
+                {
+                    "phone": "79182989296",
+                    "title": "Мобильный",
+                    "notify": True
+                }
+            ],
+            "should_send_email": True,
+            "supplier": False,
+            "goods_pct": 0,
+            "services_pct": 25,
+            "materials_pct": 0
+        },
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": True,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": True
+        },
+        "type": 0,
+        "relation_id": 35047774,
+        "relation_type": 0
+    },
+    {
+        "id": 50031253,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -11000,
+        "income": 0,
+        "outcome": -11000,
+        "created_at": 1646119366000,
+        "custom_created_at": 1646119366000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП антон",
+        "deposit": 2950,
+        "balance": 2950,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031222,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Прочий приход денег",
+        "sum": 1300,
+        "income": 1300,
+        "outcome": 0,
+        "created_at": 1646119322000,
+        "custom_created_at": 1646119322000,
+        "description": "Вернула за кофе из опозданий",
+        "comment": "Вернула за кофе из опозданий",
+        "deposit": 13950,
+        "balance": 13950,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 50031150,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -14660,
+        "income": 0,
+        "outcome": -14660,
+        "created_at": 1646119215000,
+        "custom_created_at": 1646119215000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Степаненко Юра\". ЗП Юра",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Степаненко Юра\". ЗП Юра",
+        "deposit": 12650,
+        "balance": 12650,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031078,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -4500,
+        "income": 0,
+        "outcome": -4500,
+        "created_at": 1646119126000,
+        "custom_created_at": 1646119126000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "deposit": 27310,
+        "balance": 27310,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031048,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -9000,
+        "income": 0,
+        "outcome": -9000,
+        "created_at": 1646119099000,
+        "custom_created_at": 1646119099000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Шайганова Альбина\". ЗП Альбина",
+        "deposit": 31810,
+        "balance": 31810,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031029,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 31000,
+        "income": 31000,
+        "outcome": 0,
+        "created_at": 1646119074000,
+        "custom_created_at": 1646119074000,
+        "description": "Перемещение денег из \"OneTwoService > Сейф\" в кассу \"OneTwoService > Касса\". перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сейф\" в кассу \"OneTwoService > Касса\". перемещение",
+        "deposit": 40810,
+        "balance": 40810,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50030790,
+        "cashbox_id": 48492,
+        "tags": [],
+        "cashflow_category": "Буфет, плюшки",
+        "sum": -200,
+        "income": 0,
+        "outcome": -200,
+        "created_at": 1646118819000,
+        "custom_created_at": 1646118819000,
+        "description": "молоко",
+        "comment": "молоко",
+        "deposit": 9810,
+        "balance": 9810,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": True,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
         "id": 50014764,
         "cashbox_id": 48492,
         "tags": [],

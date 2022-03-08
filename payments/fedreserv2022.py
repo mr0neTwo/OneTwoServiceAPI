@@ -1,5 +1,86 @@
 fedreserv2022 = [
     {
+        "id": 50173229,
+        "cashbox_id": 48531,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 7000,
+        "income": 7000,
+        "outcome": 0,
+        "created_at": 1646553435000,
+        "custom_created_at": 1646550180000,
+        "description": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "deposit": 8504.32,
+        "balance": 8504.32,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173106,
+        "cashbox_id": 48531,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": -18532.68,
+        "income": 0,
+        "outcome": -18532.68,
+        "created_at": 1646553129000,
+        "custom_created_at": 1646472540000,
+        "description": "Перемещение денег из \"OneTwoService > Федеральный резерв\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Федеральный резерв\" в кассу \"OneTwoService > Сбербанк\". Перемещение",
+        "deposit": 1504.32,
+        "balance": 1504.32,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50173286,
+        "cashbox_id": 48531,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 7000,
+        "income": 7000,
+        "outcome": 0,
+        "created_at": 1646553573000,
+        "custom_created_at": 1646207700000,
+        "description": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "comment": "Перемещение денег из \"OneTwoService > Сбербанк\" в кассу \"OneTwoService > Федеральный резерв\". Перемещение",
+        "deposit": 15504.32,
+        "balance": 15504.32,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
         "id": 49989186,
         "cashbox_id": 48531,
         "tags": [],
@@ -52,6 +133,33 @@ fedreserv2022 = [
             "is_fiscal": False
         },
         "type": 1
+    },
+    {
+        "id": 50186032,
+        "cashbox_id": 48531,
+        "tags": [],
+        "cashflow_category": "Прочий приход денег",
+        "sum": 6.04,
+        "income": 6.04,
+        "outcome": 0,
+        "created_at": 1646581931000,
+        "custom_created_at": 1644780300000,
+        "description": "Проценты",
+        "comment": "Проценты",
+        "deposit": 15510.36,
+        "balance": 15510.36,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
     },
     {
         "id": 49548409,
@@ -164,5 +272,32 @@ fedreserv2022 = [
             "is_fiscal": False
         },
         "type": 1
+    },
+    {
+        "id": 50186066,
+        "cashbox_id": 48531,
+        "tags": [],
+        "cashflow_category": "Прочий приход денег",
+        "sum": 0.13,
+        "income": 0.13,
+        "outcome": 0,
+        "created_at": 1646582014000,
+        "custom_created_at": 1642101780000,
+        "description": "Проценты",
+        "comment": "Проценты",
+        "deposit": 15510.49,
+        "balance": 15510.49,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 68021,
+            "fullname": "Станислав Кайгородов"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
     }
 ]

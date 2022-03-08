@@ -1,10 +1,12 @@
 import re
 from operator import and_
+from pprint import pprint
 
 from tqdm import tqdm
 
 from app.db.interaction.interaction import DbInteraction
-from app.db.models.models import EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel
+from app.db.models.models import EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, Clients, Phones, \
+    Payments, Payrolls, Operations, OrderParts, Orders
 
 from payments.alba import alba
 from payments.alba2022 import alba2022
@@ -48,6 +50,26 @@ dict_emploeey_ids = {
     '141624': 9
 }
 
+
+
+def cleanTables():
+    print('Удаляем данные данные...')
+    db.cleanTable(Phones)
+    print('Телефоны удалены')
+    db.cleanTable(Payments)
+    print('Платежы удалены')
+    db.cleanTable(Payrolls)
+    print('Начисления ЗП удалены')
+    db.cleanTable(Operations)
+    print('Операции удалены')
+    db.cleanTable(OrderParts)
+    print('Запчасти удалены')
+    db.cleanTable(Orders)
+    print('Заказы удалены')
+    db.cleanTable(Clients)
+    print('Клиенты удалены')
+
+
 def updeteClienst():
     print('Обнавление клиентов...')
     list_client = GetCustomer(page='all')
@@ -60,7 +82,7 @@ def updeteClienst():
             deleted=False,
             discount_good_type=False,
             discount_materials_type=False,
-            discount_service_type=False,
+            discount_service_type=True,
 
             name=client.get('name'),
             name_doc=client.get('custom_fields').get('f1022889'),
@@ -80,12 +102,12 @@ def updeteClienst():
 
             discount_goods=client.get('discount_goods'),
             discount_materials=client.get('discount_materials'),
-            discount_services=client.get('discount_services'),
+            discount_services=0,
 
             ad_campaign_id=1,
             discount_goods_margin_id=1,
             discount_materials_margin_id=1,
-            discount_service_margin_id=1,
+            discount_service_margin_id=4,
 
             tags=[],
             created_at=client.get('created_at') / 1000
@@ -142,7 +164,7 @@ def updataOrders():
         status = db.get_status(name=order['status']['name'])['data']
         client = db.get_clients(name=order['client']['name'])['data']
 
-        id_order = db.add_orders(
+        current_order = db.add_orders(
             created_at=order.get('created_at') / 1000 if order.get('created_at') else None,
             done_at=order.get('done_at') / 1000 if order.get('done_at') else None,
             closed_at=order.get('closed_at') / 1000 if order.get('closed_at') else None,
@@ -202,7 +224,7 @@ def updataOrders():
                     deleted=False,
                     warranty_period=operation.get('warranty_period'),
                     created_at=operation.get('created_at'),
-                    order_id=id_order,
+                    order_id=current_order['id'],
                     dict_id=None
                 )
         if order.get('parts'):
@@ -219,7 +241,7 @@ def updataOrders():
                     deleted=False,
                     warranty_period=part.get('warranty_period'),
                     created_at=part.get('created_at'),
-                    order_id=id_order
+                    order_id=current_order['id']
                 )
         if order.get('attachments'):
             for attachment in order.get('attachments'):
@@ -228,7 +250,7 @@ def updataOrders():
                     created_at=attachment.get('created_at') / 1000 if attachment.get('created_at') else None,
                     filename=attachment.get('filename'),
                     url=attachment.get('url'),
-                    order_id=id_order
+                    order_id=current_order['id']
                 )
         n += 1
         if n == len(list_orders):
@@ -359,6 +381,8 @@ def updataPayments():
                 order_id=order
             )
 
-# updeteClienst()
-# updataOrders()
+
+cleanTables()
+updeteClienst()
+updataOrders()
 updataPayments()

@@ -2,7 +2,7 @@ import time
 from pprint import pprint
 import re
 
-from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey
+from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey, BOOLEAN
 from sqlalchemy.orm import contains_eager
 from werkzeug.security import generate_password_hash
 
@@ -11,7 +11,8 @@ from app.db.models.models import Base, AdCampaign, Employees, Attachments, Branc
     StatusGroup, Status, Operations, OrderParts, Clients, Orders, time_now, MenuRows, TableHeaders, Badges, \
     CustomFilters, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
     GenerallyInfo, Counts, Schedule, DictMalfunction, DictPackagelist, Cashboxs, Payments, ItemPayments, Payrolls, \
-    Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts
+    Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts, \
+    NotificationTemplate, NotificationEvents
 
 from tqdm import tqdm
 
@@ -78,6 +79,12 @@ class DbInteraction():
         column_name = column.compile(dialect=self.engine.dialect)
         column_type = column.type.compile(self.engine.dialect)
         self.engine.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}')
+
+    def cleanTable(self, Table):
+        self.pgsql_connetction.session.query(Table).delete()
+        self.pgsql_connetction.session.commit()
+
+
 
     def drop_all_tables(self):
         '''
@@ -1893,11 +1900,12 @@ class DbInteraction():
 
 # Таблица ТЕЛЕФОНОВ ==================================================================================
 
-    def add_phone(self, number, title, client_id):
+    def add_phone(self, number, title, notify, client_id):
 
         phones = Phones(
             number=number,
             title=title,
+            notify=notify,
             client_id=client_id
         )
         self.pgsql_connetction.session.add(phones)
@@ -1935,6 +1943,7 @@ class DbInteraction():
                 'id': row.id,
                 'number': row.number,
                 'title': row.title,
+                'notify': row.notify,
                 'client_id': row.client_id
             })
 
@@ -1942,11 +1951,12 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_phones(self, id, number, title, client_id):
+    def edit_phones(self, id, number, title, notify, client_id):
 
         self.pgsql_connetction.session.query(Phones).filter_by(id=id).update({
             'number': number if number else Phones.number,
             'title': title if title else Phones.title,
+            'notify': notify if notify != None else Phones.notify,
             'client_id': client_id if client_id else Phones.client_id
         })
         self.pgsql_connetction.session.commit()
@@ -2147,7 +2157,8 @@ class DbInteraction():
                 'phone': [{
                         'id': ph.id,
                         'number': ph.number,
-                        'title': ph.title
+                        'title': ph.title,
+                    'notify': ph.notify
                     } for ph in row.phone] if row.phone else [],
                 'ad_campaign': {
                     'id': row.ad_campaign.id,
@@ -2340,7 +2351,77 @@ class DbInteraction():
         self.pgsql_connetction.session.add(orders)
         self.pgsql_connetction.session.commit()
         self.pgsql_connetction.session.refresh(orders)
-        return orders.id
+        order = {
+            'id': orders.id,
+            'created_at': orders.created_at,
+            'estimated_done_at': orders.estimated_done_at,
+            'scheduled_for': orders.scheduled_for,
+            'warranty_date': orders.warranty_date,
+            'status_deadline': orders.status_deadline,
+
+            'id_label': orders.id_label,
+            'serial': orders.serial,
+            'malfunction': orders.malfunction,
+            'packagelist': orders.packagelist,
+            'appearance': orders.appearance,
+            'manager_notes': orders.manager_notes,
+
+            'estimated_cost': orders.estimated_cost,
+
+            'urgent': orders.urgent,
+            'ad_campaign': {
+                'id': orders.ad_campaign.id,
+                'name': orders.ad_campaign.name
+            } if orders.ad_campaign else {},
+            'branch': {
+                'id': orders.branch.id,
+                'name': orders.branch.name
+            } if orders.branch else {},
+            'status': {
+                'id': orders.status.id,
+                'name': orders.status.name,
+                'color': orders.status.color,
+                'group': orders.status.group
+            } if orders.status else {},
+            'client': {
+                'id': orders.client.id,
+                'conflicted': orders.client.conflicted,
+                'email': orders.client.email,
+                'name': orders.client.name,
+                'name_doc': orders.client.name_doc,
+                'notes': orders.client.notes,
+                'phone': [{
+                    'id': ph.id,
+                    'number': ph.number,
+                    'notify': ph.notify,
+                    'title': ph.title
+                } for ph in orders.client.phone] if orders.client.phone else []
+            } if orders.client else {},
+            'order_type': {
+                'id': orders.order_type.id,
+                'name': orders.order_type.name
+            } if orders.order_type else {},
+            'kindof_good': {
+                'id': orders.kindof_good.id,
+                'title': orders.kindof_good.title,
+                'icon': orders.kindof_good.icon,
+            } if orders.kindof_good else {},
+            'brand': {
+                'id': orders.brand.id,
+                'title': orders.brand.title,
+            } if orders.brand else {},
+            'subtype': {
+                'id': orders.subtype.id,
+                'title': orders.subtype.title,
+            } if orders.subtype else {},
+            'model': {
+                'id': orders.model.id,
+                'title': orders.model.title,
+            } if orders.model else {},
+            'engineer_id': orders.engineer_id,
+            'manager_id': orders.manager_id,
+        }
+        return order
 
     def get_orders(self,
             id=None,
@@ -2464,6 +2545,19 @@ class DbInteraction():
 
         data = []
         for row in orders[50 * page: 50 * (page + 1)]:
+            discount_sum = 0
+            price = 0
+            payed = 0
+            if row.operations:
+                for operation in row.operations:
+                    if not operation.deleted:
+                        discount_sum += operation.discount_value
+                        price += operation.total
+            if row.payments:
+                for payment in row.payments:
+                    if not payment.deleted:
+                        payed += payment.income
+                        payed += payment.outcome
             data.append({
                 'id': row.id,
                 'created_at': row.created_at,
@@ -2489,10 +2583,10 @@ class DbInteraction():
                 'cell': row.cell,
 
                 'estimated_cost': row.estimated_cost,
-                'missed_payments': row.missed_payments,
-                'discount_sum': row.discount_sum,
-                'payed': row.payed,
-                'price': row.price,
+                'missed_payments': price - discount_sum - payed,
+                'discount_sum': discount_sum,
+                'payed': payed,
+                'price': price,
                 'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
                 'remaining_status': row.status_deadline - time_now() if row.status_deadline else None,
                 'remaining_warranty': row.warranty_date - time_now() if row.warranty_date else None,
@@ -2533,6 +2627,15 @@ class DbInteraction():
                     'discount_services': row.client.discount_services,
                     'email': row.client.email,
                     'juridical': row.client.juridical,
+                    'ogrn': row.client.ogrn,
+                    'inn': row.client.inn,
+                    'kpp': row.client.kpp,
+                    'juridical_address': row.client.juridical_address,
+                    'director': row.client.director,
+                    'bank_name': row.client.bank_name,
+                    'settlement_account': row.client.settlement_account,
+                    'corr_account': row.client.corr_account,
+                    'bic': row.client.bic,
                     'created_at': row.client.created_at,
                     'updated_at': row.client.updated_at,
                     'name': row.client.name,
@@ -2541,7 +2644,8 @@ class DbInteraction():
                     'phone': [{
                         'id': ph.id,
                         'number': ph.number,
-                        'title': ph.title
+                        'title': ph.title,
+                        'notify': ph.notify
                     } for ph in row.client.phone] if row.client.phone else []
                 } if row.client else {},
                 # 'engineer': {
@@ -5053,7 +5157,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ЗАПЧАСТЕЙ НА СКЛАДЕ ===============================================================
+# Таблица ЗАПЧАСТЕЙ НА СКЛАДЕ ==========================================================================================
 
     def add_warehouse_parts(self,
                             where_to_buy,
@@ -5190,11 +5294,171 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
+# Таблица ШАБЛОНОВ УВЕДОМЛЕНИЙ =========================================================================================
 
+    def add_notification_template(self, title, template, deleted):
 
+        notification_template = NotificationTemplate(
+            title=title,
+            template=template,
+            deleted=deleted
+        )
+        self.pgsql_connetction.session.add(notification_template)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(notification_template)
+        return notification_template.id
 
+    def get_notification_template(self, id=None, title=None, page=0, deleted=None):
 
+        if any([id, title, deleted != None]):
+            notification_template = self.pgsql_connetction.session.query(NotificationTemplate).filter(
+                and_(
+                    NotificationTemplate.id == id if id else True,
+                    NotificationTemplate.title.ilike(f'%{title}%') if title else True,
+                    (deleted or NotificationTemplate.deleted.is_(False)) if deleted != None else True
+                )
+            ).order_by(NotificationTemplate.title)
+        else:
+            notification_template = self.pgsql_connetction.session.query(NotificationTemplate).order_by(NotificationTemplate.title)
 
+        result = {'success': True}
+        count = notification_template.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in notification_template[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'template': row.template,
+                'deleted': row.deleted
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_notification_template(self, id, title=None, template=None, deleted=None):
+
+        self.pgsql_connetction.session.query(NotificationTemplate).filter_by(id=id).update({
+            'title': title if title else NotificationTemplate.title,
+            'template': template if template else NotificationTemplate.template,
+            'deleted': deleted if deleted != None else NotificationTemplate.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_notification_template(self, id):
+
+        notification_template = self.pgsql_connetction.session.query(NotificationTemplate).get(id)
+        if notification_template:
+            self.pgsql_connetction.session.delete(notification_template)
+            self.pgsql_connetction.session.commit()
+            return id
+
+# Таблица СОБЫТИЙ ДЛЯ УВЕДОМЛЕНИЙ ======================================================================================
+
+    def add_notification_events(self, event, target_audience, statuses, notification_type, notification_template_id, deleted):
+
+        notification_events = NotificationEvents(
+                        event=event,
+                        target_audience=target_audience,
+                        statuses=statuses,
+                        notification_type=notification_type,
+                        notification_template_id=notification_template_id,
+                        deleted=deleted
+        )
+        self.pgsql_connetction.session.add(notification_events)
+        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.refresh(notification_events)
+        return notification_events.id
+
+    def get_notification_events(self,
+                                id=None,
+                                event=None,
+                                target_audience=None,
+                                notification_template_id=None,
+                                notification_type=None,
+                                page=0,
+                                deleted=None
+                                ):
+
+        if any([id, event, target_audience, notification_template_id, notification_type, deleted != None]):
+            notification_events = self.pgsql_connetction.session.query(NotificationEvents).filter(
+                and_(
+                    NotificationEvents.id == id if id else True,
+                    NotificationEvents.event == event if event else True,
+                    NotificationEvents.target_audience == target_audience if target_audience else True,
+                    NotificationEvents.notification_type == notification_type if notification_type else True,
+                    NotificationEvents.notification_template_id == notification_template_id if notification_template_id else True,
+                    (deleted or NotificationEvents.deleted.is_(False)) if deleted != None else True
+                )
+            ).order_by(NotificationEvents.id)
+        else:
+            notification_events = self.pgsql_connetction.session.query(NotificationEvents).order_by(NotificationEvents.id)
+
+        result = {'success': True}
+        count = notification_events.count()
+        result['count'] = count
+
+        item_of_page = 50
+
+        max_page = count // item_of_page if count % item_of_page > 0 else count // item_of_page - 1
+
+        if page > max_page and max_page != -1:
+            return {'success': False, 'message': 'page is not defined'}, 400
+
+        data = []
+        for row in notification_events[item_of_page * page: item_of_page * (page + 1)]:
+            data.append({
+                'id': row.id,
+                'event': row.event,
+                'target_audience': row.target_audience,
+                'statuses': row.statuses,
+                'notification_type': row.notification_type,
+                'template_id': row.template.id,
+                'template_title': row.template.title,
+                'template': row.template.template,
+                'deleted': row.deleted
+            })
+
+        result['data'] = data
+        return result
+
+    def edit_notification_events(self,
+                                 id,
+                                 event=None,
+                                 target_audience=None,
+                                 statuses=None,
+                                 notification_type=None,
+                                 notification_template_id=None,
+                                 deleted=None
+                                 ):
+
+        self.pgsql_connetction.session.query(NotificationEvents).filter_by(id=id).update({
+            'event': event if event else NotificationEvents.event,
+            'target_audience': target_audience if target_audience else NotificationEvents.target_audience,
+            'statuses': statuses if statuses else NotificationEvents.statuses,
+            'notification_type': notification_type if notification_type else NotificationEvents.notification_type,
+            'notification_template_id': notification_template_id if notification_template_id else NotificationEvents.notification_template_id,
+            'deleted': deleted if deleted != None else NotificationEvents.deleted
+        })
+        self.pgsql_connetction.session.commit()
+        return id
+
+    def del_notification_events(self, id):
+
+        notification_events = self.pgsql_connetction.session.query(NotificationEvents).get(id)
+        if notification_events:
+            self.pgsql_connetction.session.delete(notification_events)
+            self.pgsql_connetction.session.commit()
+            return id
 
 
 
@@ -5210,11 +5474,11 @@ if __name__ == '__main__':
     )
 
     # Создание новых таблиц
-    # db.create_tables([Parts.__table__, Warehouse.__table__, WarehouseCategory.__table__, WarehouseParts.__table__])
+    # db.create_tables([NotificationTemplate.__table__, NotificationEvents.__table__])
 
     # Добавление столбца
-    # column = Column('employees', JSON)
-    # db.add_column(Warehouse.__table__, column)
+    # column = Column('notify', BOOLEAN)
+    # db.add_column(Phones.__table__, column)
 
 
     # db.create_all_tables()

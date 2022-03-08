@@ -19,6 +19,7 @@ from flask_jwt_extended import JWTManager, jwt_required
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.db.interaction.interaction import DbInteraction
+from app.events import event_change_status_to, event_create_order
 from utils import config_parser
 # from userLogin import UserLogin
 
@@ -2209,6 +2210,7 @@ def clients():
                 db_iteraction.add_phone(
                     number=ph['number'],
                     title=ph['title'],
+                    notify=ph['notify'],
                     client_id=id_create_client
                 )
         create_client = db_iteraction.get_clients(id=id_create_client)['data'][0]
@@ -2260,12 +2262,21 @@ def clients():
         )
         if phone:
             for ph in phone:
-                db_iteraction.edit_phones(
-                    id=ph['id'],
-                    number=ph['number'],
-                    title=ph['title'],
-                    client_id=id
-                )
+                if ph.get('id'):
+                    db_iteraction.edit_phones(
+                        id=ph['id'],
+                        number=ph['number'],
+                        title=ph['title'],
+                        notify=ph['notify'],
+                        client_id=id
+                    )
+                else:
+                    db_iteraction.add_phone(
+                        number=ph['number'],
+                        title=ph['title'],
+                        notify=ph['notify'],
+                        client_id=id
+                    )
 
         client = db_iteraction.get_clients(id=id)['data'][0]
 
@@ -2780,7 +2791,7 @@ def orders():
             id_label = f'{counter["prefix"]}-{counter["count"]}'
             db_iteraction.inc_count(id=1)
 
-            db_iteraction.add_orders(
+            order = db_iteraction.add_orders(
                 created_at=created_at,                      # int - дата создания
                 done_at=done_at,                            # int - дата готовность
                 closed_at=closed_at,                        # int - дата закрытия
@@ -2824,7 +2835,8 @@ def orders():
 
                 urgent=urgent                               # boll - срочный
             )
-        return {'success': True, 'message': f'{id_label} added'}, 201
+            event_create_order(db_iteraction, order)
+        return {'success': True, 'data': order, 'message': f'{id_label} added'}, 201
 
     # Проверим сущестует ли запись по данному id
     if db_iteraction.get_orders(id=id)['count'] == 0:
@@ -2887,6 +2899,12 @@ def orders():
 @app.route('/change_order_status', methods=['POST'])
 @jwt_required()
 def change_order_status():
+
+    # Достанем токен
+    token = request.headers['Authorization'][7:]
+    # Извлечем id пользователя из токена
+    user_id = decode_token(token)['sub']
+
     # Проверим содежит ли запрос тело json
     try:
         request_body = dict(request.json)
@@ -2920,6 +2938,14 @@ def change_order_status():
         id=id,
         status_id=status_id
     )
+
+# Запишим сотрудника, который закрыл заказ =============================================================================
+
+    if current_status['group'] == 6:
+        db_iteraction.edit_orders(
+            id=id,
+            closed_by_id=user_id
+        )
 
 # Расчет Начислений по статусу Готов ===================================================================================
 
@@ -3190,6 +3216,11 @@ def change_order_status():
     # 8 Добавляем списания по имеющимся зачислениям
     # 9 Проверямем Если текущий статус Закрыт, а новый друго
     # 10 Добавляем списания по имеющимся зачислениям
+
+# Отправка уведомлений =================================================================================================
+
+    # Отправляем SMS при событиях сменты статуса
+    event_change_status_to(db_iteraction, order, new_status)
 
 
     return {'success': True, 'message': f'{id} changed'}, 202
@@ -4231,8 +4262,11 @@ def get_main_data():
     ad_campaign = db_iteraction.get_adCampaign()
     result['ad_campaign'] = ad_campaign['data']
 
-    # item_payments = db_iteraction.get_item_payments()
-    # result['item_payments'] = item_payments['data']
+    item_payments = db_iteraction.get_item_payments()
+    result['item_payments'] = item_payments['data']
+
+    status_group = db_iteraction.get_status_group()
+    result['status_group'] = status_group['data']
 
     result['success'] = True
     return result, 200
@@ -6331,7 +6365,7 @@ def get_warehouse_parts():
     part_id = request_body.get('part_id')
     if part_id and type(part_id) != int:
         return {'success': False, 'message': "part_id is not integer"}, 400
-    if part_id and part_id.get_parts(id=part_id)['count'] == 0:
+    if part_id and db_iteraction.get_parts(id=part_id)['count'] == 0:
         return {'success': False, 'message': 'part_id is not defined'}, 400
 
     category_id = request_body.get('category_id')
@@ -6466,6 +6500,222 @@ def warehouse_parts():
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_notification_template', methods=['POST'])
+@jwt_required()
+def get_notification_template():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_notification_template(
+        id=id,  # int - id  - полное совпадение
+        title=title,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/notification_template', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def notification_template():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    title = request_body.get('title')
+    if title:
+        title = str(title)
+
+    template = request_body.get('template')
+    if template:
+        template = str(template)
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_notification_template(
+            title=title,
+            template=template,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_notification_template(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+    if request.method == 'PUT':
+        db_iteraction.edit_notification_template(
+            id=id,  # int - id записи - полное совпаден
+            title=title,
+            template=template,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+        db_iteraction.del_notification_template(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
+@app.route('/get_notification_events', methods=['POST'])
+@jwt_required()
+def get_notification_events():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    page = request_body.get('page',  0)
+    if page and type(page) != int:
+        return {'success': False, 'message': "page is not integer"}, 400
+
+    target_audience = request_body.get('target_audience')
+    if target_audience and type(target_audience) != int:
+        return {'success': False, 'message': "target_audience is not integer"}, 400
+
+    notification_type = request_body.get('notification_type', 0)
+    if notification_type and type(notification_type) != int:
+        return {'success': False, 'message': "notification_type is not integer"}, 400
+
+    event = request_body.get('event')
+    if event:
+        event = str(event)
+
+    notification_template_id = request_body.get('notification_template_id')
+    if notification_template_id and type(notification_template_id) != int:
+        return {'success': False, 'message': "notification_template_id is not integer"}, 400
+    if notification_template_id and db_iteraction.get_notification_template(id=notification_template_id)['count'] == 0:
+        return {'success': False, 'message': 'notification_template_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    result = db_iteraction.get_notification_events(
+        id=id,  # int - id  - полное совпадение
+        event=event,
+        target_audience=target_audience,
+        notification_template_id=notification_template_id,
+        notification_type=notification_type,
+        deleted=deleted,
+        page=page
+    )
+    return result, 200
+
+@app.route('/notification_events', methods=['POST', 'PUT', 'DELETE'])
+@jwt_required()
+def notification_events():
+    # Проверим содежит ли запрос тело json
+    try:
+        request_body = dict(request.json)
+    except:
+        return {'success': False, 'message': "Request don't has json body"}, 400
+
+    id = request_body.get('id')
+    if id and type(id) != int:
+        return {'success': False, 'message': "id is not integer"}, 400
+
+    event = request_body.get('event')
+    if event:
+        event = str(event)
+
+    target_audience = request_body.get('target_audience')
+    if target_audience and type(target_audience) != int:
+        return {'success': False, 'message': "target_audience is not integer"}, 400
+
+    notification_type = request_body.get('notification_type', 0)
+    if notification_type and type(notification_type) != int:
+        return {'success': False, 'message': "notification_type is not integer"}, 400
+
+    statuses = request_body.get('statuses')
+    if statuses and type(statuses) != list:
+        return {'success': False, 'message': "statuses is not list"}, 400
+    if statuses:
+        if not all([type(status) == int for status in statuses]):
+            return {'success': False, 'message': "statuses has not integer"}, 400
+
+    notification_template_id = request_body.get('notification_template_id')
+    if notification_template_id and type(notification_template_id) != int:
+        return {'success': False, 'message': "notification_template_id is not integer"}, 400
+    if notification_template_id and db_iteraction.get_notification_template(id=notification_template_id)['count'] == 0:
+        return {'success': False, 'message': 'notification_template_id is not defined'}, 400
+
+    deleted = request_body.get('deleted')
+    if deleted and type(deleted) != bool:
+        return {'success': False, 'message': 'deleted is not boolean'}, 400
+
+    if request.method == 'POST':
+        id = db_iteraction.add_notification_events(
+            event=event,
+            target_audience=target_audience,
+            statuses=statuses,
+            notification_type=notification_type,
+            notification_template_id=notification_template_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} added'}, 201
+
+    # Проверим сущестует ли запись по данному id
+    if db_iteraction.get_notification_events(id=id)['count'] == 0:
+        return {'success': False, 'message': 'id is not defined'}, 400
+
+    if request.method == 'PUT':
+        db_iteraction.edit_notification_events(
+            id=id,  # int - id записи - полное совпаден
+            event=event,
+            target_audience=target_audience,
+            statuses=statuses,
+            notification_type=notification_type,
+            notification_template_id=notification_template_id,
+            deleted=deleted
+        )
+
+        return {'success': True, 'message': f'{id} changed'}, 202
+
+    if request.method == 'DELETE':
+        db_iteraction.del_notification_events(
+            id=id)  # int - id записи - полное совпаден
+
+        return {'success': True, 'message': f'{id} deleted'}, 202
+
+
 
 
 app.add_url_rule('/shutdown', view_func=shutdown)

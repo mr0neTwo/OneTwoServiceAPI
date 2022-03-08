@@ -265,8 +265,14 @@ def GetCashTransaction(cashName,
     return list_dict
 
 
+
+
+
 # payments = GetCashTransaction('Альфа Банк', page=1)
 # pprint(payments)
 #
 # clients = GetCustomer(page='all')
 # pprint(clients)
+
+
+# send_sms("79002888475", "Братюня!")

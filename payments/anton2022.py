@@ -1,5 +1,140 @@
 anton2022 = [
     {
+        "id": 50119277,
+        "cashbox_id": 142658,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 2000,
+        "income": 2000,
+        "outcome": 0,
+        "created_at": 1646375379000,
+        "custom_created_at": 1646375366000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "deposit": 16500,
+        "balance": 16500,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50052084,
+        "cashbox_id": 142658,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 1500,
+        "income": 1500,
+        "outcome": 0,
+        "created_at": 1646144762000,
+        "custom_created_at": 1646144762000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП Антон",
+        "deposit": 14500,
+        "balance": 14500,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50051953,
+        "cashbox_id": 142658,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 2000,
+        "income": 2000,
+        "outcome": 0,
+        "created_at": 1646144607000,
+        "custom_created_at": 1646144607000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". Антон ЗП",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". Антон ЗП",
+        "deposit": 13000,
+        "balance": 13000,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031254,
+        "cashbox_id": 142658,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 11000,
+        "income": 11000,
+        "outcome": 0,
+        "created_at": 1646119366000,
+        "custom_created_at": 1646119366000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП антон",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Слюсарев Антон\". ЗП антон",
+        "deposit": 11000,
+        "balance": 11000,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50119334,
+        "cashbox_id": 142658,
+        "tags": [],
+        "cashflow_category": "Зарплата инженеров",
+        "sum": -16500,
+        "income": 0,
+        "outcome": -16500,
+        "created_at": 1646375556000,
+        "custom_created_at": 1646029920000,
+        "description": "ЗП Антон",
+        "comment": "ЗП Антон",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
         "id": 49630309,
         "cashbox_id": 142658,
         "tags": [],

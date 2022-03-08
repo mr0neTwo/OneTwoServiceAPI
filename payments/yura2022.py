@@ -1,5 +1,59 @@
 yura2022 = [
     {
+        "id": 50031151,
+        "cashbox_id": 142659,
+        "tags": [],
+        "cashflow_category": "",
+        "sum": 14660,
+        "income": 14660,
+        "outcome": 0,
+        "created_at": 1646119215000,
+        "custom_created_at": 1646119215000,
+        "description": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Степаненко Юра\". ЗП Юра",
+        "comment": "Перемещение денег из \"OneTwoService > Касса\" в кассу \"Степаненко Юра\". ЗП Юра",
+        "deposit": 14660,
+        "balance": 14660,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 1
+    },
+    {
+        "id": 50031287,
+        "cashbox_id": 142659,
+        "tags": [],
+        "cashflow_category": "Зарплата инженеров",
+        "sum": -14660,
+        "income": 0,
+        "outcome": -14660,
+        "created_at": 1646119405000,
+        "custom_created_at": 1646032980000,
+        "description": "ЗП Юра",
+        "comment": "ЗП Юра",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
         "id": 49656783,
         "cashbox_id": 142659,
         "tags": [],
@@ -54,33 +108,6 @@ yura2022 = [
         "type": 1
     },
     {
-        "id": 49630322,
-        "cashbox_id": 142659,
-        "tags": [],
-        "cashflow_category": "Зарплата инженеров",
-        "sum": -19000,
-        "income": 0,
-        "outcome": -19000,
-        "created_at": 1644991970000,
-        "custom_created_at": 1644955140000,
-        "description": "ЗП Юра",
-        "comment": "ЗП Юра",
-        "deposit": 0,
-        "balance": 0,
-        "client": {},
-        "is_deleted": False,
-        "employee": {
-            "id": 79236,
-            "fullname": "Альбиночка Шайганова"
-        },
-        "is_fiscal": False,
-        "can_print_fiscal": False,
-        "fiscal": {
-            "is_fiscal": False
-        },
-        "type": 0
-    },
-    {
         "id": 49630315,
         "cashbox_id": 142659,
         "tags": [],
@@ -101,6 +128,33 @@ yura2022 = [
             "id": 79236,
             "fullname": "Альбиночка Шайганова"
         },
+        "employee": {
+            "id": 79236,
+            "fullname": "Альбиночка Шайганова"
+        },
+        "is_fiscal": False,
+        "can_print_fiscal": False,
+        "fiscal": {
+            "is_fiscal": False
+        },
+        "type": 0
+    },
+    {
+        "id": 49630322,
+        "cashbox_id": 142659,
+        "tags": [],
+        "cashflow_category": "Зарплата инженеров",
+        "sum": -19000,
+        "income": 0,
+        "outcome": -19000,
+        "created_at": 1644991970000,
+        "custom_created_at": 1644955140000,
+        "description": "ЗП Юра",
+        "comment": "ЗП Юра",
+        "deposit": 0,
+        "balance": 0,
+        "client": {},
+        "is_deleted": False,
         "employee": {
             "id": 79236,
             "fullname": "Альбиночка Шайганова"
