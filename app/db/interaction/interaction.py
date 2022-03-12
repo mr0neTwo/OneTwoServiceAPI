@@ -2,7 +2,7 @@ import time
 from pprint import pprint
 import re
 
-from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey, BOOLEAN
+from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey, BOOLEAN, FLOAT
 from sqlalchemy.orm import contains_eager
 from werkzeug.security import generate_password_hash
 
@@ -778,7 +778,7 @@ class DbInteraction():
         :param name: новое поле для имени в записи
         '''
         self.pgsql_connetction.session.query(AdCampaign).filter_by(id=id).update({
-            'name': name if name else AdCampaign.name
+            'name': name if name is not None else AdCampaign.name
         })
         self.pgsql_connetction.session.commit()
         return self.get_adCampaign()
@@ -938,19 +938,19 @@ class DbInteraction():
     def edit_employee(self, id, first_name, last_name, email, phone, notes, post, deleted, inn, doc_name,
                      permissions, role_id, login, password=None):
         self.pgsql_connetction.session.query(Employees).filter_by(id=id if type(id) == int else None).update({
-                'first_name': first_name if first_name else Employees.first_name,
-                'last_name': last_name if last_name else Employees.last_name,
-                'email': email if email else Employees.email,
-                'phone': phone if phone else Employees.phone,
-                'notes': notes if notes else Employees.notes,
-                'deleted': deleted if deleted != None else Employees.deleted,
-                'inn': inn if inn else Employees.inn,
-                'doc_name': doc_name if doc_name else Employees.doc_name,
-                'post': post if post else Employees.post,
-                'role_id': role_id if role_id else Employees.role_id,
-                'permissions': permissions if permissions else Employees.permissions,
-                'login': login if login else Employees.login,
-                'password': password if password else Employees.password
+                'first_name': first_name if first_name is not None else Employees.first_name,
+                'last_name': last_name if last_name is not None else Employees.last_name,
+                'email': email if email is not None else Employees.email,
+                'phone': phone if phone is not None else Employees.phone,
+                'notes': notes if notes is not None else Employees.notes,
+                'deleted': deleted if deleted is not None else Employees.deleted,
+                'inn': inn if inn is not None else Employees.inn,
+                'doc_name': doc_name if doc_name is not None else Employees.doc_name,
+                'post': post if post is not None else Employees.post,
+                'role_id': role_id if role_id is not None else Employees.role_id,
+                'permissions': permissions if permissions is not None else Employees.permissions,
+                'login': login if login is not None else Employees.login,
+                'password': password if password is not None else Employees.password
         })
         self.pgsql_connetction.session.commit()
         return self.get_employee()
@@ -1021,11 +1021,11 @@ class DbInteraction():
     def edit_table_headers(self, id, title, field, width, employee_id, visible):
 
         self.pgsql_connetction.session.query(TableHeaders).filter_by(id=id).update({
-            'title': title if title else TableHeaders.title,
-            'field': field if field else TableHeaders.field,
-            'width': width if width else TableHeaders.width,
-            'employee_id': employee_id if employee_id else TableHeaders.employee_id,
-            'visible': visible if visible != None else TableHeaders.visible
+            'title': title if title is not None else TableHeaders.title,
+            'field': field if field is not None else TableHeaders.field,
+            'width': width if width is not None else TableHeaders.width,
+            'employee_id': employee_id if employee_id is not None else TableHeaders.employee_id,
+            'visible': visible if visible is not None else TableHeaders.visible
         })
         self.pgsql_connetction.session.commit()
         return self.get_table_headers()
@@ -1104,11 +1104,11 @@ class DbInteraction():
 
     def edit_attachments(self, id, created_by_id, created_at, filename, url, order_id):
         self.pgsql_connetction.session.query(Attachments).filter_by(id=id if type(id) == int else None).update({
-                'created_by_id': created_by_id if created_by_id else Attachments.created_by_id,
-                'created_at': created_at if created_at else Attachments.created_at,
-                'filename': filename if filename else Attachments.filename,
-                'url': url if url else Attachments.url,
-                'order_id': order_id if order_id else Attachments.order_id
+                'created_by_id': created_by_id if created_by_id is not None else Attachments.created_by_id,
+                'created_at': created_at if created_at is not None else Attachments.created_at,
+                'filename': filename if filename is not None else Attachments.filename,
+                'url': url if url is not None else Attachments.url,
+                'order_id': order_id if order_id is not None else Attachments.order_id
         })
         return self.get_attachments()
 
@@ -1219,17 +1219,17 @@ class DbInteraction():
                     deleted):
 
         self.pgsql_connetction.session.query(Branch).filter_by(id=id).update({
-            'name': name if name else Branch.name,
-            'address': address if address else Branch.address,
-            'phone': phone if phone else Branch.phone,
-            'color': color if color else Branch.color,
-            'icon': icon if icon else Branch.icon,
-            'orders_type_id': orders_type_id if orders_type_id else Branch.orders_type_id,
-            'orders_type_strategy': orders_type_strategy if orders_type_strategy else Branch.orders_type_strategy,
-            'orders_prefix': orders_prefix if orders_prefix else Branch.orders_prefix,
-            'documents_prefix': documents_prefix if documents_prefix else Branch.documents_prefix,
-            'employees': employees if employees else Branch.employees,
-            'deleted': deleted if deleted != None else Branch.deleted
+            'name': name if name is not None else Branch.name,
+            'address': address if address is not None else Branch.address,
+            'phone': phone if phone is not None else Branch.phone,
+            'color': color if color is not None else Branch.color,
+            'icon': icon if icon is not None else Branch.icon,
+            'orders_type_id': orders_type_id if orders_type_id is not None else Branch.orders_type_id,
+            'orders_type_strategy': orders_type_strategy if orders_type_strategy is not None else Branch.orders_type_strategy,
+            'orders_prefix': orders_prefix if orders_prefix is not None else Branch.orders_prefix,
+            'documents_prefix': documents_prefix if documents_prefix is not None else Branch.documents_prefix,
+            'employees': employees if employees is not None else Branch.employees,
+            'deleted': deleted if deleted is not None else Branch.deleted
         })
         self.pgsql_connetction.session.commit()
         return self.get_branch(id=id)
@@ -1292,11 +1292,11 @@ class DbInteraction():
     def edit_schedule(self, id, start_time, end_time, work_day, week_day, branch_id):
 
         self.pgsql_connetction.session.query(Schedule).filter_by(id=id).update({
-            'start_time': start_time if start_time else Schedule.start_time,
-            'end_time': end_time if end_time else Schedule.end_time,
-            'work_day': work_day if work_day else Schedule.work_day,
-            'week_day': week_day if week_day else Schedule.week_day,
-            'branch_id': branch_id if branch_id else Schedule.branch_id
+            'start_time': start_time if start_time is not None else Schedule.start_time,
+            'end_time': end_time if end_time is not None else Schedule.end_time,
+            'work_day': work_day if work_day is not None else Schedule.work_day,
+            'week_day': week_day if week_day is not None else Schedule.week_day,
+            'branch_id': branch_id if branch_id is not None else Schedule.branch_id
         })
         self.pgsql_connetction.session.commit()
         return self.get_schedule(id=id)
@@ -1365,10 +1365,10 @@ class DbInteraction():
     def edit_discount_margin(self, id, title, margin, deleted, margin_type):
 
         self.pgsql_connetction.session.query(DiscountMargin).filter_by(id=id).update({
-            'title': title if title else DiscountMargin.title,
-            'margin': margin if margin else DiscountMargin.margin,
-            'margin_type': margin_type if margin_type else DiscountMargin.margin_type,
-            'deleted': deleted if deleted != None else DiscountMargin.deleted
+            'title': title if title is not None else DiscountMargin.title,
+            'margin': margin if margin is not None else DiscountMargin.margin,
+            'margin_type': margin_type if margin_type is not None else DiscountMargin.margin_type,
+            'deleted': deleted if deleted is not None else DiscountMargin.deleted
         })
         self.pgsql_connetction.session.commit()
         return self.get_discount_margin()
@@ -1430,7 +1430,7 @@ class DbInteraction():
     def edit_order_type(self, id, name):
 
         self.pgsql_connetction.session.query(OrderType).filter_by(id=id).update({
-            'name': name if name else OrderType.name
+            'name': name if name is not None else OrderType.name
         })
         self.pgsql_connetction.session.commit()
         return self.get_order_type()
@@ -1504,9 +1504,9 @@ class DbInteraction():
     def edit_status_group(self, id, name, type_group, color):
 
         self.pgsql_connetction.session.query(StatusGroup).filter_by(id=id).update({
-            'name': name if name else StatusGroup.name,
-            'type_group': type_group if type_group else StatusGroup.type_group,
-            'color': color if color else StatusGroup.color,
+            'name': name if name is not None else StatusGroup.name,
+            'type_group': type_group if type_group is not None else StatusGroup.type_group,
+            'color': color if color is not None else  StatusGroup.color,
         })
         self.pgsql_connetction.session.commit()
         return self.get_status_group()
@@ -1579,13 +1579,13 @@ class DbInteraction():
     def edit_status(self, id, name, color, group, deadline, comment_required, payment_required, available_to):
 
         self.pgsql_connetction.session.query(Status).filter_by(id=id).update({
-            'name': name if name else Status.name,
-            'color': color if color else Status.color,
-            'group': group if group else Status.group,
-            'deadline': deadline if deadline else Status.deadline,
-            'comment_required': comment_required if comment_required else Status.comment_required,
-            'payment_required': payment_required if payment_required else Status.payment_required,
-            'available_to': available_to if available_to else Status.available_to
+            'name': name if name is not None else Status.name,
+            'color': color if color is not None else Status.color,
+            'group': group if group is not None else Status.group,
+            'deadline': deadline if deadline is not None else Status.deadline,
+            'comment_required': comment_required if comment_required is not None else Status.comment_required,
+            'payment_required': payment_required if payment_required is not None else Status.payment_required,
+            'available_to': available_to if available_to is not None else Status.available_to
         })
         self.pgsql_connetction.session.commit()
         return self.get_status()
@@ -1596,7 +1596,7 @@ class DbInteraction():
         if status:
             self.pgsql_connetction.session.delete(status)
             self.pgsql_connetction.session.commit()
-            return self.get_status()
+            return id
 
  # Таблица ОПЕРАЦИЙ ==================================================================================
 
@@ -1609,6 +1609,8 @@ class DbInteraction():
                        total,
                        title,
                        comment,
+                       percent,
+                       discount,
                        deleted,
                        warranty_period,
                        created_at,
@@ -1625,6 +1627,8 @@ class DbInteraction():
             total=total,
             title=title,
             comment=comment,
+            percent=percent,
+            discount=discount,
             deleted=deleted,
             warranty_period=warranty_period,
             created_at=created_at,
@@ -1698,6 +1702,8 @@ class DbInteraction():
                 'total': row.total,
                 'title': row.title,
                 'comment': row.comment,
+                'percent': row.percent,
+                'discount': row.discount,
                 'warranty': (row.created_at + row.warranty_period) > time_now(),
                 'deleted': row.deleted,
                 'warranty_period': row.warranty_period,
@@ -1713,37 +1719,42 @@ class DbInteraction():
 
     def edit_operations(self,
                        id,
-                       amount,
-                       cost,
-                       discount_value,
-                       engineer_id,
-                       price,
-                       total,
-                       title,
-                       comment,
-                       deleted,
-                       warranty_period,
-                       created_at,
-                       order_id,
-                       dict_id):
+                       amount=None,
+                       cost=None,
+                       discount_value=None,
+                       engineer_id=None,
+                       price=None,
+                       total=None,
+                       title=None,
+                       comment=None,
+                       percent=None,
+                       discount=None,
+                       deleted=None,
+                       warranty_period=None,
+                       created_at=None,
+                       order_id=None,
+                       dict_id=None
+                        ):
 
         self.pgsql_connetction.session.query(Operations).filter_by(id=id).update({
-            'amount': amount if amount else Operations.amount,
-            'cost': cost if cost else Operations.cost,
-            'discount_value': discount_value if discount_value else Operations.discount_value,
-            'engineer_id': engineer_id if engineer_id else Operations.engineer_id,
-            'price': price if price else Operations.price,
-            'total': total if total else Operations.total,
-            'title': title if title else Operations.title,
-            'comment': comment if comment else Operations.comment,
-            'deleted': deleted if deleted != None else Operations.deleted,
-            'warranty_period': warranty_period if warranty_period else Operations.warranty_period,
-            'created_at': created_at if created_at else Operations.created_at,
-            'order_id': order_id if order_id else Operations.order_id,
-            'dict_id': dict_id if dict_id else Operations.dict_id
+            'amount': amount if amount is not None else Operations.amount,
+            'cost': cost if cost is not None else Operations.cost,
+            'discount_value': discount_value if discount_value is not None else Operations.discount_value,
+            'engineer_id': engineer_id if engineer_id is not None else Operations.engineer_id,
+            'price': price if price is not None else Operations.price,
+            'total': total if total is not None else Operations.total,
+            'title': title if title is not None else Operations.title,
+            'comment': comment if comment is not None else Operations.comment,
+            'percent': percent if percent is not None else Operations.percent,
+            'discount': discount if discount is not None else Operations.discount,
+            'deleted': deleted if deleted is not None else Operations.deleted,
+            'warranty_period': warranty_period if warranty_period is not None else Operations.warranty_period,
+            'created_at': created_at if created_at is not None else Operations.created_at,
+            'order_id': order_id if order_id is not None else Operations.order_id,
+            'dict_id': dict_id if dict_id is not None else Operations.dict_id
         })
         self.pgsql_connetction.session.commit()
-        return self.get_operations()
+        return id
 
     def del_operations(self, id):
 
@@ -1751,7 +1762,7 @@ class DbInteraction():
         if operations:
             self.pgsql_connetction.session.delete(operations)
             self.pgsql_connetction.session.commit()
-            return self.get_operations()
+            return id
 
  # Таблица ЗАПЧАСТЕЙ ==================================================================================
 
@@ -1764,6 +1775,8 @@ class DbInteraction():
                        total,
                        title,
                        comment,
+                       percent,
+                       discount,
                        deleted,
                        warranty_period,
                        created_at,
@@ -1778,6 +1791,8 @@ class DbInteraction():
             total=total,
             title=title,
             comment=comment,
+            percent=percent,
+            discount=discount,
             deleted=deleted,
             warranty_period=warranty_period,
             created_at=created_at,
@@ -1846,6 +1861,8 @@ class DbInteraction():
                 'total': row.total,
                 'title': row.title,
                 'comment': row.comment,
+                'percent': row.percent,
+                'discount': row.discount,
                 'deleted': row.deleted,
                 'warranty': (row.created_at + row.warranty_period) > time_now(),
                 'warranty_period': row.warranty_period,
@@ -1860,35 +1877,40 @@ class DbInteraction():
 
     def edit_oder_parts(self,
                        id,
-                       amount,
-                       cost,
-                       discount_value,
-                       engineer_id,
-                       price,
-                       total,
-                       title,
-                       comment,
-                       deleted,
-                       warranty_period,
-                       created_at,
-                       order_id):
+                       amount=None,
+                       cost=None,
+                       discount_value=None,
+                       engineer_id=None,
+                       price=None,
+                       total=None,
+                       title=None,
+                       comment=None,
+                       percent=None,
+                       discount=None,
+                       deleted=None,
+                       warranty_period=None,
+                       created_at=None,
+                       order_id=None
+                        ):
 
         self.pgsql_connetction.session.query(OrderParts).filter_by(id=id).update({
-            'amount': amount if amount else OrderParts.amount,
-            'cost': cost if cost else OrderParts.cost,
-            'discount_value': discount_value if discount_value else OrderParts.discount_value,
-            'engineer_id': engineer_id if engineer_id else OrderParts.engineer_id,
-            'price': price if price else OrderParts.price,
-            'total': total if total else OrderParts.total,
-            'title': title if title else OrderParts.title,
-            'comment': comment if comment else OrderParts.comment,
-            'deleted': deleted if deleted != None else OrderParts.deleted,
-            'warranty_period': warranty_period if warranty_period else OrderParts.warranty_period,
-            'created_at': created_at if created_at else OrderParts.created_at,
-            'order_id': order_id if order_id else OrderParts.order_id,
+            'amount': amount if amount is not None else OrderParts.amount,
+            'cost': cost if cost is not None else OrderParts.cost,
+            'discount_value': discount_value if discount_value is not None else OrderParts.discount_value,
+            'engineer_id': engineer_id if engineer_id is not None else OrderParts.engineer_id,
+            'price': price if price is not None else OrderParts.price,
+            'total': total if total is not None else OrderParts.total,
+            'title': title if title is not None else OrderParts.title,
+            'comment': comment if comment is not None else OrderParts.comment,
+            'percent': percent if percent is not None else OrderParts.percent,
+            'discount': discount if discount is not None else OrderParts.discount,
+            'deleted': deleted if deleted is not None else OrderParts.deleted,
+            'warranty_period': warranty_period if warranty_period is not None else OrderParts.warranty_period,
+            'created_at': created_at if created_at is not None else OrderParts.created_at,
+            'order_id': order_id if order_id is not None else OrderParts.order_id,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_oder_parts()
+        return id
 
     def del_oder_parts(self, id):
 
@@ -1896,7 +1918,7 @@ class DbInteraction():
         if oder_parts:
             self.pgsql_connetction.session.delete(oder_parts)
             self.pgsql_connetction.session.commit()
-            return self.get_oder_parts()
+            return id
 
 # Таблица ТЕЛЕФОНОВ ==================================================================================
 
@@ -1951,16 +1973,16 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_phones(self, id, number, title, notify, client_id):
+    def edit_phones(self, id, number=None, title=None, notify=None, client_id=None):
 
         self.pgsql_connetction.session.query(Phones).filter_by(id=id).update({
-            'number': number if number else Phones.number,
-            'title': title if title else Phones.title,
-            'notify': notify if notify != None else Phones.notify,
-            'client_id': client_id if client_id else Phones.client_id
+            'number': number if number is not None else Phones.number,
+            'title': title if title is not None else Phones.title,
+            'notify': notify if notify is not None else Phones.notify,
+            'client_id': client_id if client_id is not None else Phones.client_id
         })
         self.pgsql_connetction.session.commit()
-        return self.get_phones()
+        return id
 
     def del_phones(self, id):
 
@@ -2081,7 +2103,7 @@ class DbInteraction():
             clients = self.pgsql_connetction.session.query(Clients).join(Clients.phone).filter(
                 and_(
                     Clients.id == id if id else True,
-                    Clients.name.like(f'%{name}%') if name else True,
+                    Clients.name.ilike(f'%{name}%') if name else True,
                     # Clients.ad_campaign_id == ad_campaign_id if ad_campaign_id else True,
                     # Clients.address.like(f'%{address}%') if address else True,
                     Clients.conflicted == conflicted if conflicted != None else True,
@@ -2092,7 +2114,7 @@ class DbInteraction():
                     # Clients.discount_materials == discount_materials if discount_materials else True,
                     # Clients.discount_materials_margin_id == discount_materials_margin_id if discount_materials_margin_id else True,
                     # Clients.discount_services == discount_services if discount_services else True,
-                    Clients.email.like(f'%{email}%') if email else True,
+                    Clients.email.ilike(f'%{email}%') if email else True,
                     # (Clients.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
                     # (Clients.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
                     Clients.juridical == juridical if juridical != None else True,
@@ -2172,82 +2194,82 @@ class DbInteraction():
 
     def edit_clients(self,
                      id,
-                     juridical,
-                     supplier,
-                     conflicted,
-                     should_send_email,
-                     deleted,
-                     discount_good_type,
-                     discount_materials_type,
-                     discount_service_type,
+                     juridical=None,
+                     supplier=None,
+                     conflicted=None,
+                     should_send_email=None,
+                     deleted=None,
+                     discount_good_type=None,
+                     discount_materials_type=None,
+                     discount_service_type=None,
 
-                     name,
-                     name_doc,
-                     email,
-                     address,
-                     discount_code,
-                     notes,
-                     ogrn,
-                     inn,
-                     kpp,
-                     juridical_address,
-                     director,
-                     bank_name,
-                     settlement_account,
-                     corr_account,
-                     bic,
+                     name=None,
+                     name_doc=None,
+                     email=None,
+                     address=None,
+                     discount_code=None,
+                     notes=None,
+                     ogrn=None,
+                     inn=None,
+                     kpp=None,
+                     juridical_address=None,
+                     director=None,
+                     bank_name=None,
+                     settlement_account=None,
+                     corr_account=None,
+                     bic=None,
 
-                     discount_goods,
-                     discount_materials,
-                     discount_services,
+                     discount_goods=None,
+                     discount_materials=None,
+                     discount_services=None,
 
-                     ad_campaign_id,
-                     discount_goods_margin_id,
-                     discount_materials_margin_id,
-                     discount_service_margin_id,
+                     ad_campaign_id=None,
+                     discount_goods_margin_id=None,
+                     discount_materials_margin_id=None,
+                     discount_service_margin_id=None,
 
-                     tags
+                     tags=None
                      ):
 
         self.pgsql_connetction.session.query(Clients).filter_by(id=id).update({
-            'juridical': juridical if juridical != None else Clients.juridical,
-            'supplier': supplier if supplier != None else Clients.supplier,
-            'conflicted': conflicted if conflicted != None else Clients.conflicted,
-            'should_send_email': should_send_email if should_send_email != None else Clients.should_send_email,
-            'deleted': deleted if deleted != None else Clients.deleted,
-            'discount_good_type': discount_good_type if discount_good_type != None else Clients.discount_good_type,
-            'discount_materials_type': discount_materials_type if discount_materials_type != None else Clients.discount_materials_type,
-            'discount_service_type': discount_service_type if discount_service_type != None else Clients.discount_service_type,
+            'juridical': juridical if juridical is not None else Clients.juridical,
+            'supplier': supplier if supplier is not None else Clients.supplier,
+            'conflicted': conflicted if conflicted is not None else Clients.conflicted,
+            'should_send_email': should_send_email if should_send_email is not None else Clients.should_send_email,
+            'deleted': deleted if deleted is not None else Clients.deleted,
+            'discount_good_type': discount_good_type if discount_good_type is not None else Clients.discount_good_type,
+            'discount_materials_type': discount_materials_type if discount_materials_type is not None else Clients.discount_materials_type,
+            'discount_service_type': discount_service_type if discount_service_type is not None else Clients.discount_service_type,
 
-            'name': name if name else Clients.name,
-            'name_doc': name_doc if name_doc else Clients.name_doc,
-            'email': email if email else Clients.email,
-            'address': address if address else Clients.address,
-            'discount_code': discount_code if discount_code else Clients.discount_code,
-            'notes': notes if notes else Clients.notes,
-            'ogrn': ogrn if ogrn else Clients.ogrn,
-            'inn': inn if inn else Clients.inn,
-            'kpp': kpp if kpp else Clients.kpp,
-            'juridical_address': juridical_address if juridical_address else Clients.juridical_address,
-            'director': director if director else Clients.director,
-            'bank_name': bank_name if bank_name else Clients.bank_name,
-            'settlement_account': settlement_account if settlement_account else Clients.settlement_account,
-            'corr_account': corr_account if corr_account else Clients.corr_account,
-            'bic': bic if bic else Clients.bic,
+            'name': name if name is not None else Clients.name,
+            'name_doc': name_doc if name_doc is not None else Clients.name_doc,
+            'email': email if email is not None else Clients.email,
+            'address': address if address is not None else Clients.address,
+            'discount_code': discount_code if discount_code is not None else Clients.discount_code,
+            'notes': notes if notes is not None else Clients.notes,
+            'ogrn': ogrn if ogrn is not None else Clients.ogrn,
+            'inn': inn if inn is not None else Clients.inn,
+            'kpp': kpp if kpp is not None else Clients.kpp,
+            'juridical_address': juridical_address if juridical_address is not None else Clients.juridical_address,
+            'director': director if director is not None else Clients.director,
+            'bank_name': bank_name if bank_name is not None else Clients.bank_name,
+            'settlement_account': settlement_account if settlement_account is not None else Clients.settlement_account,
+            'corr_account': corr_account if corr_account is not None else Clients.corr_account,
+            'bic': bic if bic is not None else Clients.bic,
 
-            'discount_goods': discount_goods if discount_goods else Clients.discount_goods,
-            'discount_materials': discount_materials if discount_materials else Clients.discount_materials,
-            'discount_services': discount_services if discount_services else Clients.discount_services,
-            'discount_service_margin_id': discount_service_margin_id if discount_service_margin_id else Clients.discount_service_margin_id,
+            'discount_goods': discount_goods if discount_goods is not None else Clients.discount_goods,
+            'discount_materials': discount_materials if discount_materials is not None else Clients.discount_materials,
+            'discount_services': discount_services if discount_services is not None else Clients.discount_services,
+            'discount_service_margin_id': discount_service_margin_id if discount_service_margin_id is not None else Clients.discount_service_margin_id,
 
-            'ad_campaign_id': ad_campaign_id if ad_campaign_id else Clients.ad_campaign_id,
-            'discount_goods_margin_id': discount_goods_margin_id if discount_goods_margin_id else Clients.discount_goods_margin_id,
-            'discount_materials_margin_id': discount_materials_margin_id if discount_materials_margin_id else Clients.discount_materials_margin_id,
+            'ad_campaign_id': ad_campaign_id if ad_campaign_id is not None else Clients.ad_campaign_id,
+            'discount_goods_margin_id': discount_goods_margin_id if discount_goods_margin_id is not None else Clients.discount_goods_margin_id,
+            'discount_materials_margin_id': discount_materials_margin_id if discount_materials_margin_id is not None else Clients.discount_materials_margin_id,
 
-            'tags': tags if tags else Clients.tags
+            'tags': tags if tags is not None else Clients.tags
         })
         self.pgsql_connetction.session.commit()
-        return self.get_clients()
+        return id
 
     def del_clients(self, id):
 
@@ -2389,6 +2411,9 @@ class DbInteraction():
                 'email': orders.client.email,
                 'name': orders.client.name,
                 'name_doc': orders.client.name_doc,
+                'discount_good_type': orders.client.discount_good_type,
+                'discount_materials_type': orders.client.discount_materials_type,
+                'discount_service_type': orders.client.discount_service_type,
                 'notes': orders.client.notes,
                 'phone': [{
                     'id': ph.id,
@@ -2457,7 +2482,7 @@ class DbInteraction():
             status_overdue=None,
 
             field_sort='id',
-            sort='asc',
+            sort='desc',
             page=0):
 
 
@@ -2553,6 +2578,11 @@ class DbInteraction():
                     if not operation.deleted:
                         discount_sum += operation.discount_value
                         price += operation.total
+            if row.parts:
+                for parts in row.parts:
+                    if not parts.deleted:
+                        discount_sum += parts.discount_value
+                        price += parts.total
             if row.payments:
                 for payment in row.payments:
                     if not payment.deleted:
@@ -2583,7 +2613,7 @@ class DbInteraction():
                 'cell': row.cell,
 
                 'estimated_cost': row.estimated_cost,
-                'missed_payments': price - discount_sum - payed,
+                'missed_payments': price - payed,
                 'discount_sum': discount_sum,
                 'payed': payed,
                 'price': price,
@@ -2619,12 +2649,22 @@ class DbInteraction():
                     'address': row.client.address,
                     'conflicted': row.client.conflicted,
                     'name_doc': row.client.name_doc,
+
+                    'discount_good_type': row.client.discount_good_type,
+                    'discount_materials_type': row.client.discount_materials_type,
+                    'discount_service_type': row.client.discount_service_type,
+
                     'discount_code': row.client.discount_code,
+
                     'discount_goods': row.client.discount_goods,
                     'discount_goods_margin_id': row.client.discount_goods_margin_id,
+
                     'discount_materials': row.client.discount_materials,
                     'discount_materials_margin_id': row.client.discount_materials_margin_id,
+
                     'discount_services': row.client.discount_services,
+                    'discount_service_margin_id': row.client.discount_service_margin_id,
+
                     'email': row.client.email,
                     'juridical': row.client.juridical,
                     'ogrn': row.client.ogrn,
@@ -2698,6 +2738,8 @@ class DbInteraction():
                     'warranty': (operat.created_at + operat.warranty_period) > time_now(),
                     'title': operat.title,
                     'comment': operat.comment,
+                    'percent': operat.percent,
+                    'discount': operat.discount,
                     'deleted': operat.deleted,
                     'warranty_period': operat.warranty_period,
                     'created_at': operat.created_at,
@@ -2719,6 +2761,8 @@ class DbInteraction():
                     'warranty': (part.created_at + part.warranty_period) > time_now(),
                     'title': part.title,
                     'comment': part.comment,
+                    'percent': part.percent,
+                    'discount': part.discount,
                     'deleted': part.deleted,
                     'warranty_period': part.warranty_period,
                     'created_at': part.created_at
@@ -2738,6 +2782,7 @@ class DbInteraction():
                 'payments': [
                     {
                         'id': payment.id,
+                        'cashflow_category': payment.cashflow_category,
                         'description': payment.description,
                         'income': payment.income,
                         'outcome': payment.outcome,
@@ -2748,12 +2793,25 @@ class DbInteraction():
                         'created_at': payment.created_at,
                         'custom_created_at': payment.custom_created_at,
                         'tags': payment.tags,
-                        'cashbox_id': payment.cashbox_id,
-                        'client_id': payment.client_id,
+                        'relation_id': payment.relation_id,
+                        'cashbox': {
+                            'id': payment.cashbox.id,
+                            'title': payment.cashbox.title,
+                            'type': payment.cashbox.type
+                        } if payment.cashbox else {},
+                        'client': {
+                            'id': payment.client.id,
+                            'name': payment.client.name,
+                            'phone': [ph.number for ph in row.client.phone] if payment.client.phone else []
+                        } if payment.client else {},
                         'employee': {
                             'id': payment.employee.id,
                             'name': f'{payment.employee.last_name} {payment.employee.first_name}'
-                        }
+                        } if payment.employee else {},
+                        'order': {
+                            'id': payment.order.id,
+                            'id_label': payment.order.id_label
+                        } if payment.order else {}
                     } for payment in row.payments
                 ] if row.payments else []
             })
@@ -2805,52 +2863,52 @@ class DbInteraction():
                     ):
 
         self.pgsql_connetction.session.query(Orders).filter_by(id=id).update({
-            'created_at': created_at if created_at else Orders.created_at,
-            'done_at': done_at if done_at else Orders.done_at,
-            'closed_at': closed_at if closed_at else Orders.closed_at,
-            'assigned_at': assigned_at if assigned_at else Orders.assigned_at,
-            'duration': duration if duration else Orders.duration,
-            'estimated_done_at': estimated_done_at if estimated_done_at else Orders.estimated_done_at,
-            'scheduled_for': scheduled_for if scheduled_for else Orders.scheduled_for,
-            'warranty_date': warranty_date if warranty_date else Orders.warranty_date,
-            'status_deadline': status_deadline if status_deadline else Orders.status_deadline,
+            'created_at': created_at if created_at is not None else Orders.created_at,
+            'done_at': done_at if done_at is not None else Orders.done_at,
+            'closed_at': closed_at if closed_at is not None else Orders.closed_at,
+            'assigned_at': assigned_at if assigned_at is not None else Orders.assigned_at,
+            'duration': duration if duration is not None else Orders.duration,
+            'estimated_done_at': estimated_done_at if estimated_done_at is not None else Orders.estimated_done_at,
+            'scheduled_for': scheduled_for if scheduled_for is not None else Orders.scheduled_for,
+            'warranty_date': warranty_date if warranty_date is not None else Orders.warranty_date,
+            'status_deadline': status_deadline if status_deadline is not None else Orders.status_deadline,
 
-            'ad_campaign_id': ad_campaign_id if ad_campaign_id else Orders.ad_campaign_id,
-            'branch_id': branch_id if branch_id else Orders.branch_id,
-            'status_id': status_id if status_id else Orders.status_id,
-            'client_id': client_id if client_id else Orders.client_id,
-            'order_type_id': order_type_id if order_type_id else Orders.order_type_id,
-            'kindof_good_id': kindof_good if kindof_good else Orders.kindof_good_id,
-            'brand_id': brand if brand else Orders.brand_id,
-            'subtype_id': subtype if subtype else Orders.subtype_id,
-            'model_id': model if model else Orders.model_id,
-            'closed_by_id': closed_by_id if closed_by_id else Orders.closed_by_id,
-            'created_by_id': created_by_id if created_by_id else Orders.created_by_id,
-            'engineer_id': engineer_id if engineer_id else Orders.engineer_id,
-            'manager_id': manager_id if manager_id else Orders.manager_id,
+            'ad_campaign_id': ad_campaign_id if ad_campaign_id is not None else Orders.ad_campaign_id,
+            'branch_id': branch_id if branch_id is not None else Orders.branch_id,
+            'status_id': status_id if status_id is not None else Orders.status_id,
+            'client_id': client_id if client_id is not None else Orders.client_id,
+            'order_type_id': order_type_id if order_type_id is not None else Orders.order_type_id,
+            'kindof_good_id': kindof_good if kindof_good is not None else Orders.kindof_good_id,
+            'brand_id': brand if brand is not None else Orders.brand_id,
+            'subtype_id': subtype if subtype is not None else Orders.subtype_id,
+            'model_id': model if model is not None else Orders.model_id,
+            'closed_by_id': closed_by_id if closed_by_id is not None else Orders.closed_by_id,
+            'created_by_id': created_by_id if created_by_id is not None else Orders.created_by_id,
+            'engineer_id': engineer_id if engineer_id is not None else Orders.engineer_id,
+            'manager_id': manager_id if manager_id is not None else Orders.manager_id,
 
-            'id_label': id_label if id_label else Orders.id_label,
-            'prefix': prefix if prefix else Orders.prefix,
-            'serial': serial if serial else Orders.serial,
-            'malfunction': malfunction if malfunction else Orders.malfunction,
-            'packagelist': packagelist if packagelist else Orders.packagelist,
-            'appearance': appearance if appearance else Orders.appearance,
-            'engineer_notes': engineer_notes if engineer_notes else Orders.engineer_notes,
-            'manager_notes': manager_notes if manager_notes else Orders.manager_notes,
-            'resume': resume if resume else Orders.resume,
-            'cell': cell if cell else Orders.cell,
+            'id_label': id_label if id_label is not None else Orders.id_label,
+            'prefix': prefix if prefix is not None else Orders.prefix,
+            'serial': serial if serial is not None else Orders.serial,
+            'malfunction': malfunction if malfunction is not None else Orders.malfunction,
+            'packagelist': packagelist if packagelist is not None else Orders.packagelist,
+            'appearance': appearance if appearance is not None else Orders.appearance,
+            'engineer_notes': engineer_notes if engineer_notes is not None else Orders.engineer_notes,
+            'manager_notes': manager_notes if manager_notes is not None else Orders.manager_notes,
+            'resume': resume if resume is not None else Orders.resume,
+            'cell': cell if cell is not None else Orders.cell,
 
-            'estimated_cost': estimated_cost if estimated_cost else Orders.estimated_cost,
-            'missed_payments': missed_payments if missed_payments else Orders.missed_payments,
-            'discount_sum': discount_sum if discount_sum else Orders.discount_sum,
-            'payed': payed if payed else Orders.payed,
-            'price': price if price else Orders.price,
+            'estimated_cost': estimated_cost if estimated_cost is not None else Orders.estimated_cost,
+            'missed_payments': missed_payments if missed_payments is not None else Orders.missed_payments,
+            'discount_sum': discount_sum if discount_sum is not None else Orders.discount_sum,
+            'payed': payed if payed is not None else Orders.payed,
+            'price': price if price is not None else Orders.price,
 
-            'urgent': urgent if urgent != None else Orders.urgent,
+            'urgent': urgent if urgent is not None else Orders.urgent,
 
         })
         self.pgsql_connetction.session.commit()
-        return self.get_orders()
+        return id
 
     def del_orders(self, id):
 
@@ -2906,17 +2964,17 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_menu_row(self, id, title, img, url, group_name):
+    def edit_menu_row(self, id=None, title=None, img=None, url=None, group_name=None):
 
         self.pgsql_connetction.session.query(MenuRows).filter_by(id=id).update({
-            'title': title if title else MenuRows.title,
-            'img': img if img else MenuRows.img,
-            'url': url if url else MenuRows.url,
-            'group_name': group_name if group_name else MenuRows.group_name
+            'title': title if title is not None else MenuRows.title,
+            'img': img if img is not None else MenuRows.img,
+            'url': url if url is not None else MenuRows.url,
+            'group_name': group_name if group_name is not None else MenuRows.group_name
 
         })
         self.pgsql_connetction.session.commit()
-        return self.get_menu_row()
+        return id
 
     def del_menu_row(self, id):
 
@@ -3031,15 +3089,15 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_custom_filters(self, id, title, filters, general):
+    def edit_custom_filters(self, id, title=None, filters=None, general=None):
 
         self.pgsql_connetction.session.query(CustomFilters).filter_by(id=id).update({
-            'title': title if title else CustomFilters.title,
-            'filters': filters if filters else CustomFilters.filters,
-            'general': general if general else CustomFilters.general
+            'title': title if title is not None else CustomFilters.title,
+            'filters': filters if filters is not None else CustomFilters.filters,
+            'general': general if general is not None else CustomFilters.general
         })
         self.pgsql_connetction.session.commit()
-        return self.get_custom_filters(1)
+        return id
 
     def del_custom_filters(self, id):
 
@@ -3133,14 +3191,14 @@ class DbInteraction():
     def edit_equipment_type(self, id, title=None, icon=None, url=None, branches=None, deleted=None):
 
         self.pgsql_connetction.session.query(EquipmentType).filter_by(id=id).update({
-            'title': title if title else EquipmentType.title,
-            'icon': icon if icon else None,
-            'url': url if url else EquipmentType.url,
-            'branches': branches if branches else EquipmentType.branches,
-            'deleted': deleted if deleted != None else EquipmentType.deleted
+            'title': title if title is not None else EquipmentType.title,
+            'icon': icon if icon is not None else None,
+            'url': url if url is not None else EquipmentType.url,
+            'branches': branches is not None if branches else EquipmentType.branches,
+            'deleted': deleted if deleted  is not None else EquipmentType.deleted
         })
         self.pgsql_connetction.session.commit()
-        return self.get_equipment_type()
+        return id
 
     def del_equipment_type(self, id):
 
@@ -3227,15 +3285,15 @@ class DbInteraction():
     def edit_equipment_brand(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_type_id=None):
 
         self.pgsql_connetction.session.query(EquipmentBrand).filter_by(id=id).update({
-            'title': title if title else EquipmentBrand.title,
-            'icon': icon if icon else EquipmentBrand.icon,
-            'url': url if url else EquipmentBrand.url,
-            'branches': branches if branches else EquipmentBrand.branches,
-            'deleted': deleted if deleted != None else EquipmentBrand.deleted,
-            'equipment_type_id': equipment_type_id if equipment_type_id else EquipmentBrand.equipment_type_id,
+            'title': title if title is not None else EquipmentBrand.title,
+            'icon': icon if icon is not None else EquipmentBrand.icon,
+            'url': url if url is not None else EquipmentBrand.url,
+            'branches': branches if branches is not None else EquipmentBrand.branches,
+            'deleted': deleted if deleted is not None else EquipmentBrand.deleted,
+            'equipment_type_id': equipment_type_id if equipment_type_id is not None else EquipmentBrand.equipment_type_id,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_equipment_brand()
+        return id
 
     def del_equipment_brand(self, id):
 
@@ -3314,15 +3372,15 @@ class DbInteraction():
     def edit_equipment_subtype(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_brand_id=None):
 
         self.pgsql_connetction.session.query(EquipmentSubtype).filter_by(id=id).update({
-            'title': title if title else EquipmentSubtype.title,
-            'icon': icon if icon else EquipmentSubtype.icon,
-            'url': url if url else EquipmentSubtype.url,
-            'branches': branches if branches else EquipmentSubtype.branches,
-            'deleted': deleted if deleted != None else EquipmentSubtype.deleted,
-            'equipment_brand_id': equipment_brand_id if equipment_brand_id else EquipmentSubtype.equipment_brand_id,
+            'title': title if title is not None else EquipmentSubtype.title,
+            'icon': icon if icon is not None else EquipmentSubtype.icon,
+            'url': url if url is not None else EquipmentSubtype.url,
+            'branches': branches if branches is not None else EquipmentSubtype.branches,
+            'deleted': deleted if deleted  is not None else EquipmentSubtype.deleted,
+            'equipment_brand_id': equipment_brand_id if equipment_brand_id is not None else EquipmentSubtype.equipment_brand_id,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_equipment_subtype()
+        return id
 
     def del_equipment_subtype(self, id):
 
@@ -3391,15 +3449,15 @@ class DbInteraction():
     def edit_equipment_model(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_subtype_id=None):
 
         self.pgsql_connetction.session.query(EquipmentModel).filter_by(id=id).update({
-            'title': title if title else EquipmentModel.title,
-            'icon': icon if icon else EquipmentModel.icon,
-            'url': url if url else EquipmentModel.url,
-            'branches': branches if branches else EquipmentModel.branches,
-            'deleted': deleted if deleted != None else EquipmentModel.deleted,
-            'equipment_subtype_id': equipment_subtype_id if equipment_subtype_id else EquipmentModel.equipment_subtype_id,
+            'title': title if title is not None else EquipmentModel.title,
+            'icon': icon if icon is not None else EquipmentModel.icon,
+            'url': url if url is not None else EquipmentModel.url,
+            'branches': branches if branches is not None else EquipmentModel.branches,
+            'deleted': deleted if deleted  is not None else EquipmentModel.deleted,
+            'equipment_subtype_id': equipment_subtype_id if equipment_subtype_id is not None else EquipmentModel.equipment_subtype_id,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_equipment_model()
+        return id
 
     def del_equipment_model(self, id):
 
@@ -3454,16 +3512,16 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_setting_menu(self, id, title, url, group_name):
+    def edit_setting_menu(self, id, title=None, url=None, group_name=None):
 
         self.pgsql_connetction.session.query(SettingMenu).filter_by(id=id).update({
-            'title': title if title else SettingMenu.title,
-            'url': url if url else SettingMenu.url,
-            'group_name': group_name if group_name else SettingMenu.group_name
+            'title': title if title is not None else SettingMenu.title,
+            'url': url if url is not None else SettingMenu.url,
+            'group_name': group_name if group_name is not None else SettingMenu.group_name
 
         })
         self.pgsql_connetction.session.commit()
-        return self.get_setting_menu()
+        return id
 
     def del_setting_menuw(self, id):
 
@@ -3545,27 +3603,27 @@ class DbInteraction():
 
     def edit_role(self,
                   id,
-                  title,
-                  earnings_visibility,
-                  leads_visibility,
-                  orders_visibility,
-                  permissions,
-                  settable_statuses,
-                  visible_statuses,
-                  settable_discount_margin):
+                  title=None,
+                  earnings_visibility=None,
+                  leads_visibility=None,
+                  orders_visibility=None,
+                  permissions=None,
+                  settable_statuses=None,
+                  visible_statuses=None,
+                  settable_discount_margin=None):
 
         self.pgsql_connetction.session.query(Roles).filter_by(id=id).update({
-            'title': title if title else Roles.title,
-            'earnings_visibility': earnings_visibility if earnings_visibility != None else Roles.earnings_visibility,
-            'leads_visibility': leads_visibility if leads_visibility != None else Roles.leads_visibility,
-            'orders_visibility': orders_visibility if orders_visibility != None else Roles.orders_visibility,
-            'permissions': permissions if permissions else Roles.permissions,
-            'settable_statuses': settable_statuses if settable_statuses else Roles.settable_statuses,
-            'visible_statuses': visible_statuses if visible_statuses else Roles.visible_statuses,
-            'settable_discount_margin': settable_discount_margin if settable_discount_margin else Roles.settable_discount_margin
+            'title': title if title is not None else Roles.title,
+            'earnings_visibility': earnings_visibility if earnings_visibility  is not None else Roles.earnings_visibility,
+            'leads_visibility': leads_visibility if leads_visibility is not None else Roles.leads_visibility,
+            'orders_visibility': orders_visibility if orders_visibility is not None else Roles.orders_visibility,
+            'permissions': permissions if permissions is not None else Roles.permissions,
+            'settable_statuses': settable_statuses if settable_statuses is not None else Roles.settable_statuses,
+            'visible_statuses': visible_statuses if visible_statuses is not None else Roles.visible_statuses,
+            'settable_discount_margin': settable_discount_margin if settable_discount_margin is not None else Roles.settable_discount_margin
         })
         self.pgsql_connetction.session.commit()
-        return self.get_role()
+        return id
 
     def del_roles(self, id):
 
@@ -3658,45 +3716,45 @@ class DbInteraction():
 
     def edit_generally_info(self,
                             id,
-                            name,
-                            address,
-                            email,
+                            name=None,
+                            address=None,
+                            email=None,
 
-                            ogrn,
-                            inn,
-                            kpp,
-                            juridical_address,
-                            director,
-                            bank_name,
-                            settlement_account,
-                            corr_account,
-                            bic,
+                            ogrn=None,
+                            inn=None,
+                            kpp=None,
+                            juridical_address=None,
+                            director=None,
+                            bank_name=None,
+                            settlement_account=None,
+                            corr_account=None,
+                            bic=None,
 
-                            description,
-                            phone,
-                            logo):
+                            description=None,
+                            phone=None,
+                            logo=None):
 
         self.pgsql_connetction.session.query(GenerallyInfo).filter_by(id=id).update({
-            'name': name if name else GenerallyInfo.name,
-            'address': address if address else GenerallyInfo.address,
-            'email': email if email != None else GenerallyInfo.email,
+            'name': name if name is not None else GenerallyInfo.name,
+            'address': address if address is not None else GenerallyInfo.address,
+            'email': email if email is not None else GenerallyInfo.email,
 
-            'ogrn': ogrn if ogrn else GenerallyInfo.ogrn,
-            'inn': inn if inn else GenerallyInfo.inn,
-            'kpp': kpp if kpp else GenerallyInfo.kpp,
-            'juridical_address': juridical_address if juridical_address else GenerallyInfo.juridical_address,
-            'director': director if director else GenerallyInfo.director,
-            'bank_name': bank_name if bank_name else GenerallyInfo.bank_name,
-            'settlement_account': settlement_account if settlement_account else GenerallyInfo.settlement_account,
-            'corr_account': corr_account if corr_account else GenerallyInfo.corr_account,
-            'bic': bic if bic else GenerallyInfo.bic,
+            'ogrn': ogrn if ogrn is not None else GenerallyInfo.ogrn,
+            'inn': inn if inn is not None else GenerallyInfo.inn,
+            'kpp': kpp if kpp is not None else GenerallyInfo.kpp,
+            'juridical_address': juridical_address if juridical_address is not None else GenerallyInfo.juridical_address,
+            'director': director if director is not None else GenerallyInfo.director,
+            'bank_name': bank_name if bank_name is not None else GenerallyInfo.bank_name,
+            'settlement_account': settlement_account if settlement_account is not None else GenerallyInfo.settlement_account,
+            'corr_account': corr_account if corr_account is not None else GenerallyInfo.corr_account,
+            'bic': bic if bic is not None else GenerallyInfo.bic,
 
-            'description': description if description else GenerallyInfo.description,
-            'phone': phone if phone else GenerallyInfo.phone,
-            'logo': logo if logo else GenerallyInfo.logo,
+            'description': description if description is not None else GenerallyInfo.description,
+            'phone': phone if phone is not None else GenerallyInfo.phone,
+            'logo': logo if logo is not None else GenerallyInfo.logo,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_generally_info()
+        return id
 
     def del_generally_info(self, id):
 
@@ -3704,7 +3762,7 @@ class DbInteraction():
         if generally_info:
             self.pgsql_connetction.session.delete(generally_info)
             self.pgsql_connetction.session.commit()
-            return self.get_generally_info()
+            return id
 
 # Таблица СЧЕТЧИКОВ ==================================================================================
 
@@ -3745,15 +3803,15 @@ class DbInteraction():
 
         return result
 
-    def edit_counts(self, id, prefix, count, description):
+    def edit_counts(self, id, prefix=None, count=None, description=None):
 
         self.pgsql_connetction.session.query(Counts).filter_by(id=id).update({
-            'prefix': prefix if prefix else Counts.prefix,
-            'count': count if count else Counts.count,
-            'description': description if description else Counts.description
+            'prefix': prefix if prefix is not None else Counts.prefix,
+            'count': count if count is not None else Counts.count,
+            'description': description if description is not None else Counts.description
         })
         self.pgsql_connetction.session.commit()
-        return self.get_counts()
+        return id
 
     def inc_count(self, id):
 
@@ -3763,7 +3821,7 @@ class DbInteraction():
         })
 
         self.pgsql_connetction.session.commit()
-        return self.get_counts()
+        return id
 
     def del_counts(self, id):
 
@@ -3823,14 +3881,14 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_malfunction(self, id, title, count):
+    def edit_malfunction(self, id, title=None, count=None):
 
         self.pgsql_connetction.session.query(DictMalfunction).filter_by(id=id).update({
-            'title': title if title else DictMalfunction.title,
-            'count': count if count else DictMalfunction.count
+            'title': title if title is not None else DictMalfunction.title,
+            'count': count if count is not None else DictMalfunction.count
         })
         self.pgsql_connetction.session.commit()
-        return self.get_malfunction()
+        return id
 
     def del_malfunction(self, id):
 
@@ -3838,7 +3896,7 @@ class DbInteraction():
         if malfunction:
             self.pgsql_connetction.session.delete(malfunction)
             self.pgsql_connetction.session.commit()
-            return self.get_malfunction()
+            return id
 
 # Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
 
@@ -3889,14 +3947,14 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_packagelist(self, id, title, count):
+    def edit_packagelist(self, id, title=None, count=None):
 
         self.pgsql_connetction.session.query(DictPackagelist).filter_by(id=id).update({
-            'title': title if title else DictPackagelist.title,
-            'count': count if count else DictPackagelist.count
+            'title': title if title is not None else DictPackagelist.title,
+            'count': count if count is not None else DictPackagelist.count
         })
         self.pgsql_connetction.session.commit()
-        return self.get_packagelist()
+        return id
 
     def del_packagelist(self, id):
 
@@ -3979,21 +4037,32 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_cashbox(self, id, title, balance, type, isGlobal, isVirtual, deleted, permissions, employees, branch_id):
+    def edit_cashbox(self,
+                     id,
+                     title=None,
+                     balance=None,
+                     type=None,
+                     isGlobal=None,
+                     isVirtual=None,
+                     deleted=None,
+                     permissions=None,
+                     employees=None,
+                     branch_id=None
+                     ):
 
         self.pgsql_connetction.session.query(Cashboxs).filter_by(id=id).update({
-            'title': title if title else Cashboxs.title,
-            'balance': balance if balance else Cashboxs.balance,
-            'type': type if type else Cashboxs.type,
-            'isGlobal': isGlobal if isGlobal != None else Cashboxs.isGlobal,
-            'isVirtual': isVirtual if isVirtual != None else Cashboxs.isVirtual,
-            'deleted': deleted if deleted != None else Cashboxs.deleted,
-            'permissions': permissions if permissions else Cashboxs.permissions,
-            'employees': employees if employees else Cashboxs.employees,
-            'branch_id': branch_id if branch_id else Cashboxs.branch_id,
+            'title': title if title is not None else Cashboxs.title,
+            'balance': balance if balance is not None else Cashboxs.balance,
+            'type': type if type is not None else Cashboxs.type,
+            'isGlobal': isGlobal if isGlobal is not None else Cashboxs.isGlobal,
+            'isVirtual': isVirtual if isVirtual is not None else Cashboxs.isVirtual,
+            'deleted': deleted if deleted is not None else Cashboxs.deleted,
+            'permissions': permissions if permissions is not None else Cashboxs.permissions,
+            'employees': employees if employees is not None else Cashboxs.employees,
+            'branch_id': branch_id if branch_id is not None else Cashboxs.branch_id,
         })
         self.pgsql_connetction.session.commit()
-        return self.get_cashbox()
+        return id
 
     def del_cashbox(self, id):
 
@@ -4001,7 +4070,7 @@ class DbInteraction():
         if cashbox:
             self.pgsql_connetction.session.delete(cashbox)
             self.pgsql_connetction.session.commit()
-            return self.get_cashbox()
+            return id
 
 # Таблица ТРАНЗАКЦИЙ =================================================================================
 
@@ -4112,7 +4181,6 @@ class DbInteraction():
                 'deleted': row.deleted,
                 'is_fiscal': row.is_fiscal,
                 'created_at': row.created_at,
-                'updated_at': row.updated_at,
                 'custom_created_at': row.custom_created_at,
                 'tags': row.tags,
                 'relation_id': row.relation_id,
@@ -4220,42 +4288,43 @@ class DbInteraction():
 
     def edit_payments(self,
                       id,
-                      cashflow_category,
-                      description,
-                      deposit,
-                      income,
-                      outcome,
-                      direction,
-                      can_print_fiscal,
-                      deleted,
-                      is_fiscal,
-                      created_at,
-                      custom_created_at,
-                      tags,
-                      relation_id,
-                      cashbox_id,
-                      client_id,
-                      employee_id,
-                      order_id):
+                      cashflow_category=None,
+                      description=None,
+                      deposit=None,
+                      income=None,
+                      outcome=None,
+                      direction=None,
+                      can_print_fiscal=None,
+                      deleted=None,
+                      is_fiscal=None,
+                      created_at=None,
+                      custom_created_at=None,
+                      tags=None,
+                      relation_id=None,
+                      cashbox_id=None,
+                      client_id=None,
+                      employee_id=None,
+                      order_id=None
+                      ):
 
         self.pgsql_connetction.session.query(Payments).filter_by(id=id).update({
-            'cashflow_category': cashflow_category if cashflow_category else Payments.cashflow_category,
-            'description': description if description else Payments.description,
-            'deposit': deposit if deposit else Payments.deposit,
-            'income': income if income else Payments.income,
-            'outcome': outcome if outcome else Payments.outcome,
-            'direction': direction if direction else Payments.direction,
-            'can_print_fiscal': can_print_fiscal if can_print_fiscal != None else Payments.can_print_fiscal,
-            'deleted': deleted if deleted != None else Payments.deleted,
-            'is_fiscal': is_fiscal if is_fiscal != None else Payments.is_fiscal,
-            'created_at': created_at if created_at else Payments.created_at,
-            'custom_created_at': custom_created_at if custom_created_at else Payments.custom_created_at,
-            'tags': tags if tags else Payments.tags,
-            'relation_id': relation_id if relation_id else Payments.relation_id,
-            'cashbox_id': cashbox_id if cashbox_id else Payments.cashbox_id,
-            'client_id': client_id if client_id else Payments.client_id,
-            'employee_id': employee_id if employee_id else Payments.employee_id,
-            'order_id': order_id if order_id else Payments.order_id
+            'cashflow_category': cashflow_category if cashflow_category is not None else Payments.cashflow_category,
+            'description': description if description is not None else Payments.description,
+            'deposit': deposit if deposit is not None else Payments.deposit,
+            'income': income if income is not None else Payments.income,
+            'outcome': outcome if outcome is not None else Payments.outcome,
+            'direction': direction if direction is not None else Payments.direction,
+            'can_print_fiscal': can_print_fiscal if can_print_fiscal is not None else Payments.can_print_fiscal,
+            'deleted': deleted if deleted is not None else Payments.deleted,
+            'is_fiscal': is_fiscal if is_fiscal is not None else Payments.is_fiscal,
+            'created_at': created_at if created_at is not None else Payments.created_at,
+            'custom_created_at': custom_created_at is not None if custom_created_at else Payments.custom_created_at,
+            'tags': tags if tags is not None else Payments.tags,
+            'relation_id': relation_id if relation_id is not None else Payments.relation_id,
+            'cashbox_id': cashbox_id if cashbox_id is not None else Payments.cashbox_id,
+            'client_id': client_id if client_id is not None else Payments.client_id,
+            'employee_id': employee_id if employee_id is not None else Payments.employee_id,
+            'order_id': order_id if order_id is not None else Payments.order_id
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4266,7 +4335,7 @@ class DbInteraction():
         if payments:
             self.pgsql_connetction.session.delete(payments)
             self.pgsql_connetction.session.commit()
-            return self.get_payments()
+            return id
 
 
 # Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
@@ -4319,14 +4388,14 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_item_payments(self, id, title, direction):
+    def edit_item_payments(self, id, title=None, direction=None):
 
         self.pgsql_connetction.session.query(ItemPayments).filter_by(id=id).update({
-            'title': title if title else ItemPayments.title,
-            'direction': direction if direction else ItemPayments.direction
+            'title': title if title is not None else ItemPayments.title,
+            'direction': direction if direction is not None else ItemPayments.direction
         })
         self.pgsql_connetction.session.commit()
-        return self.get_item_payments()
+        return id
 
     def del_item_payments(self, id):
 
@@ -4334,7 +4403,7 @@ class DbInteraction():
         if item_payments:
             self.pgsql_connetction.session.delete(item_payments)
             self.pgsql_connetction.session.commit()
-            return self.get_item_payments()
+            return id
 
 # Таблица НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
 
@@ -4467,17 +4536,17 @@ class DbInteraction():
                       order_id=None):
 
         self.pgsql_connetction.session.query(Payrolls).filter_by(id=id).update({
-            'description': description if description else Payrolls.description,
-            'income': income if income else Payrolls.income,
-            'outcome': outcome if outcome else Payrolls.outcome,
-            'direction': direction if direction else Payrolls.direction,
-            'deleted': deleted if deleted != None else Payrolls.deleted,
-            'reimburse': reimburse if reimburse != None else Payrolls.reimburse,
-            'custom_created_at': custom_created_at if custom_created_at else Payrolls.custom_created_at,
-            'relation_type': relation_type if relation_type else Payrolls.relation_type,
-            'relation_id': relation_id if relation_id else Payrolls.relation_id,
-            'employee_id': employee_id if employee_id else Payrolls.employee_id,
-            'order_id': order_id if order_id else Payrolls.order_id
+            'description': description if description is not None else Payrolls.description,
+            'income': income if income is not None else Payrolls.income,
+            'outcome': outcome if outcome is not None else Payrolls.outcome,
+            'direction': direction if direction is not None else Payrolls.direction,
+            'deleted': deleted if deleted is not None else Payrolls.deleted,
+            'reimburse': reimburse if reimburse is not None else Payrolls.reimburse,
+            'custom_created_at': custom_created_at if custom_created_at is not None else Payrolls.custom_created_at,
+            'relation_type': relation_type if relation_type is not None else Payrolls.relation_type,
+            'relation_id': relation_id if relation_id is not None else Payrolls.relation_id,
+            'employee_id': employee_id if employee_id is not None else Payrolls.employee_id,
+            'order_id': order_id if order_id is not None else Payrolls.order_id
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4575,28 +4644,28 @@ class DbInteraction():
 
     def edit_payrule(self,
                      id,
-                     title,
-                     type_rule,
-                     order_type,
-                     method,
-                     coefficient,
-                     count_coeff,
-                     fix_salary,
-                     deleted,
-                     employee_id,
-                     check_status):
+                     title=None,
+                     type_rule=None,
+                     order_type=None,
+                     method=None,
+                     coefficient=None,
+                     count_coeff=None,
+                     fix_salary=None,
+                     deleted=None,
+                     employee_id=None,
+                     check_status=None):
 
         self.pgsql_connetction.session.query(Payrules).filter_by(id=id).update({
-            'title': title if title else Payrules.title,
-            'type_rule': type_rule if type_rule else Payrules.type_rule,
-            'order_type': order_type if order_type else Payrules.order_type,
-            'method': method if method != None else Payrules.method,
-            'coefficient': coefficient if coefficient else Payrules.coefficient,
-            'count_coeff': count_coeff if count_coeff else Payrules.count_coeff,
-            'fix_salary': fix_salary if fix_salary else Payrules.fix_salary,
-            'deleted': deleted if deleted != None else Payrules.deleted,
-            'employee_id': employee_id if employee_id else Payrules.employee_id,
-            'check_status': check_status if check_status else Payrules.check_status
+            'title': title if title is not None else Payrules.title,
+            'type_rule': type_rule if type_rule is not None else Payrules.type_rule,
+            'order_type': order_type if order_type is not None else Payrules.order_type,
+            'method': method if method is not None else Payrules.method,
+            'coefficient': coefficient if coefficient is not None else Payrules.coefficient,
+            'count_coeff': count_coeff if count_coeff is not None else Payrules.count_coeff,
+            'fix_salary': fix_salary if fix_salary is not None else Payrules.fix_salary,
+            'deleted': deleted if deleted is not None else Payrules.deleted,
+            'employee_id': employee_id if employee_id is not None else Payrules.employee_id,
+            'check_status': check_status if check_status is not None else Payrules.check_status
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4653,12 +4722,12 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_group_dict_service(self, id, title, icon, deleted):
+    def edit_group_dict_service(self, id, title=None, icon=None, deleted=None):
 
         self.pgsql_connetction.session.query(GroupDictService).filter_by(id=id).update({
-            'title': title if title else GroupDictService.title,
-            'icon': icon if icon else GroupDictService.icon,
-            'deleted': deleted if deleted != None else GroupDictService.deleted
+            'title': title if title is not None else GroupDictService.title,
+            'icon': icon if icon is not None else GroupDictService.icon,
+            'deleted': deleted if deleted is not None else GroupDictService.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4749,26 +4818,27 @@ class DbInteraction():
 
     def edit_dict_service(self,
                           id,
-                          title,
-                          price,
-                          cost,
-                          warranty,
-                          code,
-                          earnings_percent,
-                          earnings_summ,
-                          deleted,
-                          category_id):
+                          title=None,
+                          price=None,
+                          cost=None,
+                          warranty=None,
+                          code=None,
+                          earnings_percent=None,
+                          earnings_summ=None,
+                          deleted=None,
+                          category_id=None
+                          ):
 
             self.pgsql_connetction.session.query(DictService).filter_by(id=id).update({
-                'title': title if title else DictService.title,
-                'price': price if price else DictService.price,
-                'cost': cost if cost else DictService.cost,
-                'warranty': warranty if warranty else DictService.warranty,
-                'code': code if code else DictService.code,
-                'earnings_percent': earnings_percent if earnings_percent else DictService.earnings_percent,
-                'earnings_summ': earnings_summ if earnings_summ else DictService.earnings_summ,
-                'deleted': deleted if deleted != None else DictService.deleted,
-                'category_id': category_id if category_id else DictService.category_id
+                'title': title if title is not None else DictService.title,
+                'price': price if price is not None else DictService.price,
+                'cost': cost if cost is not None else DictService.cost,
+                'warranty': warranty if warranty is not None else DictService.warranty,
+                'code': code if code is not None else DictService.code,
+                'earnings_percent': earnings_percent if earnings_percent is not None else DictService.earnings_percent,
+                'earnings_summ': earnings_summ if earnings_summ is not None else DictService.earnings_summ,
+                'deleted': deleted if deleted is not None else DictService.deleted,
+                'category_id': category_id if category_id is not None else DictService.category_id
             })
             self.pgsql_connetction.session.commit()
             return id
@@ -4827,13 +4897,13 @@ class DbInteraction():
         result['data'] = data
         return result
 
-    def edit_service_prices(self, id, cost, discount_margin_id, service_id, deleted):
+    def edit_service_prices(self, id, cost=None, discount_margin_id=None, service_id=None, deleted=None):
 
         self.pgsql_connetction.session.query(ServicePrices).filter_by(id=id).update({
-            'cost': cost if cost else ServicePrices.cost,
-            'discount_margin_id': discount_margin_id if discount_margin_id else ServicePrices.discount_margin_id,
-            'service_id': service_id if service_id else ServicePrices.service_id,
-            'deleted': deleted if deleted != None else ServicePrices.deleted
+            'cost': cost if cost is not None else ServicePrices.cost,
+            'discount_margin_id': discount_margin_id if discount_margin_id is not None else ServicePrices.discount_margin_id,
+            'service_id': service_id if service_id is not None else ServicePrices.service_id,
+            'deleted': deleted if deleted is not None else ServicePrices.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -4956,17 +5026,17 @@ class DbInteraction():
                    warehouse_category_id=None):
 
         self.pgsql_connetction.session.query(Parts).filter_by(id=id).update({
-            'title': title if title else Parts.title,
-            'description': description if description else Parts.description,
-            'marking': marking if marking else Parts.marking,
-            'article': article if article else Parts.article,
-            'barcode': barcode if barcode else Parts.barcode,
-            'code': code if code else Parts.code,
-            'image_url': image_url if image_url else Parts.image_url,
-            'doc_url': doc_url if doc_url else Parts.doc_url,
-            'specifications': specifications if specifications else Parts.specifications,
-            'deleted': deleted if deleted != None else Parts.deleted,
-            'warehouse_category_id': warehouse_category_id if warehouse_category_id else Parts.warehouse_category_id
+            'title': title if title is not None else Parts.title,
+            'description': description if description is not None else Parts.description,
+            'marking': marking if marking is not None else Parts.marking,
+            'article': article if article is not None else Parts.article,
+            'barcode': barcode if barcode is not None else Parts.barcode,
+            'code': code if code is not None else Parts.code,
+            'image_url': image_url if image_url is not None else Parts.image_url,
+            'doc_url': doc_url if doc_url is not None else Parts.doc_url,
+            'specifications': specifications if specifications is not None else Parts.specifications,
+            'deleted': deleted if deleted is not None else Parts.deleted,
+            'warehouse_category_id': warehouse_category_id if warehouse_category_id is not None else Parts.warehouse_category_id
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5061,13 +5131,13 @@ class DbInteraction():
                    deleted=None):
 
         self.pgsql_connetction.session.query(Warehouse).filter_by(id=id).update({
-            'title': title if title else Warehouse.title,
-            'description': description if description else Warehouse.description,
-            'branch_id': branch_id if branch_id else Warehouse.branch_id,
-            'permissions': permissions if permissions else Warehouse.permissions,
-            'employees': employees if employees else Warehouse.employees,
-            'isGlobal': isGlobal if isGlobal != None else Warehouse.isGlobal,
-            'deleted': deleted if deleted != None else Warehouse.deleted
+            'title': title if title is not None else Warehouse.title,
+            'description': description if description is not None else Warehouse.description,
+            'branch_id': branch_id if branch_id is not None else Warehouse.branch_id,
+            'permissions': permissions if permissions is not None else Warehouse.permissions,
+            'employees': employees if employees is not None else Warehouse.employees,
+            'isGlobal': isGlobal if isGlobal is not None else Warehouse.isGlobal,
+            'deleted': deleted if deleted is not None else Warehouse.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5141,10 +5211,10 @@ class DbInteraction():
                                deleted=None):
 
         self.pgsql_connetction.session.query(WarehouseCategory).filter_by(id=id).update({
-            'title': title if title else WarehouseCategory.title,
-            'parent_category_id': parent_category_id if parent_category_id else WarehouseCategory.parent_category_id,
-            'warehouse_id': warehouse_id if warehouse_id else WarehouseCategory.warehouse_id,
-            'deleted': deleted if deleted != None else WarehouseCategory.deleted
+            'title': title if title is not None else WarehouseCategory.title,
+            'parent_category_id': parent_category_id if parent_category_id is not None else WarehouseCategory.parent_category_id,
+            'warehouse_id': warehouse_id if warehouse_id is not None else WarehouseCategory.warehouse_id,
+            'deleted': deleted if deleted is not None else WarehouseCategory.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5272,16 +5342,16 @@ class DbInteraction():
                            deleted=None):
 
         self.pgsql_connetction.session.query(WarehouseParts).filter_by(id=id).update({
-            'where_to_buy': where_to_buy if where_to_buy else WarehouseParts.where_to_buy,
-            'cell': cell if cell else WarehouseParts.cell,
-            'count': count if count else WarehouseParts.count,
-            'min_residue': min_residue if min_residue else WarehouseParts.min_residue,
-            'warranty_period': warranty_period if warranty_period else WarehouseParts.warranty_period,
-            'necessary_amount': necessary_amount if necessary_amount else WarehouseParts.necessary_amount,
-            'part_id': part_id if part_id else WarehouseParts.part_id,
-            'category_id': category_id if category_id else WarehouseParts.category_id,
-            'warehouse_id': warehouse_id if warehouse_id else WarehouseParts.warehouse_id,
-            'deleted': deleted if deleted != None else WarehouseParts.deleted
+            'where_to_buy': where_to_buy if where_to_buy is not None else WarehouseParts.where_to_buy,
+            'cell': cell if cell is not None else WarehouseParts.cell,
+            'count': count if count is not None else WarehouseParts.count,
+            'min_residue': min_residue if min_residue is not None else WarehouseParts.min_residue,
+            'warranty_period': warranty_period if warranty_period is not None else WarehouseParts.warranty_period,
+            'necessary_amount': necessary_amount if necessary_amount is not None else WarehouseParts.necessary_amount,
+            'part_id': part_id if part_id is not None else WarehouseParts.part_id,
+            'category_id': category_id if category_id is not None else WarehouseParts.category_id,
+            'warehouse_id': warehouse_id if warehouse_id is not None else WarehouseParts.warehouse_id,
+            'deleted': deleted if deleted is not None else WarehouseParts.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5347,9 +5417,9 @@ class DbInteraction():
     def edit_notification_template(self, id, title=None, template=None, deleted=None):
 
         self.pgsql_connetction.session.query(NotificationTemplate).filter_by(id=id).update({
-            'title': title if title else NotificationTemplate.title,
-            'template': template if template else NotificationTemplate.template,
-            'deleted': deleted if deleted != None else NotificationTemplate.deleted
+            'title': title if title is not None else NotificationTemplate.title,
+            'template': template if template is not None else NotificationTemplate.template,
+            'deleted': deleted if deleted is not None else NotificationTemplate.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5442,12 +5512,12 @@ class DbInteraction():
                                  ):
 
         self.pgsql_connetction.session.query(NotificationEvents).filter_by(id=id).update({
-            'event': event if event else NotificationEvents.event,
-            'target_audience': target_audience if target_audience else NotificationEvents.target_audience,
-            'statuses': statuses if statuses else NotificationEvents.statuses,
-            'notification_type': notification_type if notification_type else NotificationEvents.notification_type,
-            'notification_template_id': notification_template_id if notification_template_id else NotificationEvents.notification_template_id,
-            'deleted': deleted if deleted != None else NotificationEvents.deleted
+            'event': event if event is not None else NotificationEvents.event,
+            'target_audience': target_audience if target_audience is not None else NotificationEvents.target_audience,
+            'statuses': statuses if statuses is not None else NotificationEvents.statuses,
+            'notification_type': notification_type if notification_type is not None else NotificationEvents.notification_type,
+            'notification_template_id': notification_template_id if notification_template_id is not None else NotificationEvents.notification_template_id,
+            'deleted': deleted if deleted is not None else NotificationEvents.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -5459,6 +5529,8 @@ class DbInteraction():
             self.pgsql_connetction.session.delete(notification_events)
             self.pgsql_connetction.session.commit()
             return id
+
+
 
 
 
@@ -5476,9 +5548,15 @@ if __name__ == '__main__':
     # Создание новых таблиц
     # db.create_tables([NotificationTemplate.__table__, NotificationEvents.__table__])
 
-    # Добавление столбца
-    # column = Column('notify', BOOLEAN)
-    # db.add_column(Phones.__table__, column)
+    # # Добавление столбца
+    # column = Column('percent', BOOLEAN)
+    # db.add_column(Operations.__table__, column)
+    # column = Column('discount', FLOAT)
+    # db.add_column(Operations.__table__, column)
+    # column = Column('percent', BOOLEAN)
+    # db.add_column(OrderParts.__table__, column)
+    # column = Column('discount', FLOAT)
+    # db.add_column(OrderParts.__table__, column)
 
 
     # db.create_all_tables()

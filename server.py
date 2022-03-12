@@ -1,4 +1,3 @@
-# import logging
 from datetime import timedelta
 from pprint import pprint
 import time
@@ -18,42 +17,31 @@ from flask_jwt_extended import JWTManager, jwt_required
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.db.interaction.interaction import DbInteraction
+from app.API_requests.operations import operation_api
+from app.db.interaction.db_iteraction import db_iteraction, config
 from app.events import event_change_status_to, event_create_order
-from utils import config_parser
-# from userLogin import UserLogin
+
 
 import ssl
 # pip freeze > requirements.txt
 
-config = config_parser('config.txt')
 
 host = config['SERVER_HOST']
 port = config['SERVER_PORT']
 
-db_host = config['DB_HOST']
-db_port = config['DB_PORT']
-user = config['DB_USER']
-password = config['DB_PASSWORD']
-db_name = config['DB_NAME']
-
 print_logs = False
 
-# Добавляем объект управления БД
-db_iteraction = DbInteraction(
-    host=db_host,
-    port=db_port,
-    user=user,
-    password=password,
-    db_name=db_name,
-    rebuild_db=False
-)
+
+
 
 # context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 # context.load_cert_chain("server.crt", "server.key")
 
 
 app = Flask(__name__, static_folder="build/static", template_folder="build")
+app.register_blueprint(operation_api)
+
+
 jwt = JWTManager(app)
 
 app.config['SECRET_KEY'] = '07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79'
@@ -112,10 +100,7 @@ def shutdown():
     if terminate_func:
         terminate_func()
 
-# @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'])
-# @app.route('/home')
-# def get_home():
-#     return render_template('index.html')
+
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -1318,290 +1303,7 @@ def status():
             id=id)                              # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/get_operations', methods=['POST'])
-@jwt_required()
-def get_operations():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
 
-    # Проверка соответствию типов данных
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    amount = request_body.get('amount', 1)
-    if amount and type(amount) != int:
-        return {'success': False, 'message': "amount is not integer"}, 400
-
-    cost = request_body.get('cost', 0)
-    if cost:
-        try:
-            cost = float(cost)
-        except:
-            return {'success': False, 'message': 'cost is not number'}, 400
-
-    discount_value = request_body.get('discount_value', 0)
-    if discount_value:
-        try:
-            discount_value = float(discount_value)
-        except:
-            return {'success': False, 'message': 'discount_value is not number'}, 400
-
-    engineer_id = request_body.get('engineer_id')
-    if engineer_id and type(engineer_id) != int:
-        return {'success': False, 'message': "engineer_id is not integer"}, 400
-    if engineer_id:
-        if db_iteraction.get_employee(id=engineer_id)['count'] == 0:
-            return {'success': False, 'message': 'engineer_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id:
-        if db_iteraction.get_orders(id=order_id)['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-    dict_id = request_body.get('dict_id')
-    if dict_id and type(dict_id) != int:
-        return {'success': False, 'message': "dict_id is not integer"}, 400
-    if dict_id:
-        if db_iteraction.get_dict_service(id=dict_id)['count'] == 0:
-            return {'success': False, 'message': 'dict_id is not defined'}, 400
-
-    price = request_body.get('price', 0)
-    if price:
-        try:
-            price = float(price)
-        except:
-            return {'success': False, 'message': 'price is not number'}, 400
-
-    total = request_body.get('total', 0)
-    if total:
-        try:
-            total = float(total)
-        except:
-            return {'success': False, 'message': 'total is not number'}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    warranty = request_body.get('warranty')
-    if warranty and type(warranty) != bool:
-        return {'success': False, 'message': 'warranty is not boolean'}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    warranty_period = request_body.get('warranty_period', 0)
-    if warranty_period and type(warranty_period) != int:
-        return {'success': False, 'message': "warranty_period is not integer"}, 400
-
-    created_at = request_body.get('created_at')
-    if created_at:
-        if type(created_at) != list:
-            return {'success': False, 'message': "Created_at is not list"}, 400
-        if len(created_at) != 2:
-            return {'success': False, 'message': "Created_at is not correct"}, 400
-        if (type(created_at[0]) != int) or (type(created_at[1]) != int):
-            return {'success': False, 'message': "Created_at has not integers"}, 400
-
-    result = db_iteraction.get_operations(
-        id=id,                              # int - id статуса - полное совпадение
-        cost=cost,                          # int - себестоимость - полное совпадение
-        discount_value=discount_value,      # float - сумма скидки - подное совпадение
-        engineer_id=engineer_id,            # int - id инженера - полное сопвпадение
-        price=price,                        # float - цена услуги - полное совпадение
-        title=title,                        # str - наименование услуги - частичное совпадение
-        total=total,
-        warranty=warranty,                  # bool - гарантия - полное совпадение
-        deleted=deleted,
-        warranty_period=warranty_period,    # int - гарантийный период - полное совпадение
-        created_at=created_at,              # [int, int] - дата создания - промежуток дат
-        page=page,                          # int - Старница погинации
-        order_id=order_id,                  # int - Новый id заказа
-        dict_id=dict_id
-    )
-    return result, 200
-
-@app.route('/operations', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def operations():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    # Проверка соответствию типов данных
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    amount = request_body.get('amount', 1)
-    if amount and type(amount) != int:
-        return {'success': False, 'message': "amount is not integer"}, 400
-
-
-    order_type_id = request_body.get('order_type_id')
-    if order_type_id and type(order_type_id) != int:
-        return {'success': False, 'message': "order_type_id is not integer"}, 400
-
-    cost = request_body.get('cost', 0)
-    if cost:
-        try:
-            cost = float(cost)
-        except:
-            return {'success': False, 'message': 'cost is not number'}, 400
-
-    earnings_percent = request_body.get('earnings_percent', 0)
-    if earnings_percent:
-        try:
-            earnings_percent = float(earnings_percent)
-        except:
-            return {'success': False, 'message': 'earnings_percent is not number'}, 400
-
-    earnings_summ = request_body.get('earnings_summ', 0)
-    if earnings_summ:
-        try:
-            earnings_summ = float(earnings_summ)
-        except:
-            return {'success': False, 'message': 'earnings_summ is not number'}, 400
-
-    discount_value = request_body.get('discount_value', 0)
-    if discount_value:
-        try:
-            discount_value = float(discount_value)
-        except:
-            return {'success': False, 'message': 'discount_value is not number'}, 400
-
-    engineer_id = request_body.get('engineer_id')
-    if engineer_id and type(engineer_id) != int:
-        return {'success': False, 'message': "engineer_id is not integer"}, 400
-    if engineer_id:
-        if db_iteraction.get_employee(id=engineer_id)['count'] == 0:
-            return {'success': False, 'message': 'engineer_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id:
-        if db_iteraction.get_orders(id=order_id)['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-    dict_id = request_body.get('dict_id')
-    if dict_id and type(dict_id) != int:
-        return {'success': False, 'message': "dict_id is not integer"}, 400
-    if dict_id:
-        if db_iteraction.get_dict_service(id=dict_id)['count'] == 0:
-            return {'success': False, 'message': 'dict_id is not defined'}, 400
-
-    price = request_body.get('price', 0)
-    if price:
-        try:
-            price = float(price)
-        except:
-            return {'success': False, 'message': 'price is not number'}, 400
-
-    total = request_body.get('total', 0)
-    if total:
-        try:
-            total = float(total)
-        except:
-            return {'success': False, 'message': 'total is not number'}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    comment = request_body.get('comment')
-    if comment:
-        comment = str(comment)
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    warranty_period = request_body.get('warranty_period', 0)
-    if warranty_period and type(warranty_period) != int:
-        return {'success': False, 'message': "warranty_period is not integer"}, 400
-
-    created_at = request_body.get('created_at')
-
-    if request.method == 'POST':
-
-        if created_at and type(created_at) != int:
-            return {'success': False, 'message': "created_at is not integer"}, 400
-
-        if not engineer_id:
-            return {'success': False, 'message': 'engineer_id required'}, 400
-
-        if not title:
-            return {'success': False, 'message': 'title required'}, 400
-
-        operation_id = db_iteraction.add_operations(
-            amount=amount,                          # int - количество - по дефолту 1
-            cost=cost,                              # int - себестоимость - по дефолту 0
-            discount_value=discount_value,          # float - сумма скидки - по дефолту 0
-            engineer_id=engineer_id,                # int - id инженера - обязательное поле
-            price=price,                            # float - цена услуги - по дефолту 0
-            total=total,
-            title=title,                            # str - наименование услуги - обязательное поле
-            comment=comment,
-            deleted=deleted,
-            warranty_period=warranty_period,        # int - гарантийный период - по дефолту 0
-            created_at=created_at,                  # int - дата создания - по дефоту now
-            order_id=order_id,                      # int - Новый id заказа
-            dict_id=dict_id
-        )
-        return {'success': True, 'message': f'{title} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_operations(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-
-        created_at = request_body.get('created_at', 0)
-        if created_at and type(created_at) != int:
-            return {'success': False, 'message': "created_at is not integer"}, 400
-
-
-        db_iteraction.edit_operations(
-            id=id,                                      # int - id записи - полное совпаден
-            amount=amount,                              # int - Новое количество
-            cost=cost,                                  # float - Новая себестоимость
-            discount_value=discount_value,              # float - Новая сумма скидки
-            engineer_id=engineer_id,                    # int - Новый id инженера
-            price=price,                                # int - Новая стоимость услуги
-            total=total,
-            title=title,                                # str - Новое наименование услуги
-            comment=comment,
-            deleted=deleted,
-            warranty_period=warranty_period,            # int - Новый срок гаранти
-            created_at=created_at,                      # int - Новая дата создания
-            order_id=order_id,                          # int - Новый id заказа
-            dict_id=dict_id
-        )
-
-        return {'success': True, 'message': f'{request_body.get("id")} changed'}, 202
-
-    if request.method == 'DELETE':
-        db_iteraction.del_operations(
-            id=id)                              # int - id записи - полное совпаден
-        return {'success': True, 'message': f'{id} deleted'}, 202
 
 @app.route('/get_order_parts', methods=['POST'])
 @jwt_required()
@@ -1741,6 +1443,13 @@ def order_parts():
         except:
             return {'success': False, 'message': 'Discount_value is not number'}, 400
 
+    discount = request_body.get('discount', 0)
+    if discount:
+        try:
+            discount = float(discount)
+        except:
+            return {'success': False, 'message': 'discount is not number'}, 400
+
     engineer_id = request_body.get('engineer_id')
     if engineer_id and type(engineer_id) != int:
         return {'success': False, 'message': "Engineer_id is not integer"}, 400
@@ -1777,6 +1486,10 @@ def order_parts():
     if comment:
         comment = str(comment)
 
+    percent = request_body.get('percent')
+    if percent and type(percent) != bool:
+        return {'success': False, 'message': 'percent is not boolean'}, 400
+
     deleted = request_body.get('deleted')
     if deleted and type(deleted) != bool:
         return {'success': False, 'message': 'deleted is not boolean'}, 400
@@ -1807,6 +1520,8 @@ def order_parts():
             total=total,
             title=title,                            # str - наименование услуги - обязательное поле
             comment=comment,
+            percent=percent,
+            discount=discount,
             deleted=deleted,
             warranty_period=warranty_period,        # int - гарантийный период - по дефолту 0
             created_at=created_at,                  # int - дата создания - по дефоту now
@@ -1835,6 +1550,8 @@ def order_parts():
             total=total,
             title=title,                                # str - Новое наименование услуги
             comment=comment,
+            percent=percent,
+            discount=discount,
             deleted=deleted,
             warranty_period=warranty_period,            # int - Новый срок гаранти
             created_at=created_at,                      # int - Новая дата создания
@@ -3733,15 +3450,7 @@ def equipment_subtype():
         if not all([type(join) == int for join in list_for_join]):
             return {'success': False, 'message': "list_for_join has not integer"}, 400
 
-    # загрузка/замена изображения
-    img_uri = request_body.get('img')
-    if img_uri:
-        with urlopen(img_uri) as response:
-            data = response.read()
-        url = f'build/static/data/PCB/subtype{id}.jpeg'
-        with open(url, 'wb') as f:
-            f.write(data)
-        url = f'data/PCB/subtype{id}.jpeg'
+
 
 
     if request.method == 'POST':
@@ -3752,7 +3461,7 @@ def equipment_subtype():
         if not equipment_brand_id:
             return {'success': False, 'message': 'equipment_brand_id required'}, 400
 
-        db_iteraction.add_equipment_subtype(
+        id_subtype = db_iteraction.add_equipment_subtype(
             title=title,                            # str - Модификация изделия - обязательное поле
             icon=icon,                              # str - Иконка модификации изделия
             url=url,                                # str - Ссылка на изображение модификации изделия
@@ -3760,6 +3469,20 @@ def equipment_subtype():
             deleted=deleted,
             equipment_brand_id=equipment_brand_id   # int - id бренда изделия
         )
+
+        # загрузка изображения
+        img_uri = request_body.get('img')
+        if img_uri:
+            with urlopen(img_uri) as response:
+                data = response.read()
+            url = f'build/static/data/PCB/subtype{id_subtype}.jpeg'
+            with open(url, 'wb') as f:
+                f.write(data)
+            url = f'data/PCB/subtype{id_subtype}.jpeg'
+            db_iteraction.edit_equipment_subtype(
+                id=id_subtype,
+                url=url
+            )
         return {'success': True, 'message': f'{title} added'}, 201
 
     # Проверим сущестует ли запись по данному id
@@ -3767,6 +3490,17 @@ def equipment_subtype():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
+
+        # загрузка/замена изображения
+        img_uri = request_body.get('img')
+        if img_uri:
+            with urlopen(img_uri) as response:
+                data = response.read()
+            url = f'build/static/data/PCB/subtype{id}.jpeg'
+            with open(url, 'wb') as f:
+                f.write(data)
+            url = f'data/PCB/subtype{id}.jpeg'
+
         db_iteraction.edit_equipment_subtype(
             id=id,                                  # int - id записи - полное совпаден
             title=title,                            # str - Новое название бренда изделия
@@ -3788,6 +3522,8 @@ def equipment_subtype():
                         id=equipment_model['id'],
                         equipment_subtype_id=id
                     )
+
+
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
@@ -4267,6 +4003,15 @@ def get_main_data():
 
     status_group = db_iteraction.get_status_group()
     result['status_group'] = status_group['data']
+
+    cashboxes = db_iteraction.get_cashbox()
+    result['cashboxes'] = cashboxes['data']
+
+    item_payments = db_iteraction.get_item_payments()
+    result['item_payments'] = item_payments['data']
+
+    service_prices = db_iteraction.get_service_prices()
+    result['service_prices'] = service_prices['data']
 
     result['success'] = True
     return result, 200

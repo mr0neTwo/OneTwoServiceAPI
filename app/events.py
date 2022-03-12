@@ -1,8 +1,6 @@
 from datetime import datetime
-
-import requests
 import json
-
+import requests
 from num2words import num2words
 
 def timestamp_to_string(timestamp):

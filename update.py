@@ -25,6 +25,7 @@ from payments.seyf import seyf
 from payments.seyf2022 import seyf2022
 from payments.tinkoff import tinkoff
 from payments.tinkoff2022 import tinkoff2022
+from payments.tinkoff_lost import tinkoff_lost
 from payments.yura import yura
 from payments.yura2022 import yura2022
 from utils import GetCustomer, GetOders
@@ -314,6 +315,10 @@ def updataPayments():
             'title': 'Транзакции Тинькофф 2022',
             'cashbox_id': 2
         }, {
+            'data': tinkoff_lost,
+            'title': 'Транзакции Тинькофф tinkoff_lost',
+            'cashbox_id': 2
+        }, {
             'data': anton,
             'title': 'Транзакции кассы Антон',
             'cashbox_id': 8
@@ -386,3 +391,5 @@ cleanTables()
 updeteClienst()
 updataOrders()
 updataPayments()
+
+

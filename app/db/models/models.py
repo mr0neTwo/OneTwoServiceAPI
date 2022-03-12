@@ -200,9 +200,9 @@ class Clients(Base):
     id_сompany_ref = f'{AdCampaign.__tablename__}.{AdCampaign.id.name}'
     ad_campaign_id = Column(INTEGER, ForeignKey(id_сompany_ref), nullable=False)    # Данные о рекламной компании
     id_margin_ref = f'{DiscountMargin.__tablename__}.{DiscountMargin.id.name}'
-    discount_goods_margin_id = Column(INTEGER, ForeignKey(id_сompany_ref))          # Тип цены для продаж (id)
-    discount_materials_margin_id = Column(INTEGER, ForeignKey(id_сompany_ref))      # Тип цены для мареиалов (id)
-    discount_service_margin_id = Column(INTEGER, ForeignKey(id_сompany_ref))        # Тип цены для мареиалов (id)
+    discount_goods_margin_id = Column(INTEGER, ForeignKey(id_margin_ref))          # Тип цены для продаж (id)
+    discount_materials_margin_id = Column(INTEGER, ForeignKey(id_margin_ref))      # Тип цены для мареиалов (id)
+    discount_service_margin_id = Column(INTEGER, ForeignKey(id_margin_ref))        # Тип цены для мареиалов (id)
 
     tags = Column(ARRAY(TEXT))
 
@@ -419,17 +419,19 @@ class Operations(Base):
     id_ref = f'{Employees.__tablename__}.{Employees.id.name}'
     engineer_id = Column(INTEGER, ForeignKey(id_ref), nullable=False)           # Инженер
     price = Column(FLOAT)                                                       # Цена услуги
-    total = Column(FLOAT)
+    total = Column(FLOAT)                                                       # Сумма к оплате
     title = Column(TEXT)                                                        # Наименование услуги
-    comment = Column(TEXT)
-    deleted = Column(BOOLEAN)
+    comment = Column(TEXT)                                                      # Сумма к оплате
+    percent = Column(BOOLEAN)                                                   # Процент или сумма (True - процент)
+    discount = Column(FLOAT)                                                    # Значение скидки
+    deleted = Column(BOOLEAN)                                                   # Сумма к оплате
     warranty_period = Column(INTEGER)                                           # Период гарантии
     created_at = Column(INTEGER, default=time_now)                              # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)           # Дата обновления
     id_order_ref = f'{Orders.__tablename__}.{Orders.id.name}'
     order_id = Column(INTEGER, ForeignKey(id_order_ref, ondelete='CASCADE'))    # id заказа
     id_dict_ref = f'{DictService.__tablename__}.{DictService.id.name}'
-    dict_id = Column(INTEGER, ForeignKey(id_dict_ref, ondelete='CASCADE'), nullable=True)     # id заказа
+    dict_id = Column(INTEGER, ForeignKey(id_dict_ref, ondelete='CASCADE'), nullable=True)     # id услуги
 
     dict_service = relationship('DictService', foreign_keys=[dict_id])
 
@@ -445,10 +447,12 @@ class OrderParts(Base):
     id_ref = f'{Employees.__tablename__}.{Employees.id.name}'
     engineer_id = Column(INTEGER, ForeignKey(id_ref), nullable=False)           # Инженер
     price = Column(FLOAT)                                                       # Цена запчасти
-    total = Column(FLOAT)
+    total = Column(FLOAT)                                                       # Сумма к оплате
     title = Column(TEXT)                                                        # Наименование запачасти
-    comment = Column(TEXT)
-    deleted = Column(BOOLEAN)
+    comment = Column(TEXT)                                                      # Сумма к оплате
+    percent = Column(BOOLEAN)                                                   # Процент или сумма (True - процент)
+    discount = Column(FLOAT)                                                    # Значение скидки
+    deleted = Column(BOOLEAN)                                                   # Сумма к оплате
     warranty_period = Column(INTEGER)                                           # Период гарантии
     created_at = Column(INTEGER, default=time_now)                              # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)           # Дата обновления
