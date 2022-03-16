@@ -6,7 +6,7 @@ from flask import request
 
 from app.db.interaction.db_iteraction import db_iteraction
 
-operation_api = Blueprint('account_api', __name__)
+operation_api = Blueprint('operation_api', __name__)
 
 
 @operation_api.route('/get_operations', methods=['POST'])

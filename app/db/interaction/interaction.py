@@ -46,9 +46,10 @@ dict_emploeey_ids = {
 }
 print_logs = False
 
+
 class DbInteraction():
 
-    def __init__(self, host, port,  user, password, db_name, rebuild_db=False):
+    def __init__(self, host, port, user, password, db_name, rebuild_db=False):
         self.pgsql_connetction = PGSQL_connetction(
             host=host,
             port=port,
@@ -60,6 +61,11 @@ class DbInteraction():
 
         self.rebuild_db = rebuild_db
         self.engine = self.pgsql_connetction.connection
+
+    # Imported methods
+    from ._orders import add_orders, get_orders, edit_orders, del_orders
+    from ._filters import get_badges, add_custom_filters, get_custom_filters, edit_custom_filters, del_custom_filters
+
 
     def create_all_tables(self):
         '''
@@ -84,8 +90,6 @@ class DbInteraction():
         self.pgsql_connetction.session.query(Table).delete()
         self.pgsql_connetction.session.commit()
 
-
-
     def drop_all_tables(self):
         '''
         Функция удаляет все таблицы
@@ -106,24 +110,24 @@ class DbInteraction():
 
         # # Загрузим основные данные компании
         self.add_generally_info(
-                name='OneTwoService',
-                address='Краснодар, Бабушкина 179/1',
-                email='onetwoservice@yandex.ru',
+            name='OneTwoService',
+            address='Краснодар, Бабушкина 179/1',
+            email='onetwoservice@yandex.ru',
 
-                ogrn='',
-                inn='230815804505',
-                kpp='',
-                juridical_address='350049, г. Краснодар, улица Платановый Бульвар, д. 9, кв. 17',
-                director='КАЙГОРОДОВ СТАНИСЛАВ СЕРГЕЕВИЧ',
-                bank_name='ФИЛИАЛ "РОСТОВСКИЙ" АО "АЛЬФА-БАНК"',
-                settlement_account='40802810126240001808',
-                corr_account='30101810500000000207',
-                bic='046015207',
+            ogrn='',
+            inn='230815804505',
+            kpp='',
+            juridical_address='350049, г. Краснодар, улица Платановый Бульвар, д. 9, кв. 17',
+            director='КАЙГОРОДОВ СТАНИСЛАВ СЕРГЕЕВИЧ',
+            bank_name='ФИЛИАЛ "РОСТОВСКИЙ" АО "АЛЬФА-БАНК"',
+            settlement_account='40802810126240001808',
+            corr_account='30101810500000000207',
+            bic='046015207',
 
-                description='Ремонт бытовой техники',
-                phone='79528556886',
-                logo=''
-            )
+            description='Ремонт бытовой техники',
+            phone='79528556886',
+            logo=''
+        )
         print('Основные данные компании созданы')
 
         # Добавим счетчики
@@ -332,8 +336,10 @@ class DbInteraction():
                 email=employee.get('email'),
                 notes=employee.get('notes'),
                 phone=employee.get('phone'),
-                password=generate_password_hash('225567') if employee.get('email') == 'stasmen@mail.ru' else generate_password_hash('12345'),
-                deleted=not employee.get('email') in ['stasmen@mail.ru', 'p.s.respekt@mail.ru', 'potato316bless@gmail.com', 'Stepanenkoyura353@mail.ru'],
+                password=generate_password_hash('225567') if employee.get(
+                    'email') == 'stasmen@mail.ru' else generate_password_hash('12345'),
+                deleted=not employee.get('email') in ['stasmen@mail.ru', 'p.s.respekt@mail.ru',
+                                                      'potato316bless@gmail.com', 'Stepanenkoyura353@mail.ru'],
                 inn=None,
                 doc_name=None,
                 post=None,
@@ -341,7 +347,7 @@ class DbInteraction():
                 role_id=1 if employee.get('email') == 'stasmen@mail.ru' else 2,
                 login=None
             )
-            imployee_id=self.get_employee(email=employee.get('email'))['data'][0]['id']
+            imployee_id = self.get_employee(email=employee.get('email'))['data'][0]['id']
             for head in dataTableHeader:
                 self.add_table_headers(
                     title=head['title'],
@@ -483,7 +489,7 @@ class DbInteraction():
                     equipment_subtype_id=equipment_subtype_id
                 )
 
-            id_order =self.add_orders(
+            id_order = self.add_orders(
                 created_at=order.get('created_at') / 1000 if order.get('created_at') else None,
                 done_at=order.get('done_at') / 1000 if order.get('done_at') else None,
                 closed_at=order.get('closed_at') / 1000 if order.get('closed_at') else None,
@@ -496,11 +502,18 @@ class DbInteraction():
 
                 ad_campaign_id=1,
                 branch_id=1,
-                status_id=self.get_status(name=order['status']['name'])['data'][0]['id'] if self.get_status(name=order['status']['name'])['data'] else None,
-                client_id=self.get_clients(name=order['client']['name'])['data'][0]['id'] if order.get('client') and self.get_clients(name=order['client']['name'])['data'] else None,
-                order_type_id=self.get_order_type(name=order['order_type']['name'])['data'][0]['id'] if order.get('order_type') else None,
+                status_id=self.get_status(name=order['status']['name'])['data'][0]['id'] if
+                self.get_status(name=order['status']['name'])['data'] else None,
+                client_id=self.get_clients(name=order['client']['name'])['data'][0]['id'] if order.get('client') and
+                                                                                             self.get_clients(
+                                                                                                 name=order['client'][
+                                                                                                     'name'])[
+                                                                                                 'data'] else None,
+                order_type_id=self.get_order_type(name=order['order_type']['name'])['data'][0]['id'] if order.get(
+                    'order_type') else None,
                 closed_by_id=dict_emploeey_ids[str(order.get('closed_by_id'))] if order.get('closed_by_id') else None,
-                created_by_id=dict_emploeey_ids[str(order.get('created_by_id'))] if order.get('created_by_id') else None,
+                created_by_id=dict_emploeey_ids[str(order.get('created_by_id'))] if order.get(
+                    'created_by_id') else None,
                 engineer_id=dict_emploeey_ids[str(order.get('engineer_id'))] if order.get('engineer_id') else None,
                 manager_id=dict_emploeey_ids[str(order.get('manager_id'))] if order.get('manager_id') else None,
 
@@ -512,14 +525,16 @@ class DbInteraction():
                 serial=order.get('serial'),
                 subtype=equipment_subtype_id,
                 malfunction=order.get('malfunction'),
-                packagelist=order.get('packagelist') if order.get('packagelist') else order['custom_fields'].get('f718508'),
+                packagelist=order.get('packagelist') if order.get('packagelist') else order['custom_fields'].get(
+                    'f718508'),
                 appearance=order.get('appearance'),
                 manager_notes=order.get('manager_notes'),
                 engineer_notes=order.get('engineer_notes'),
                 resume=order.get('resume'),
                 cell=None,
 
-                estimated_cost=order.get('estimated_cost', 0) if (type(order.get('estimated_cost', 0)) == int or type(order.get('estimated_cost', 0)) == float) else 0,
+                estimated_cost=order.get('estimated_cost', 0) if (type(order.get('estimated_cost', 0)) == int or type(
+                    order.get('estimated_cost', 0)) == float) else 0,
                 missed_payments=order.get('missed_payments', 0),
                 discount_sum=order.get('discount_sum', 0),
                 payed=order.get('payed', 0),
@@ -536,7 +551,8 @@ class DbInteraction():
                         amount=operation.get('amount'),
                         cost=operation.get('cost'),
                         discount_value=operation.get('discount_value'),
-                        engineer_id=dict_emploeey_ids[str(operation.get('engineer_id'))] if operation.get('engineer_id') else None,
+                        engineer_id=dict_emploeey_ids[str(operation.get('engineer_id'))] if operation.get(
+                            'engineer_id') else None,
                         price=operation.get('price') + operation.get('discount_value'),
                         total=operation.get('price'),
                         title=operation.get('title'),
@@ -553,7 +569,8 @@ class DbInteraction():
                         amount=part.get('amount'),
                         cost=part.get('cost'),
                         discount_value=part.get('discount_value'),
-                        engineer_id=dict_emploeey_ids[str(part.get('engineer_id'))] if part.get('engineer_id') else None,
+                        engineer_id=dict_emploeey_ids[str(part.get('engineer_id'))] if part.get(
+                            'engineer_id') else None,
                         price=part.get('price') + part.get('discount_value'),
                         total=part.get('price'),
                         title=part.get('title'),
@@ -566,7 +583,8 @@ class DbInteraction():
             if order.get('attachments'):
                 for attachment in order.get('attachments'):
                     self.add_attachments(
-                        created_by_id=dict_emploeey_ids[str(attachment.get('created_by_id'))] if attachment.get('created_by_id') else None,
+                        created_by_id=dict_emploeey_ids[str(attachment.get('created_by_id'))] if attachment.get(
+                            'created_by_id') else None,
                         created_at=attachment.get('created_at') / 1000 if attachment.get('created_at') else None,
                         filename=attachment.get('filename'),
                         url=attachment.get('url'),
@@ -575,7 +593,7 @@ class DbInteraction():
             n += 1
             if n == len(list_orders):
                 index = int(order['id_label'][4:])
-                self.edit_counts(id=1, count=index+1, prefix=None, description=None)
+                self.edit_counts(id=1, count=index + 1, prefix=None, description=None)
 
         print('Заказы обнавлены')
 
@@ -586,18 +604,18 @@ class DbInteraction():
                 'data': alfa,
                 'title': 'Транзакции Альфа Банк 2018',
                 'cashbox_id': 4
-            # }, {
-            #     'data': alfa2019,
-            #     'title': 'Транзакции Альфа Банк 2019',
-            #     'cashbox_id': 4
-            # }, {
-            #     'data': alfa2020,
-            #     'title': 'Транзакции Альфа Банк 2020',
-            #     'cashbox_id': 4
-            # }, {
-            #     'data': alfa2021,
-            #     'title': 'Транзакции Альфа Банк 2021',
-            #     'cashbox_id': 4
+                # }, {
+                #     'data': alfa2019,
+                #     'title': 'Транзакции Альфа Банк 2019',
+                #     'cashbox_id': 4
+                # }, {
+                #     'data': alfa2020,
+                #     'title': 'Транзакции Альфа Банк 2020',
+                #     'cashbox_id': 4
+                # }, {
+                #     'data': alfa2021,
+                #     'title': 'Транзакции Альфа Банк 2021',
+                #     'cashbox_id': 4
             }, {
                 'data': fedreserv,
                 'title': 'Транзакции Федеральный резерв',
@@ -606,26 +624,26 @@ class DbInteraction():
                 'data': kassa,
                 'title': 'Транзакции Касса 2018',
                 'cashbox_id': 1
-            # }, {
-            #     'data': kassa2019_1,
-            #     'title': 'Транзакции Касса 2019_1',
-            #     'cashbox_id': 1
-            # }, {
-            #     'data': kassa2019_2,
-            #     'title': 'Транзакции Касса 2019_2',
-            #     'cashbox_id': 1
-            # }, {
-            #     'data': kassa2019_3,
-            #     'title': 'Транзакции Касса 2019_3',
-            #     'cashbox_id': 1
-            # }, {
-            #     'data': kassa2020,
-            #     'title': 'Транзакции Касса 2020',
-            #     'cashbox_id': 1
-            # }, {
-            #     'data': kassa2021,
-            #     'title': 'Транзакции Касса 2021',
-            #     'cashbox_id': 1
+                # }, {
+                #     'data': kassa2019_1,
+                #     'title': 'Транзакции Касса 2019_1',
+                #     'cashbox_id': 1
+                # }, {
+                #     'data': kassa2019_2,
+                #     'title': 'Транзакции Касса 2019_2',
+                #     'cashbox_id': 1
+                # }, {
+                #     'data': kassa2019_3,
+                #     'title': 'Транзакции Касса 2019_3',
+                #     'cashbox_id': 1
+                # }, {
+                #     'data': kassa2020,
+                #     'title': 'Транзакции Касса 2020',
+                #     'cashbox_id': 1
+                # }, {
+                #     'data': kassa2021,
+                #     'title': 'Транзакции Касса 2021',
+                #     'cashbox_id': 1
             }, {
                 'data': obus,
                 'title': 'Транзакции Обустройство',
@@ -750,7 +768,7 @@ class DbInteraction():
         else:
             adCampaign = self.pgsql_connetction.session.query(AdCampaign)
 
-        self.pgsql_connetction.session.expire_all()
+        # self.pgsql_connetction.session.expire_all()
         result = {'success': True}
         count = adCampaign.count()
         result['count'] = count
@@ -797,19 +815,19 @@ class DbInteraction():
     #  Таблица СОТРУДНИКИ ==================================================================================
 
     def add_employee(self,
-                    first_name,
-                    last_name,
-                    email,
-                    phone,
-                    notes,
-                    deleted,
-                    inn,
-                    doc_name,
-                    post,
-                    permissions,
-                    role_id,
-                    login,
-                    password):
+                     first_name,
+                     last_name,
+                     email,
+                     phone,
+                     notes,
+                     deleted,
+                     inn,
+                     doc_name,
+                     post,
+                     permissions,
+                     role_id,
+                     login,
+                     password):
         '''
         Функция добавляет запись о новом сотруднике в таблицу данных сотрудников
         :param first_name: Имя
@@ -856,16 +874,16 @@ class DbInteraction():
         if any([id, first_name, last_name, email, phone, notes, post, deleted, role_id, login]):
             employees = self.pgsql_connetction.session.query(Employees).filter(
 
-                    Employees.id == id if id else True,
-                    Employees.first_name.like(f'%{first_name}%') if first_name else True,
-                    Employees.last_name.like(f'%{last_name}%') if last_name else True,
-                    Employees.email == email if email else True,
-                    Employees.phone.like(f'%{phone}%') if phone else True,
-                    Employees.notes.like(f'%{notes}%') if notes else True,
-                    Employees.post.like(f'%{post}%') if post else True,
-                    Employees.deleted == bool(deleted) if deleted else True,
-                    Employees.role_id == role_id if role_id else True,
-                    Employees.login == login if login else True
+                Employees.id == id if id else True,
+                Employees.first_name.like(f'%{first_name}%') if first_name else True,
+                Employees.last_name.like(f'%{last_name}%') if last_name else True,
+                Employees.email == email if email else True,
+                Employees.phone.like(f'%{phone}%') if phone else True,
+                Employees.notes.like(f'%{notes}%') if notes else True,
+                Employees.post.like(f'%{post}%') if post else True,
+                Employees.deleted == bool(deleted) if deleted else True,
+                Employees.role_id == role_id if role_id else True,
+                Employees.login == login if login else True
 
             )
         else:
@@ -936,21 +954,21 @@ class DbInteraction():
         return result
 
     def edit_employee(self, id, first_name, last_name, email, phone, notes, post, deleted, inn, doc_name,
-                     permissions, role_id, login, password=None):
+                      permissions, role_id, login, password=None):
         self.pgsql_connetction.session.query(Employees).filter_by(id=id if type(id) == int else None).update({
-                'first_name': first_name if first_name is not None else Employees.first_name,
-                'last_name': last_name if last_name is not None else Employees.last_name,
-                'email': email if email is not None else Employees.email,
-                'phone': phone if phone is not None else Employees.phone,
-                'notes': notes if notes is not None else Employees.notes,
-                'deleted': deleted if deleted is not None else Employees.deleted,
-                'inn': inn if inn is not None else Employees.inn,
-                'doc_name': doc_name if doc_name is not None else Employees.doc_name,
-                'post': post if post is not None else Employees.post,
-                'role_id': role_id if role_id is not None else Employees.role_id,
-                'permissions': permissions if permissions is not None else Employees.permissions,
-                'login': login if login is not None else Employees.login,
-                'password': password if password is not None else Employees.password
+            'first_name': first_name if first_name is not None else Employees.first_name,
+            'last_name': last_name if last_name is not None else Employees.last_name,
+            'email': email if email is not None else Employees.email,
+            'phone': phone if phone is not None else Employees.phone,
+            'notes': notes if notes is not None else Employees.notes,
+            'deleted': deleted if deleted is not None else Employees.deleted,
+            'inn': inn if inn is not None else Employees.inn,
+            'doc_name': doc_name if doc_name is not None else Employees.doc_name,
+            'post': post if post is not None else Employees.post,
+            'role_id': role_id if role_id is not None else Employees.role_id,
+            'permissions': permissions if permissions is not None else Employees.permissions,
+            'login': login if login is not None else Employees.login,
+            'password': password if password is not None else Employees.password
         })
         self.pgsql_connetction.session.commit()
         return self.get_employee()
@@ -984,7 +1002,7 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(table_headers)
         return table_headers.id
 
-    def get_table_headers(self, id=None, title=None, field=None, employee_id=None, visible=None ):
+    def get_table_headers(self, id=None, title=None, field=None, employee_id=None, visible=None):
 
         if any([id, title, field, employee_id, visible]):
             table_headers = self.pgsql_connetction.session.query(TableHeaders).filter(
@@ -1054,14 +1072,14 @@ class DbInteraction():
         return attachments.id
 
     def get_attachments(self,
-                     id=None,
-                     created_by_id=None,
-                     created_at=None,
-                     updated_at=None,
-                     filename=None,
-                     url=None,
-                     order_id=None,
-                     page=0):
+                        id=None,
+                        created_by_id=None,
+                        created_at=None,
+                        updated_at=None,
+                        filename=None,
+                        url=None,
+                        order_id=None,
+                        page=0):
 
         if any([id, created_by_id, created_at, updated_at, filename, url, order_id]):
             attachments = self.pgsql_connetction.session.query(Attachments).filter(
@@ -1095,20 +1113,19 @@ class DbInteraction():
                 'filename': row.filename,
                 'url': row.url,
                 'order_id': row.order_id
-                })
+            })
 
         result['data'] = data
         result['page'] = page
         return result
 
-
     def edit_attachments(self, id, created_by_id, created_at, filename, url, order_id):
         self.pgsql_connetction.session.query(Attachments).filter_by(id=id if type(id) == int else None).update({
-                'created_by_id': created_by_id if created_by_id is not None else Attachments.created_by_id,
-                'created_at': created_at if created_at is not None else Attachments.created_at,
-                'filename': filename if filename is not None else Attachments.filename,
-                'url': url if url is not None else Attachments.url,
-                'order_id': order_id if order_id is not None else Attachments.order_id
+            'created_by_id': created_by_id if created_by_id is not None else Attachments.created_by_id,
+            'created_at': created_at if created_at is not None else Attachments.created_at,
+            'filename': filename if filename is not None else Attachments.filename,
+            'url': url if url is not None else Attachments.url,
+            'order_id': order_id if order_id is not None else Attachments.order_id
         })
         return self.get_attachments()
 
@@ -1381,7 +1398,6 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_discount_margin()
 
-
     # Таблица ТИПОВ ЗАКАЗА ==================================================================================
 
     def add_order_type(self, name):
@@ -1506,7 +1522,7 @@ class DbInteraction():
         self.pgsql_connetction.session.query(StatusGroup).filter_by(id=id).update({
             'name': name if name is not None else StatusGroup.name,
             'type_group': type_group if type_group is not None else StatusGroup.type_group,
-            'color': color if color is not None else  StatusGroup.color,
+            'color': color if color is not None else StatusGroup.color,
         })
         self.pgsql_connetction.session.commit()
         return self.get_status_group()
@@ -1519,7 +1535,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_status_group()
 
- # Таблица СТАТУСОВ ==================================================================================
+    # Таблица СТАТУСОВ ==================================================================================
 
     def add_status(self, name, color, group, deadline, comment_required, payment_required, available_to):
 
@@ -1537,7 +1553,7 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(status)
         return status.id
 
-    def get_status(self, id=None, name=None, color=None, group=None,page=0):
+    def get_status(self, id=None, name=None, color=None, group=None, page=0):
         if any([id, name, color, group]):
             status = self.pgsql_connetction.session.query(Status).filter(
                 and_(
@@ -1598,7 +1614,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
- # Таблица ОПЕРАЦИЙ ==================================================================================
+    # Таблица ОПЕРАЦИЙ ==================================================================================
 
     def add_operations(self,
                        amount,
@@ -1718,22 +1734,22 @@ class DbInteraction():
         return result
 
     def edit_operations(self,
-                       id,
-                       amount=None,
-                       cost=None,
-                       discount_value=None,
-                       engineer_id=None,
-                       price=None,
-                       total=None,
-                       title=None,
-                       comment=None,
-                       percent=None,
-                       discount=None,
-                       deleted=None,
-                       warranty_period=None,
-                       created_at=None,
-                       order_id=None,
-                       dict_id=None
+                        id,
+                        amount=None,
+                        cost=None,
+                        discount_value=None,
+                        engineer_id=None,
+                        price=None,
+                        total=None,
+                        title=None,
+                        comment=None,
+                        percent=None,
+                        discount=None,
+                        deleted=None,
+                        warranty_period=None,
+                        created_at=None,
+                        order_id=None,
+                        dict_id=None
                         ):
 
         self.pgsql_connetction.session.query(Operations).filter_by(id=id).update({
@@ -1764,7 +1780,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
- # Таблица ЗАПЧАСТЕЙ ==================================================================================
+    # Таблица ЗАПЧАСТЕЙ ==================================================================================
 
     def add_oder_parts(self,
                        amount,
@@ -1876,21 +1892,21 @@ class DbInteraction():
         return result
 
     def edit_oder_parts(self,
-                       id,
-                       amount=None,
-                       cost=None,
-                       discount_value=None,
-                       engineer_id=None,
-                       price=None,
-                       total=None,
-                       title=None,
-                       comment=None,
-                       percent=None,
-                       discount=None,
-                       deleted=None,
-                       warranty_period=None,
-                       created_at=None,
-                       order_id=None
+                        id,
+                        amount=None,
+                        cost=None,
+                        discount_value=None,
+                        engineer_id=None,
+                        price=None,
+                        total=None,
+                        title=None,
+                        comment=None,
+                        percent=None,
+                        discount=None,
+                        deleted=None,
+                        warranty_period=None,
+                        created_at=None,
+                        order_id=None
                         ):
 
         self.pgsql_connetction.session.query(OrderParts).filter_by(id=id).update({
@@ -1920,7 +1936,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ТЕЛЕФОНОВ ==================================================================================
+    # Таблица ТЕЛЕФОНОВ ==================================================================================
 
     def add_phone(self, number, title, notify, client_id):
 
@@ -2098,7 +2114,6 @@ class DbInteraction():
                     phone=None,
                     page=0):
 
-
         if any([id, name, conflicted != None, email, juridical != None, supplier != None, deleted != None, phone]):
             clients = self.pgsql_connetction.session.query(Clients).join(Clients.phone).filter(
                 and_(
@@ -2177,11 +2192,11 @@ class DbInteraction():
                 'tags': row.tags,
                 'created_at': row.created_at,
                 'phone': [{
-                        'id': ph.id,
-                        'number': ph.number,
-                        'title': ph.title,
+                    'id': ph.id,
+                    'number': ph.number,
+                    'title': ph.title,
                     'notify': ph.notify
-                    } for ph in row.phone] if row.phone else [],
+                } for ph in row.phone] if row.phone else [],
                 'ad_campaign': {
                     'id': row.ad_campaign.id,
                     'name': row.ad_campaign.name
@@ -2279,646 +2294,8 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_clients()
 
-    # Таблица ЗАКАЗОВ ==================================================================================
 
-    def add_orders(self,
-                   created_at,
-                   done_at,
-                   closed_at,
-                   assigned_at,
-                   duration,
-                   estimated_done_at,
-                   scheduled_for,
-                   warranty_date,
-                   status_deadline,
-
-                   ad_campaign_id,
-                   branch_id,
-                   status_id,
-                   client_id,
-                   order_type_id,
-                   kindof_good,
-                   brand,
-                   subtype,
-                   model,
-                   closed_by_id,
-                   created_by_id,
-                   engineer_id,
-                   manager_id,
-
-                   id_label,
-                   prefix,
-                   serial,
-                   malfunction,
-                   packagelist,
-                   appearance,
-                   manager_notes,
-                   engineer_notes,
-                   resume,
-                   cell,
-
-                   estimated_cost,
-                   missed_payments,
-                   discount_sum,
-                   payed,
-                   price,
-
-                   urgent,
-                   ):
-
-        orders = Orders(
-            created_at=created_at,
-            done_at=done_at,
-            closed_at=closed_at,
-            assigned_at=assigned_at,
-            duration=duration,
-            estimated_done_at=estimated_done_at,
-            scheduled_for=scheduled_for,
-            warranty_date=warranty_date,
-            status_deadline=status_deadline,
-
-            ad_campaign_id=ad_campaign_id,
-            branch_id=branch_id,
-            status_id=status_id,
-            client_id=client_id,
-            order_type_id=order_type_id,
-            kindof_good_id=kindof_good,
-            brand_id=brand,
-            subtype_id=subtype,
-            model_id=model,
-            closed_by_id=closed_by_id,
-            created_by_id=created_by_id,
-            engineer_id=engineer_id,
-            manager_id=manager_id,
-
-            id_label=id_label,
-            prefix=prefix,
-            serial=serial,
-            malfunction=malfunction,
-            packagelist=packagelist,
-            appearance=appearance,
-            manager_notes=manager_notes,
-            engineer_notes=engineer_notes,
-            resume=resume,
-            cell=cell,
-
-            estimated_cost=estimated_cost,
-            missed_payments=missed_payments,
-            discount_sum=discount_sum,
-            payed=payed,
-            price=price,
-
-            urgent=urgent
-        )
-        self.pgsql_connetction.session.add(orders)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(orders)
-        order = {
-            'id': orders.id,
-            'created_at': orders.created_at,
-            'estimated_done_at': orders.estimated_done_at,
-            'scheduled_for': orders.scheduled_for,
-            'warranty_date': orders.warranty_date,
-            'status_deadline': orders.status_deadline,
-
-            'id_label': orders.id_label,
-            'serial': orders.serial,
-            'malfunction': orders.malfunction,
-            'packagelist': orders.packagelist,
-            'appearance': orders.appearance,
-            'manager_notes': orders.manager_notes,
-
-            'estimated_cost': orders.estimated_cost,
-
-            'urgent': orders.urgent,
-            'ad_campaign': {
-                'id': orders.ad_campaign.id,
-                'name': orders.ad_campaign.name
-            } if orders.ad_campaign else {},
-            'branch': {
-                'id': orders.branch.id,
-                'name': orders.branch.name
-            } if orders.branch else {},
-            'status': {
-                'id': orders.status.id,
-                'name': orders.status.name,
-                'color': orders.status.color,
-                'group': orders.status.group
-            } if orders.status else {},
-            'client': {
-                'id': orders.client.id,
-                'conflicted': orders.client.conflicted,
-                'email': orders.client.email,
-                'name': orders.client.name,
-                'name_doc': orders.client.name_doc,
-                'discount_good_type': orders.client.discount_good_type,
-                'discount_materials_type': orders.client.discount_materials_type,
-                'discount_service_type': orders.client.discount_service_type,
-                'notes': orders.client.notes,
-                'phone': [{
-                    'id': ph.id,
-                    'number': ph.number,
-                    'notify': ph.notify,
-                    'title': ph.title
-                } for ph in orders.client.phone] if orders.client.phone else []
-            } if orders.client else {},
-            'order_type': {
-                'id': orders.order_type.id,
-                'name': orders.order_type.name
-            } if orders.order_type else {},
-            'kindof_good': {
-                'id': orders.kindof_good.id,
-                'title': orders.kindof_good.title,
-                'icon': orders.kindof_good.icon,
-            } if orders.kindof_good else {},
-            'brand': {
-                'id': orders.brand.id,
-                'title': orders.brand.title,
-            } if orders.brand else {},
-            'subtype': {
-                'id': orders.subtype.id,
-                'title': orders.subtype.title,
-            } if orders.subtype else {},
-            'model': {
-                'id': orders.model.id,
-                'title': orders.model.title,
-            } if orders.model else {},
-            'engineer_id': orders.engineer_id,
-            'manager_id': orders.manager_id,
-        }
-        return order
-
-    def get_orders(self,
-            id=None,
-            created_at=None,
-            done_at=None,
-            closed_at=None,
-            assigned_at=None,
-            estimated_done_at=None,
-            scheduled_for=None,
-            warranty_date=None,
-
-            ad_campaign_id=None,
-            branch_id=None,
-            status_id=None,
-            client_id=None,
-            order_type_id=None,
-            kindof_good=None,
-            brand=None,
-            subtype=None,
-            model=None,
-            cell=None,
-            engineer_id=None,
-            manager_id=None,
-
-            id_label=None,
-            serial=None,
-            client_name=None,
-            client_phone=None,
-            search=None,
-
-            urgent=None,
-            overdue=None,
-            status_overdue=None,
-
-            field_sort='id',
-            sort='desc',
-            page=0):
-
-
-
-        if any([id, created_at, done_at, closed_at, assigned_at, estimated_done_at, scheduled_for, warranty_date,
-                ad_campaign_id, branch_id, status_id, client_id, order_type_id, engineer_id, manager_id, id_label,
-                kindof_good, brand, model, subtype, serial, client_name, client_phone, urgent, overdue, status_overdue,
-                search, cell]):
-
-            if search:
-                # search = search.lower()
-                orders = self.pgsql_connetction.session.query(Orders)\
-                    .join(Orders.client) \
-                    .options(contains_eager(Orders.client)) \
-                    .filter(
-                    or_(
-                        Orders.id_label.ilike(f'%{search}%'),
-                        # func.lower(Orders.kindof_good).like(f'%{search}%'),
-                        # Orders.brand.ilike(f'%{search}%'),
-                        # Orders.model.ilike(f'%{search}%'),
-                        # Orders.subtype.ilike(f'%{search}%'),
-                        Orders.serial.ilike(f'%{search}%'),
-                        Orders.client.property.mapper.class_.name.ilike(f'%{search}%'),
-                        # Orders.client.property.mapper.class_.phone[0].ilike(f'%{search}%'),
-                        Orders.id_label.ilike(f'%{search}%'),
-                    )
-                ).order_by(
-                    getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
-            else:
-                orders = self.pgsql_connetction.session.query(Orders).join(Orders.client).filter(
-                    and_(
-                        Orders.id == id if id else True,
-                        (Orders.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
-                        (Orders.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
-                        (Orders.done_at >= done_at[0] if done_at[0] else True) if done_at else True,
-                        (Orders.done_at <= done_at[1] if done_at[1] else True) if done_at else True,
-                        (Orders.closed_at >= closed_at[0] if closed_at[0] else True) if closed_at else True,
-                        (Orders.closed_at <= closed_at[1] if closed_at[1] else True) if closed_at else True,
-                        (Orders.assigned_at >= assigned_at[0] if assigned_at[0] else True) if assigned_at else True,
-                        (Orders.assigned_at <= assigned_at[1] if assigned_at[1] else True) if assigned_at else True,
-                        (Orders.estimated_done_at >= estimated_done_at[0] if estimated_done_at[0] else True) if estimated_done_at else True,
-                        (Orders.estimated_done_at <= estimated_done_at[1] if estimated_done_at[1] else True) if estimated_done_at else True,
-                        (Orders.scheduled_for >= scheduled_for[0] if scheduled_for[0] else True) if scheduled_for else True,
-                        (Orders.scheduled_for <= scheduled_for[1] if scheduled_for[1] else True) if scheduled_for else True,
-                        (Orders.warranty_date >= warranty_date[0] if warranty_date[0] else True) if warranty_date else True,
-                        (Orders.warranty_date <= warranty_date[1] if warranty_date[1] else True) if warranty_date else True,
-
-                        Orders.ad_campaign_id.in_(ad_campaign_id) if ad_campaign_id else True,
-                        Orders.branch_id.in_(branch_id) if branch_id else True,
-                        Orders.status_id.in_(status_id) if status_id else True,
-                        Orders.client_id.in_(client_id) if client_id else True,
-                        Orders.order_type_id.in_(order_type_id) if order_type_id else True,
-                        Orders.engineer_id.in_(engineer_id) if engineer_id else True,
-                        Orders.manager_id.in_(manager_id) if manager_id else True,
-
-                        Orders.cell == cell if cell else True,
-                        Orders.id_label.ilike(f'%{id_label}%') if id_label else True,
-                        # Orders.kindof_good == kindof_good if kindof_good else True,
-                        # Orders.brand == brand if brand else True,
-                        # Orders.model == model if model else True,
-                        # Orders.subtype == subtype if subtype else True,
-                        # Orders.serial.ilike(f'%{serial}%') if serial else True,
-                        Orders.client.property.mapper.class_.name.ilike(f'%{client_name}%') if client_name else True,
-                        # Orders.client.property.mapper.class_.phone[0].ilike(f'%{client_name}%') if client_phone else True,
-
-
-                        Orders.urgent == urgent if urgent != None else True,
-                        (Orders.estimated_done_at < time_now()) if overdue else True,
-                        (Orders.status_deadline < time_now()) if status_overdue else True
-                    )
-                ).order_by(getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
-        else:
-            orders = self.pgsql_connetction.session.query(Orders)\
-                .order_by(getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
-
-        self.pgsql_connetction.session.expire_all()
-        result = {'success': True}
-        count = orders.count()
-        result['count'] = count
-
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
-
-        if page > max_page and max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
-
-        data = []
-        for row in orders[50 * page: 50 * (page + 1)]:
-            discount_sum = 0
-            price = 0
-            payed = 0
-            if row.operations:
-                for operation in row.operations:
-                    if not operation.deleted:
-                        discount_sum += operation.discount_value
-                        price += operation.total
-            if row.parts:
-                for parts in row.parts:
-                    if not parts.deleted:
-                        discount_sum += parts.discount_value
-                        price += parts.total
-            if row.payments:
-                for payment in row.payments:
-                    if not payment.deleted:
-                        payed += payment.income
-                        payed += payment.outcome
-            data.append({
-                'id': row.id,
-                'created_at': row.created_at,
-                'updated_at': row.updated_at,
-                'done_at': row.done_at,
-                'closed_at': row.closed_at,
-                'assigned_at': row.assigned_at,
-                'duration': row.duration,
-                'estimated_done_at': row.estimated_done_at,
-                'scheduled_for': row.scheduled_for,
-                'warranty_date': row.warranty_date,
-                'status_deadline': row.status_deadline,
-
-                'id_label': row.id_label,
-                'prefix': row.prefix,
-                'serial': row.serial,
-                'malfunction': row.malfunction,
-                'packagelist': row.packagelist,
-                'appearance': row.appearance,
-                'engineer_notes': row.engineer_notes,
-                'manager_notes': row.manager_notes,
-                'resume': row.resume,
-                'cell': row.cell,
-
-                'estimated_cost': row.estimated_cost,
-                'missed_payments': price - payed,
-                'discount_sum': discount_sum,
-                'payed': payed,
-                'price': price,
-                'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
-                'remaining_status': row.status_deadline - time_now() if row.status_deadline else None,
-                'remaining_warranty': row.warranty_date - time_now() if row.warranty_date else None,
-
-                'overdue': row.estimated_done_at > time_now() if row.estimated_done_at else False,
-                'status_overdue': row.status_deadline > time_now() if row.status_deadline else False,
-                'urgent': row.urgent,
-                'warranty_measures': row.warranty_date < time_now() if row.warranty_date else False,
-
-                'ad_campaign': {
-                    'id': row.ad_campaign.id,
-                    'name': row.ad_campaign.name
-                } if row.ad_campaign else {},
-                'branch': {
-                    'id': row.branch.id,
-                    'name': row.branch.name
-                } if row.branch else {},
-                'status': {
-                    'id': row.status.id,
-                    'name': row.status.name,
-                    'color': row.status.color,
-                    'group': row.status.group
-                } if row.status else {},
-                'client': {
-                    'id': row.client.id,
-                    'ad_campaign': {
-                        'id': row.client.ad_campaign.id,
-                        'name': row.client.ad_campaign.name
-                    },
-                    'address': row.client.address,
-                    'conflicted': row.client.conflicted,
-                    'name_doc': row.client.name_doc,
-
-                    'discount_good_type': row.client.discount_good_type,
-                    'discount_materials_type': row.client.discount_materials_type,
-                    'discount_service_type': row.client.discount_service_type,
-
-                    'discount_code': row.client.discount_code,
-
-                    'discount_goods': row.client.discount_goods,
-                    'discount_goods_margin_id': row.client.discount_goods_margin_id,
-
-                    'discount_materials': row.client.discount_materials,
-                    'discount_materials_margin_id': row.client.discount_materials_margin_id,
-
-                    'discount_services': row.client.discount_services,
-                    'discount_service_margin_id': row.client.discount_service_margin_id,
-
-                    'email': row.client.email,
-                    'juridical': row.client.juridical,
-                    'ogrn': row.client.ogrn,
-                    'inn': row.client.inn,
-                    'kpp': row.client.kpp,
-                    'juridical_address': row.client.juridical_address,
-                    'director': row.client.director,
-                    'bank_name': row.client.bank_name,
-                    'settlement_account': row.client.settlement_account,
-                    'corr_account': row.client.corr_account,
-                    'bic': row.client.bic,
-                    'created_at': row.client.created_at,
-                    'updated_at': row.client.updated_at,
-                    'name': row.client.name,
-                    'notes': row.client.notes,
-                    'supplier': row.client.supplier,
-                    'phone': [{
-                        'id': ph.id,
-                        'number': ph.number,
-                        'title': ph.title,
-                        'notify': ph.notify
-                    } for ph in row.client.phone] if row.client.phone else []
-                } if row.client else {},
-                # 'engineer': {
-                #     'id': row.engineer.id,
-                #     'first_name': row.engineer.first_name,
-                #     'last_name': row.engineer.last_name,
-                #     'email': row.engineer.email,
-                #     'phone': row.engineer.phone,
-                # } if row.engineer else {},
-                # 'manager': {
-                #     'id': row.manager.id,
-                #     'first_name': row.manager.first_name,
-                #     'last_name': row.manager.last_name,
-                #     'email': row.manager.email,
-                #     'phone': row.manager.phone,
-                # } if row.manager else {},
-                'order_type': {
-                    'id': row.order_type.id,
-                    'name': row.order_type.name
-                } if row.order_type else {},
-                'kindof_good': {
-                    'id': row.kindof_good.id,
-                    'title': row.kindof_good.title,
-                    'icon': row.kindof_good.icon,
-                } if row.kindof_good else {},
-                'brand': {
-                    'id': row.brand.id,
-                    'title': row.brand.title,
-                } if row.brand else {},
-                'subtype': {
-                    'id': row.subtype.id,
-                    'title': row.subtype.title,
-                } if row.subtype else {},
-                'model': {
-                    'id': row.model.id,
-                    'title': row.model.title,
-                } if row.model else {},
-                'closed_by_id': row.closed_by_id,
-                'created_by_id': row.created_by_id,
-                'engineer_id': row.engineer_id,
-                'manager_id': row.manager_id,
-                'operations': [{
-                    'id': operat.id,
-                    'amount': operat.amount,
-                    'cost': operat.cost,
-                    'discount_value': operat.discount_value,
-                    'engineer_id': operat.engineer_id,
-                    'price': operat.price,
-                    'total': operat.total,
-                    'warranty': (operat.created_at + operat.warranty_period) > time_now(),
-                    'title': operat.title,
-                    'comment': operat.comment,
-                    'percent': operat.percent,
-                    'discount': operat.discount,
-                    'deleted': operat.deleted,
-                    'warranty_period': operat.warranty_period,
-                    'created_at': operat.created_at,
-                    'dict_service': {
-                        'id': operat.dict_service.id,
-                        'title': operat.dict_service.title,
-                        'earnings_percent': operat.dict_service.earnings_percent,
-                        'earnings_summ': operat.dict_service.earnings_summ
-                    } if operat.dict_service else {},
-                } for operat in row.operations] if row.operations else [],
-                'parts': [{
-                    'id': part.id,
-                    'amount': part.amount,
-                    'cost': part.cost,
-                    'discount_value': part.discount_value,
-                    'engineer_id': part.engineer_id,
-                    'price': part.price,
-                    'total': part.total,
-                    'warranty': (part.created_at + part.warranty_period) > time_now(),
-                    'title': part.title,
-                    'comment': part.comment,
-                    'percent': part.percent,
-                    'discount': part.discount,
-                    'deleted': part.deleted,
-                    'warranty_period': part.warranty_period,
-                    'created_at': part.created_at
-                } for part in row.parts] if row.parts else [],
-                # 'attachments': [{
-                #     'id': attachment.id,
-                #     'amount': attachment.amount,
-                #     'cost': attachment.cost,
-                #     'discount_value': attachment.discount_value,
-                #     'engineer_id': attachment.engineer_id,
-                #     'price': attachment.price,
-                #     'warranty': attachment.warranty,
-                #     'title': attachment.title,
-                #     'warranty_period': attachment.warranty_period,
-                #     'created_at': attachment.created_at
-                # } for attachment in row.attachments] if row.attachments else [],
-                'payments': [
-                    {
-                        'id': payment.id,
-                        'cashflow_category': payment.cashflow_category,
-                        'description': payment.description,
-                        'income': payment.income,
-                        'outcome': payment.outcome,
-                        'direction': payment.direction,
-                        'can_print_fiscal': payment.can_print_fiscal,
-                        'deleted': payment.deleted,
-                        'is_fiscal': payment.is_fiscal,
-                        'created_at': payment.created_at,
-                        'custom_created_at': payment.custom_created_at,
-                        'tags': payment.tags,
-                        'relation_id': payment.relation_id,
-                        'cashbox': {
-                            'id': payment.cashbox.id,
-                            'title': payment.cashbox.title,
-                            'type': payment.cashbox.type
-                        } if payment.cashbox else {},
-                        'client': {
-                            'id': payment.client.id,
-                            'name': payment.client.name,
-                            'phone': [ph.number for ph in row.client.phone] if payment.client.phone else []
-                        } if payment.client else {},
-                        'employee': {
-                            'id': payment.employee.id,
-                            'name': f'{payment.employee.last_name} {payment.employee.first_name}'
-                        } if payment.employee else {},
-                        'order': {
-                            'id': payment.order.id,
-                            'id_label': payment.order.id_label
-                        } if payment.order else {}
-                    } for payment in row.payments
-                ] if row.payments else []
-            })
-
-        result['data'] = data
-        result['page'] = page
-        return result
-
-    def edit_orders(self,
-                    id,
-                    created_at=None,
-                    done_at=None,
-                    closed_at=None,
-                    assigned_at=None,
-                    duration=None,
-                    estimated_done_at=None,
-                    scheduled_for=None,
-                    warranty_date=None,
-                    status_deadline=None,
-                    ad_campaign_id=None,
-                    branch_id=None,
-                    status_id=None,
-                    client_id=None,
-                    order_type_id=None,
-                    closed_by_id=None,
-                    created_by_id=None,
-                    engineer_id=None,
-                    manager_id=None,
-                    id_label=None,
-                    prefix=None,
-                    kindof_good=None,
-                    brand=None,
-                    model=None,
-                    subtype=None,
-                    serial=None,
-                    malfunction=None,
-                    packagelist=None,
-                    appearance=None,
-                    engineer_notes=None,
-                    manager_notes=None,
-                    resume=None,
-                    cell=None,
-                    estimated_cost=None,
-                    missed_payments=None,
-                    discount_sum=None,
-                    payed=None,
-                    price=None,
-                    urgent=None
-                    ):
-
-        self.pgsql_connetction.session.query(Orders).filter_by(id=id).update({
-            'created_at': created_at if created_at is not None else Orders.created_at,
-            'done_at': done_at if done_at is not None else Orders.done_at,
-            'closed_at': closed_at if closed_at is not None else Orders.closed_at,
-            'assigned_at': assigned_at if assigned_at is not None else Orders.assigned_at,
-            'duration': duration if duration is not None else Orders.duration,
-            'estimated_done_at': estimated_done_at if estimated_done_at is not None else Orders.estimated_done_at,
-            'scheduled_for': scheduled_for if scheduled_for is not None else Orders.scheduled_for,
-            'warranty_date': warranty_date if warranty_date is not None else Orders.warranty_date,
-            'status_deadline': status_deadline if status_deadline is not None else Orders.status_deadline,
-
-            'ad_campaign_id': ad_campaign_id if ad_campaign_id is not None else Orders.ad_campaign_id,
-            'branch_id': branch_id if branch_id is not None else Orders.branch_id,
-            'status_id': status_id if status_id is not None else Orders.status_id,
-            'client_id': client_id if client_id is not None else Orders.client_id,
-            'order_type_id': order_type_id if order_type_id is not None else Orders.order_type_id,
-            'kindof_good_id': kindof_good if kindof_good is not None else Orders.kindof_good_id,
-            'brand_id': brand if brand is not None else Orders.brand_id,
-            'subtype_id': subtype if subtype is not None else Orders.subtype_id,
-            'model_id': model if model is not None else Orders.model_id,
-            'closed_by_id': closed_by_id if closed_by_id is not None else Orders.closed_by_id,
-            'created_by_id': created_by_id if created_by_id is not None else Orders.created_by_id,
-            'engineer_id': engineer_id if engineer_id is not None else Orders.engineer_id,
-            'manager_id': manager_id if manager_id is not None else Orders.manager_id,
-
-            'id_label': id_label if id_label is not None else Orders.id_label,
-            'prefix': prefix if prefix is not None else Orders.prefix,
-            'serial': serial if serial is not None else Orders.serial,
-            'malfunction': malfunction if malfunction is not None else Orders.malfunction,
-            'packagelist': packagelist if packagelist is not None else Orders.packagelist,
-            'appearance': appearance if appearance is not None else Orders.appearance,
-            'engineer_notes': engineer_notes if engineer_notes is not None else Orders.engineer_notes,
-            'manager_notes': manager_notes if manager_notes is not None else Orders.manager_notes,
-            'resume': resume if resume is not None else Orders.resume,
-            'cell': cell if cell is not None else Orders.cell,
-
-            'estimated_cost': estimated_cost if estimated_cost is not None else Orders.estimated_cost,
-            'missed_payments': missed_payments if missed_payments is not None else Orders.missed_payments,
-            'discount_sum': discount_sum if discount_sum is not None else Orders.discount_sum,
-            'payed': payed if payed is not None else Orders.payed,
-            'price': price if price is not None else Orders.price,
-
-            'urgent': urgent if urgent is not None else Orders.urgent,
-
-        })
-        self.pgsql_connetction.session.commit()
-        return id
-
-    def del_orders(self, id):
-
-        orders = self.pgsql_connetction.session.query(Orders).get(id)
-        if orders:
-            self.pgsql_connetction.session.delete(orders)
-            self.pgsql_connetction.session.commit()
-            return self.get_orders()
-
-# Таблица СТРОК МЕНЮ ===============================================================================
+    # Таблица СТРОК МЕНЮ ===============================================================================
 
     def add_menu_row(self, title, img, url, group_name):
 
@@ -2984,130 +2361,8 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_menu_row()
 
-# Таблица БЕДЖЕЙ ===============================================================================
 
-    def add_badges(self, title, img, color):
-
-        badges = Badges(
-            title=title,
-            img=img,
-            color=color
-        )
-        self.pgsql_connetction.session.add(badges)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(badges)
-        return badges.id
-
-    def get_badges(self, employee_id):
-
-
-        badges = self.pgsql_connetction.session.query(Badges)
-
-        self.pgsql_connetction.session.expire_all()
-        result = {'success': True}
-        count = badges.count()
-        result['count'] = count
-
-        status = self.get_status()['data']
-
-        status_not_ready = [stat['id'] for stat in status if stat['group'] < 3]
-        status_ready = [stat['id'] for stat in status if stat['group'] == 4]
-
-        data = []
-        for row in badges:
-            data.append({
-                'id': row.id,
-                'title': row.title,
-                'img': row.img,
-                'filters': {
-                    'page': 0,
-                    'sort': 'asc',
-                    'sort_field': 'id',
-                    'engineer_id': [employee_id],
-                    'status_id': status_ready if row.id == 5 else status_not_ready,
-                    'urgent': True if row.id == 2 else None,
-                    'overdue': True if row.id == 3 else False,
-                    'status_overdue': True if row.id == 4 else False
-                },
-                'count': self.get_orders(
-                    engineer_id=[employee_id],
-                    status_id=status_ready if row.id == 5 else status_not_ready,
-                    urgent=True if row.id == 2 else None,
-                    overdue=True if row.id == 3 else False,
-                    status_overdue=True if row.id == 4 else False
-                )['count'],
-                'color': row.color,
-                'active': False
-            })
-        result['data'] = data
-        return result
-
-
-# Таблица ПОЛЬЗОВАТЕЛЬСКИХ ФИЛЬТРОВ ======================================================================
-
-    def add_custom_filters(self, title, filters, employee_id, general=False):
-
-        custom_filters = CustomFilters(
-            title=title,
-            filters=filters,
-            employee_id=employee_id,
-            general=general
-        )
-        self.pgsql_connetction.session.add(custom_filters)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(custom_filters)
-        return custom_filters.id
-
-    def get_custom_filters(self, employee_id):
-
-
-        custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
-            or_(
-                CustomFilters.employee_id == employee_id,
-                CustomFilters.general == True,
-            ))
-
-        self.pgsql_connetction.session.expire_all()
-        result = {'success': True}
-        count = custom_filters.count()
-        result['count'] = count
-
-
-
-
-        data = []
-        for row in custom_filters:
-            data.append({
-                'id': row.id,
-                'title': row.title,
-                'filters': row.filters,
-                'employee_id': row.employee_id,
-                'general': row.general,
-                'active': False
-            })
-
-        result['data'] = data
-        return result
-
-    def edit_custom_filters(self, id, title=None, filters=None, general=None):
-
-        self.pgsql_connetction.session.query(CustomFilters).filter_by(id=id).update({
-            'title': title if title is not None else CustomFilters.title,
-            'filters': filters if filters is not None else CustomFilters.filters,
-            'general': general if general is not None else CustomFilters.general
-        })
-        self.pgsql_connetction.session.commit()
-        return id
-
-    def del_custom_filters(self, id):
-
-        custom_filters = self.pgsql_connetction.session.query(CustomFilters).get(id)
-        if custom_filters:
-            self.pgsql_connetction.session.delete(custom_filters)
-            self.pgsql_connetction.session.commit()
-            return self.get_custom_filters(1)
-
-# Таблица ТИПОВ ИЗДЕЛИЙ ==================================================================================
+    # Таблица ТИПОВ ИЗДЕЛИЙ ==================================================================================
 
     def add_equipment_type(self, title, icon, url, branches, deleted):
 
@@ -3130,7 +2385,7 @@ class DbInteraction():
                 and_(
                     EquipmentType.id == id if id else True,
                     EquipmentType.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentType.deleted.is_(False)) if deleted!=None else True
+                    (deleted or EquipmentType.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(EquipmentType.title)
         else:
@@ -3158,31 +2413,30 @@ class DbInteraction():
                 'branches': row.branches,
                 'deleted': row.deleted
             })
-                # 'equipment_brand': [{
-                #     'id': brand.id,
-                #     'title': brand.title,
-                #     'icon': brand.icon,
-                #     'url': brand.url,
-                #     'branches': brand.branches,
-                #     'deleted': brand.deleted,
-                #     'equipment_subtype': [{
-                #         'id': subtype.id,
-                #         'title': subtype.title,
-                #         'icon': subtype.icon,
-                #         'url': subtype.url,
-                #         'branches': subtype.branches,
-                #         'deleted': subtype.deleted,
-                #         'equipment_model': [{
-                #             'id': model.id,
-                #             'title': model.title,
-                #             'icon': model.icon,
-                #             'url': model.url,
-                #             'branches': model.branches,
-                #             'deleted': model.deleted
-                #         } for model in subtype.equipment_model] if subtype.equipment_model else []
-                #     } for subtype in brand.equipment_subtype] if brand.equipment_subtype else []
-                # } for brand in row.equipment_brand] if row.equipment_brand else []
-
+            # 'equipment_brand': [{
+            #     'id': brand.id,
+            #     'title': brand.title,
+            #     'icon': brand.icon,
+            #     'url': brand.url,
+            #     'branches': brand.branches,
+            #     'deleted': brand.deleted,
+            #     'equipment_subtype': [{
+            #         'id': subtype.id,
+            #         'title': subtype.title,
+            #         'icon': subtype.icon,
+            #         'url': subtype.url,
+            #         'branches': subtype.branches,
+            #         'deleted': subtype.deleted,
+            #         'equipment_model': [{
+            #             'id': model.id,
+            #             'title': model.title,
+            #             'icon': model.icon,
+            #             'url': model.url,
+            #             'branches': model.branches,
+            #             'deleted': model.deleted
+            #         } for model in subtype.equipment_model] if subtype.equipment_model else []
+            #     } for subtype in brand.equipment_subtype] if brand.equipment_subtype else []
+            # } for brand in row.equipment_brand] if row.equipment_brand else []
 
         result['data'] = data
         result['page'] = page
@@ -3195,7 +2449,7 @@ class DbInteraction():
             'icon': icon if icon is not None else None,
             'url': url if url is not None else EquipmentType.url,
             'branches': branches is not None if branches else EquipmentType.branches,
-            'deleted': deleted if deleted  is not None else EquipmentType.deleted
+            'deleted': deleted if deleted is not None else EquipmentType.deleted
         })
         self.pgsql_connetction.session.commit()
         return id
@@ -3208,9 +2462,9 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_equipment_type()
 
-# Таблица БРЕНДОВ ИЗДЕЛИЙ ==================================================================================
+    # Таблица БРЕНДОВ ИЗДЕЛИЙ ==================================================================================
 
-    def add_equipment_brand(self, title,  icon, url, branches, deleted, equipment_type_id):
+    def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_type_id):
 
         equipment_brand = EquipmentBrand(
             title=title,
@@ -3227,13 +2481,13 @@ class DbInteraction():
 
     def get_equipment_brand(self, id=None, title=None, equipment_type_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_type_id, deleted!=None]):
+        if any([id, title, equipment_type_id, deleted != None]):
             equipment_brand = self.pgsql_connetction.session.query(EquipmentBrand).filter(
                 and_(
                     EquipmentBrand.id == id if id else True,
                     EquipmentBrand.equipment_type_id == equipment_type_id if equipment_type_id else True,
                     EquipmentBrand.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentBrand.deleted.is_(False)) if deleted!=None else True
+                    (deleted or EquipmentBrand.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(EquipmentBrand.title)
         else:
@@ -3260,29 +2514,29 @@ class DbInteraction():
                 'branches': row.branches,
                 'deleted': row.deleted
             })
-                # 'equipment_subtype': [{
-                #     'id': subtype.id,
-                #     'title': subtype.title,
-                #     'icon': subtype.icon,
-                #     'url': subtype.url,
-                #     'branches': subtype.branches,
-                #     'deleted': subtype.deleted,
-                #     'equipment_model': [{
-                #         'id': model.id,
-                #         'title': model.title,
-                #         'icon': model.icon,
-                #         'url': model.url,
-                #         'branches': model.branches,
-                #         'deleted': model.deleted,
-                #         } for model in subtype.equipment_model] if subtype.equipment_model else []
-                #     } for subtype in row.equipment_subtype] if row.equipment_subtype else []
-
+            # 'equipment_subtype': [{
+            #     'id': subtype.id,
+            #     'title': subtype.title,
+            #     'icon': subtype.icon,
+            #     'url': subtype.url,
+            #     'branches': subtype.branches,
+            #     'deleted': subtype.deleted,
+            #     'equipment_model': [{
+            #         'id': model.id,
+            #         'title': model.title,
+            #         'icon': model.icon,
+            #         'url': model.url,
+            #         'branches': model.branches,
+            #         'deleted': model.deleted,
+            #         } for model in subtype.equipment_model] if subtype.equipment_model else []
+            #     } for subtype in row.equipment_subtype] if row.equipment_subtype else []
 
         result['data'] = data
         result['page'] = page
         return result
 
-    def edit_equipment_brand(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_type_id=None):
+    def edit_equipment_brand(self, id, title=None, icon=None, url=None, branches=None, deleted=None,
+                             equipment_type_id=None):
 
         self.pgsql_connetction.session.query(EquipmentBrand).filter_by(id=id).update({
             'title': title if title is not None else EquipmentBrand.title,
@@ -3303,9 +2557,9 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_equipment_brand()
 
-# Таблица МОДИФИКАЦИЙ ИЗДЕЛИЙ ==================================================================================
+    # Таблица МОДИФИКАЦИЙ ИЗДЕЛИЙ ==================================================================================
 
-    def add_equipment_subtype(self, title,  icon, url, branches, deleted,equipment_brand_id):
+    def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_brand_id):
 
         equipment_subtype = EquipmentSubtype(
             title=title,
@@ -3323,7 +2577,7 @@ class DbInteraction():
 
     def get_equipment_subtype(self, id=None, title=None, equipment_brand_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_brand_id, deleted!=None]):
+        if any([id, title, equipment_brand_id, deleted != None]):
             equipment_subtype = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
                 and_(
                     EquipmentSubtype.id == id if id else True,
@@ -3355,28 +2609,28 @@ class DbInteraction():
                 'branches': row.branches,
                 'deleted': row.deleted
             })
-                # 'equipment_model': [{
-                #         'id': model.id,
-                #         'title': model.title,
-                #         'icon': model.icon,
-                #         'url': model.url,
-                #         'branches': row.branches,
-                #         'deleted': row.deleted
-                #     } for model in row.equipment_model] if row.equipment_model else []
-
+            # 'equipment_model': [{
+            #         'id': model.id,
+            #         'title': model.title,
+            #         'icon': model.icon,
+            #         'url': model.url,
+            #         'branches': row.branches,
+            #         'deleted': row.deleted
+            #     } for model in row.equipment_model] if row.equipment_model else []
 
         result['data'] = data
         result['page'] = page
         return result
 
-    def edit_equipment_subtype(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_brand_id=None):
+    def edit_equipment_subtype(self, id, title=None, icon=None, url=None, branches=None, deleted=None,
+                               equipment_brand_id=None):
 
         self.pgsql_connetction.session.query(EquipmentSubtype).filter_by(id=id).update({
             'title': title if title is not None else EquipmentSubtype.title,
             'icon': icon if icon is not None else EquipmentSubtype.icon,
             'url': url if url is not None else EquipmentSubtype.url,
             'branches': branches if branches is not None else EquipmentSubtype.branches,
-            'deleted': deleted if deleted  is not None else EquipmentSubtype.deleted,
+            'deleted': deleted if deleted is not None else EquipmentSubtype.deleted,
             'equipment_brand_id': equipment_brand_id if equipment_brand_id is not None else EquipmentSubtype.equipment_brand_id,
         })
         self.pgsql_connetction.session.commit()
@@ -3390,9 +2644,9 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_equipment_subtype()
 
-# Таблица МОДИФИКАЦИЙ ИЗДЕЛИЙ ==================================================================================
+    # Таблица МОДИФИКАЦИЙ ИЗДЕЛИЙ ==================================================================================
 
-    def add_equipment_model(self, title,  icon, url, branches, deleted, equipment_subtype_id):
+    def add_equipment_model(self, title, icon, url, branches, deleted, equipment_subtype_id):
 
         equipment_model = EquipmentModel(
             title=title,
@@ -3409,7 +2663,7 @@ class DbInteraction():
 
     def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, deleted=None, page=0):
 
-        if any([id, title, equipment_subtype_id, deleted!=None]):
+        if any([id, title, equipment_subtype_id, deleted != None]):
             equipment_model = self.pgsql_connetction.session.query(EquipmentModel).filter(
                 and_(
                     EquipmentModel.id == id if id else True,
@@ -3446,14 +2700,15 @@ class DbInteraction():
         result['page'] = page
         return result
 
-    def edit_equipment_model(self, id, title=None, icon=None, url=None, branches=None, deleted=None, equipment_subtype_id=None):
+    def edit_equipment_model(self, id, title=None, icon=None, url=None, branches=None, deleted=None,
+                             equipment_subtype_id=None):
 
         self.pgsql_connetction.session.query(EquipmentModel).filter_by(id=id).update({
             'title': title if title is not None else EquipmentModel.title,
             'icon': icon if icon is not None else EquipmentModel.icon,
             'url': url if url is not None else EquipmentModel.url,
             'branches': branches if branches is not None else EquipmentModel.branches,
-            'deleted': deleted if deleted  is not None else EquipmentModel.deleted,
+            'deleted': deleted if deleted is not None else EquipmentModel.deleted,
             'equipment_subtype_id': equipment_subtype_id if equipment_subtype_id is not None else EquipmentModel.equipment_subtype_id,
         })
         self.pgsql_connetction.session.commit()
@@ -3467,7 +2722,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_equipment_model()
 
-# Таблица СТРОК МЕНЮ ===============================================================================
+    # Таблица СТРОК МЕНЮ ===============================================================================
 
     def add_setting_menu(self, title, url, group_name):
 
@@ -3531,7 +2786,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_setting_menu()
 
-# Таблица РОЛЕЙ ==================================================================================
+    # Таблица РОЛЕЙ ==================================================================================
 
     def add_role(self,
                  title,
@@ -3614,7 +2869,7 @@ class DbInteraction():
 
         self.pgsql_connetction.session.query(Roles).filter_by(id=id).update({
             'title': title if title is not None else Roles.title,
-            'earnings_visibility': earnings_visibility if earnings_visibility  is not None else Roles.earnings_visibility,
+            'earnings_visibility': earnings_visibility if earnings_visibility is not None else Roles.earnings_visibility,
             'leads_visibility': leads_visibility if leads_visibility is not None else Roles.leads_visibility,
             'orders_visibility': orders_visibility if orders_visibility is not None else Roles.orders_visibility,
             'permissions': permissions if permissions is not None else Roles.permissions,
@@ -3633,26 +2888,26 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_role()
 
-# Таблица ОСНОВНАЯ ИНФОРМАЦИЯ О КОМПАНИИ ==================================================================
+    # Таблица ОСНОВНАЯ ИНФОРМАЦИЯ О КОМПАНИИ ==================================================================
 
     def add_generally_info(self,
-                             name,
-                             address,
-                             email,
+                           name,
+                           address,
+                           email,
 
-                             ogrn,
-                             inn,
-                             kpp,
-                             juridical_address,
-                             director,
-                             bank_name,
-                             settlement_account,
-                             corr_account,
-                             bic,
+                           ogrn,
+                           inn,
+                           kpp,
+                           juridical_address,
+                           director,
+                           bank_name,
+                           settlement_account,
+                           corr_account,
+                           bic,
 
-                             description,
-                             phone,
-                             logo
+                           description,
+                           phone,
+                           logo
                            ):
 
         generally_info = GenerallyInfo(
@@ -3679,37 +2934,35 @@ class DbInteraction():
         self.pgsql_connetction.session.refresh(generally_info)
         return generally_info.id
 
-
     def get_generally_info(self, id=1):
 
         generally_info = self.pgsql_connetction.session.query(GenerallyInfo).filter(
-                GenerallyInfo.id == id if id else True
+            GenerallyInfo.id == id if id else True
         ).first()
 
         self.pgsql_connetction.session.expire_all()
         result = {'success': True}
 
         data = {
-                'id': generally_info.id,
-                'name': generally_info.name,
-                'address': generally_info.address,
-                'email': generally_info.email,
+            'id': generally_info.id,
+            'name': generally_info.name,
+            'address': generally_info.address,
+            'email': generally_info.email,
 
-                'ogrn': generally_info.ogrn,
-                'inn': generally_info.inn,
-                'kpp': generally_info.kpp,
-                'juridical_address': generally_info.juridical_address,
-                'director': generally_info.director,
-                'bank_name': generally_info.bank_name,
-                'settlement_account': generally_info.settlement_account,
-                'corr_account': generally_info.corr_account,
-                'bic': generally_info.bic,
+            'ogrn': generally_info.ogrn,
+            'inn': generally_info.inn,
+            'kpp': generally_info.kpp,
+            'juridical_address': generally_info.juridical_address,
+            'director': generally_info.director,
+            'bank_name': generally_info.bank_name,
+            'settlement_account': generally_info.settlement_account,
+            'corr_account': generally_info.corr_account,
+            'bic': generally_info.bic,
 
-                'description': generally_info.description,
-                'phone': generally_info.phone,
-                'logo': generally_info.logo
-            }
-
+            'description': generally_info.description,
+            'phone': generally_info.phone,
+            'logo': generally_info.logo
+        }
 
         result['data'] = data
         return result
@@ -3764,7 +3017,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица СЧЕТЧИКОВ ==================================================================================
+    # Таблица СЧЕТЧИКОВ ==================================================================================
 
     def add_counts(self, prefix, count, description):
 
@@ -3782,7 +3035,7 @@ class DbInteraction():
 
         if id:
             counts = self.pgsql_connetction.session.query(Counts).filter(
-                    Counts.id == id if id else True,
+                Counts.id == id if id else True,
             )
         else:
             counts = self.pgsql_connetction.session.query(Counts)
@@ -3831,8 +3084,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_counts()
 
-
-# Таблица СЛОВАРЬ НЕИСПРАВНОСТЕЙ =========================================================================
+    # Таблица СЛОВАРЬ НЕИСПРАВНОСТЕЙ =========================================================================
 
     def add_malfunction(self, title, count):
 
@@ -3898,7 +3150,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
+    # Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
 
     def add_packagelist(self, title, count):
 
@@ -3964,7 +3216,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return self.get_packagelist()
 
-# Таблица КАССЫ =================================================================================
+    # Таблица КАССЫ =================================================================================
 
     def add_cashbox(self, title, balance, type, isGlobal, isVirtual, deleted,
                     permissions, employees, branch_id):
@@ -3987,8 +3239,8 @@ class DbInteraction():
 
     def get_cashbox_balance(self, cashbox_id):
 
-        sum_col = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome))\
-            .filter(Payments.cashbox_id == cashbox_id)\
+        sum_col = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome)) \
+            .filter(Payments.cashbox_id == cashbox_id) \
             .filter(Payments.deleted != True).scalar()
         # self.pgsql_connetction.session.commit()
         # self.get_payments()
@@ -3997,7 +3249,7 @@ class DbInteraction():
 
     def get_cashbox(self, id=None, title=None, isGlobal=None, isVirtual=None, deleted=None, branch_id=None):
 
-        if any([id, title, isGlobal!=None, isVirtual!=None, deleted != None, branch_id!=None ]):
+        if any([id, title, isGlobal != None, isVirtual != None, deleted != None, branch_id != None]):
             cashbox = self.pgsql_connetction.session.query(Cashboxs).filter(
                 and_(
                     Cashboxs.id == id if id else True,
@@ -4018,9 +3270,9 @@ class DbInteraction():
 
         data = []
         for row in cashbox:
-            balance = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome))\
-            .filter(Payments.cashbox_id == row.id)\
-            .filter(Payments.deleted != True).scalar()
+            balance = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome)) \
+                .filter(Payments.cashbox_id == row.id) \
+                .filter(Payments.deleted != True).scalar()
             data.append({
                 'id': row.id,
                 'title': row.title,
@@ -4072,7 +3324,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ТРАНЗАКЦИЙ =================================================================================
+    # Таблица ТРАНЗАКЦИЙ =================================================================================
 
     def add_payments(self,
                      cashflow_category,
@@ -4142,8 +3394,10 @@ class DbInteraction():
                     Payments.cashflow_category.like(f'%{cashflow_category}%') if cashflow_category else True,
                     Payments.direction == direction if direction else True,
                     (deleted or Payments.deleted.is_(False)) if deleted != None else True,
-                    (Payments.custom_created_at >= custom_created_at[0] if custom_created_at[0] else True) if custom_created_at else True,
-                    (Payments.custom_created_at <= custom_created_at[1] if custom_created_at[1] else True) if custom_created_at else True,
+                    (Payments.custom_created_at >= custom_created_at[0] if custom_created_at[
+                        0] else True) if custom_created_at else True,
+                    (Payments.custom_created_at <= custom_created_at[1] if custom_created_at[
+                        1] else True) if custom_created_at else True,
                     tags._in(Payments.tags) if tags else True,
                     Payments.relation_id == relation_id if relation_id else True,
                     Payments.cashbox_id == cashbox_id if cashbox_id else True,
@@ -4161,13 +3415,11 @@ class DbInteraction():
 
         data = []
         for row in payments:
-
-            deposit = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome))\
-            .filter(Payments.cashbox_id == row.cashbox.id)\
-            .filter(Payments.deleted != True) \
-            .filter(Payments.custom_created_at <= row.custom_created_at)\
-            .scalar()
-
+            deposit = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome)) \
+                .filter(Payments.cashbox_id == row.cashbox.id) \
+                .filter(Payments.deleted != True) \
+                .filter(Payments.custom_created_at <= row.custom_created_at) \
+                .scalar()
 
             data.append({
                 'id': row.id,
@@ -4285,7 +3537,6 @@ class DbInteraction():
     #         print(f'Конец изменения баланса платежей: {time.time() - start_time} сек.')
     #     return {'success': True}
 
-
     def edit_payments(self,
                       id,
                       cashflow_category=None,
@@ -4337,8 +3588,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-
-# Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
+    # Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
 
     def add_item_payments(self, title, direction):
 
@@ -4405,7 +3655,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
+    # Таблица НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
 
     def add_payroll(self,
                     relation_type,
@@ -4461,8 +3711,10 @@ class DbInteraction():
                     Payrolls.direction == direction if direction else True,
                     (deleted or Payrolls.deleted.is_(False)) if deleted != None else True,
                     Payrolls.reimburse == reimburse if reimburse != None else True,
-                    (Payrolls.custom_created_at >= custom_created_at[0] if custom_created_at[0] else True) if custom_created_at else True,
-                    (Payrolls.custom_created_at <= custom_created_at[1] if custom_created_at[1] else True) if custom_created_at else True,
+                    (Payrolls.custom_created_at >= custom_created_at[0] if custom_created_at[
+                        0] else True) if custom_created_at else True,
+                    (Payrolls.custom_created_at <= custom_created_at[1] if custom_created_at[
+                        1] else True) if custom_created_at else True,
                     Payrolls.relation_type == relation_type if relation_type else True,
                     Payrolls.relation_id == relation_id if relation_id else True,
                     Payrolls.employee_id == employee_id if employee_id else True,
@@ -4478,12 +3730,11 @@ class DbInteraction():
 
         data = []
         for row in payroll:
-
-            deposit = self.pgsql_connetction.session.query(func.sum(Payrolls.income + Payrolls.outcome))\
-            .filter(Payrolls.employee_id == row.employee_id)\
-            .filter(Payrolls.deleted != True) \
-            .filter(Payrolls.custom_created_at <= row.custom_created_at)\
-            .scalar()
+            deposit = self.pgsql_connetction.session.query(func.sum(Payrolls.income + Payrolls.outcome)) \
+                .filter(Payrolls.employee_id == row.employee_id) \
+                .filter(Payrolls.deleted != True) \
+                .filter(Payrolls.custom_created_at <= row.custom_created_at) \
+                .scalar()
 
             data.append({
                 'id': row.id,
@@ -4522,18 +3773,18 @@ class DbInteraction():
         return sum
 
     def edit_payroll(self,
-                      id,
-                      description=None,
-                      income=None,
-                      outcome=None,
-                      direction=None,
-                      deleted=None,
-                      reimburse=None,
-                      custom_created_at=None,
-                      relation_type=None,
-                      relation_id=None,
-                      employee_id=None,
-                      order_id=None):
+                     id,
+                     description=None,
+                     income=None,
+                     outcome=None,
+                     direction=None,
+                     deleted=None,
+                     reimburse=None,
+                     custom_created_at=None,
+                     relation_type=None,
+                     relation_id=None,
+                     employee_id=None,
+                     order_id=None):
 
         self.pgsql_connetction.session.query(Payrolls).filter_by(id=id).update({
             'description': description if description is not None else Payrolls.description,
@@ -4559,7 +3810,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ПРАВИЛ НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
+    # Таблица ПРАВИЛ НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
 
     def add_payrule(self,
                     title,
@@ -4640,8 +3891,6 @@ class DbInteraction():
         result['data'] = data
         return result
 
-
-
     def edit_payrule(self,
                      id,
                      title=None,
@@ -4678,7 +3927,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица КАТЕГОРИЙ ПРАЙСА УСЛГ ===============================================================
+    # Таблица КАТЕГОРИЙ ПРАЙСА УСЛГ ===============================================================
 
     def add_group_dict_service(self, title, icon, deleted):
 
@@ -4740,19 +3989,19 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ПРАВИЛ НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
+    # Таблица ПРАВИЛ НАЧИСЛЕНИЙ ЗАРАБОТНОЙ ПЛАТЫ ===============================================================
 
     def add_dict_service(self,
-                        title,
-                        price,
-                        cost,
-                        warranty,
-                        code,
-                        earnings_percent,
-                        earnings_summ,
-                        deleted,
-                        category_id
-                        ):
+                         title,
+                         price,
+                         cost,
+                         warranty,
+                         code,
+                         earnings_percent,
+                         earnings_summ,
+                         deleted,
+                         category_id
+                         ):
 
         dict_service = DictService(
             title=title,
@@ -4779,42 +4028,41 @@ class DbInteraction():
                          category_id=None
                          ):
 
-            if any([id, title, warranty, code, deleted != None,  category_id]):
-                dict_service = self.pgsql_connetction.session.query(DictService).filter(
-                    and_(
-                        DictService.id == id if id else True,
-                        DictService.title.like(f'%{title}%') if title else True,
-                        DictService.warranty == warranty if warranty else True,
-                        DictService.code == code if code else True,
-                        (deleted or DictService.deleted.is_(False)) if deleted != None else True,
-                        DictService.category_id == category_id if category_id else True,
-                    )
-                ).order_by(desc(DictService.title))
-            else:
-                dict_service = self.pgsql_connetction.session.query(DictService).order_by(desc(DictService.title))
+        if any([id, title, warranty, code, deleted != None, category_id]):
+            dict_service = self.pgsql_connetction.session.query(DictService).filter(
+                and_(
+                    DictService.id == id if id else True,
+                    DictService.title.like(f'%{title}%') if title else True,
+                    DictService.warranty == warranty if warranty else True,
+                    DictService.code == code if code else True,
+                    (deleted or DictService.deleted.is_(False)) if deleted != None else True,
+                    DictService.category_id == category_id if category_id else True,
+                )
+            ).order_by(desc(DictService.title))
+        else:
+            dict_service = self.pgsql_connetction.session.query(DictService).order_by(desc(DictService.title))
 
-            result = {'success': True}
-            count = dict_service.count()
-            result['count'] = count
+        result = {'success': True}
+        count = dict_service.count()
+        result['count'] = count
 
-            data = []
-            for row in dict_service:
-                data.append({
-                    'id': row.id,
-                    'title': row.title,
-                    'price': row.price,
-                    'cost': row.cost,
-                    'warranty': row.warranty,
-                    'code': row.code,
-                    'earnings_percent': row.earnings_percent,
-                    'earnings_summ': row.earnings_summ,
-                    'deleted': row.deleted,
-                    'category_id': row.category_id
-                })
+        data = []
+        for row in dict_service:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'price': row.price,
+                'cost': row.cost,
+                'warranty': row.warranty,
+                'code': row.code,
+                'earnings_percent': row.earnings_percent,
+                'earnings_summ': row.earnings_summ,
+                'deleted': row.deleted,
+                'category_id': row.category_id
+            })
 
-            result['data'] = data
-            return result
-
+        result['data'] = data
+        return result
 
     def edit_dict_service(self,
                           id,
@@ -4829,19 +4077,19 @@ class DbInteraction():
                           category_id=None
                           ):
 
-            self.pgsql_connetction.session.query(DictService).filter_by(id=id).update({
-                'title': title if title is not None else DictService.title,
-                'price': price if price is not None else DictService.price,
-                'cost': cost if cost is not None else DictService.cost,
-                'warranty': warranty if warranty is not None else DictService.warranty,
-                'code': code if code is not None else DictService.code,
-                'earnings_percent': earnings_percent if earnings_percent is not None else DictService.earnings_percent,
-                'earnings_summ': earnings_summ if earnings_summ is not None else DictService.earnings_summ,
-                'deleted': deleted if deleted is not None else DictService.deleted,
-                'category_id': category_id if category_id is not None else DictService.category_id
-            })
-            self.pgsql_connetction.session.commit()
-            return id
+        self.pgsql_connetction.session.query(DictService).filter_by(id=id).update({
+            'title': title if title is not None else DictService.title,
+            'price': price if price is not None else DictService.price,
+            'cost': cost if cost is not None else DictService.cost,
+            'warranty': warranty if warranty is not None else DictService.warranty,
+            'code': code if code is not None else DictService.code,
+            'earnings_percent': earnings_percent if earnings_percent is not None else DictService.earnings_percent,
+            'earnings_summ': earnings_summ if earnings_summ is not None else DictService.earnings_summ,
+            'deleted': deleted if deleted is not None else DictService.deleted,
+            'category_id': category_id if category_id is not None else DictService.category_id
+        })
+        self.pgsql_connetction.session.commit()
+        return id
 
     def del_dict_service(self, id):
 
@@ -4851,7 +4099,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ЦЕН УСЛГ ===============================================================
+    # Таблица ЦЕН УСЛГ ===============================================================
 
     def add_service_prices(self, cost, discount_margin_id, service_id, deleted):
 
@@ -4916,7 +4164,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ТОВАРОВ/ЗАПЧАСТЕЙ ===============================================================
+    # Таблица ТОВАРОВ/ЗАПЧАСТЕЙ ===============================================================
 
     def add_parts(self,
                   title,
@@ -5049,7 +4297,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица СКЛАДОВ ===============================================================
+    # Таблица СКЛАДОВ ===============================================================
 
     def add_warehouse(self, title, description, isGlobal, permissions, employees, branch_id, deleted):
 
@@ -5082,7 +4330,7 @@ class DbInteraction():
                     Warehouse.title.ilike(f'%{title}%') if title else True,
                     Warehouse.branch_id == branch_id if branch_id else True,
                     Warehouse.isGlobal == isGlobal if isGlobal != None else True,
-                    (deleted or Warehouse.deleted.is_(False)) if deleted!=None else True
+                    (deleted or Warehouse.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(Warehouse.title)
         else:
@@ -5121,14 +4369,14 @@ class DbInteraction():
         return result
 
     def edit_warehouse(self,
-                   id,
-                   title=None,
-                   description=None,
-                   isGlobal=None,
-                   permissions=None,
-                   employees=None,
-                   branch_id=None,
-                   deleted=None):
+                       id,
+                       title=None,
+                       description=None,
+                       isGlobal=None,
+                       permissions=None,
+                       employees=None,
+                       branch_id=None,
+                       deleted=None):
 
         self.pgsql_connetction.session.query(Warehouse).filter_by(id=id).update({
             'title': title if title is not None else Warehouse.title,
@@ -5150,7 +4398,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица КАТЕГОРИЙ СКЛАДОВ ===============================================================
+    # Таблица КАТЕГОРИЙ СКЛАДОВ ===============================================================
 
     def add_warehouse_category(self, title, parent_category_id, warehouse_id, deleted):
 
@@ -5166,12 +4414,12 @@ class DbInteraction():
         return warehouse_category.id
 
     def get_warehouse_category(self,
-                      id=None,
-                      title=None,
-                      parent_category_id=None,
-                      warehouse_id=None,
-                      deleted=None,
-                      page=0):
+                               id=None,
+                               title=None,
+                               parent_category_id=None,
+                               warehouse_id=None,
+                               deleted=None,
+                               page=0):
 
         if any([id, title, parent_category_id, warehouse_id, deleted != None]):
             warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).filter(
@@ -5180,11 +4428,12 @@ class DbInteraction():
                     # WarehouseCategory.title.ilike(f'%{title}%') if title else True,
                     # WarehouseCategory.parent_category_id == parent_category_id if parent_category_id else True,
                     # WarehouseCategory.warehouse_id == warehouse_id if warehouse_id else True,
-                    (deleted or WarehouseCategory.deleted.is_(False)) if deleted!=None else True
+                    (deleted or WarehouseCategory.deleted.is_(False)) if deleted != None else True
                 )
             ).order_by(WarehouseCategory.title)
         else:
-            warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).order_by(WarehouseCategory.title)
+            warehouse_category = self.pgsql_connetction.session.query(WarehouseCategory).order_by(
+                WarehouseCategory.title)
 
         result = {'success': True}
         count = warehouse_category.count()
@@ -5204,11 +4453,11 @@ class DbInteraction():
         return result
 
     def edit_warehouse_category(self,
-                               id,
-                               title=None,
-                               parent_category_id=None,
-                               warehouse_id=None,
-                               deleted=None):
+                                id,
+                                title=None,
+                                parent_category_id=None,
+                                warehouse_id=None,
+                                deleted=None):
 
         self.pgsql_connetction.session.query(WarehouseCategory).filter_by(id=id).update({
             'title': title if title is not None else WarehouseCategory.title,
@@ -5227,7 +4476,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ЗАПЧАСТЕЙ НА СКЛАДЕ ==========================================================================================
+    # Таблица ЗАПЧАСТЕЙ НА СКЛАДЕ ==========================================================================================
 
     def add_warehouse_parts(self,
                             where_to_buy,
@@ -5259,17 +4508,17 @@ class DbInteraction():
         return warehouse_parts.id
 
     def get_warehouse_parts(self,
-                          id=None,
-                          title=None,
-                          cell=None,
-                          marking=None,
-                          count=None,
-                          min_residue=None,
-                          part_id=None,
-                          category_id=None,
-                          warehouse_id=None,
-                          page=0,
-                          deleted=None):
+                            id=None,
+                            title=None,
+                            cell=None,
+                            marking=None,
+                            count=None,
+                            min_residue=None,
+                            part_id=None,
+                            category_id=None,
+                            warehouse_id=None,
+                            page=0,
+                            deleted=None):
 
         if any([id, cell, title, marking, count, min_residue, part_id, category_id, warehouse_id, deleted != None]):
             warehouse_parts = self.pgsql_connetction.session.query(WarehouseParts).join(WarehouseParts.part).filter(
@@ -5328,18 +4577,18 @@ class DbInteraction():
         return result
 
     def edit_warehouse_parts(self,
-                           id,
-                           where_to_buy=None,
-                           cell=None,
-                           count=None,
-                           min_residue=None,
-                           warranty_period=None,
-                           necessary_amount=None,
-                           part_id=None,
-                           category_id=None,
-                           warehouse_id=None,
-                           specifications=None,
-                           deleted=None):
+                             id,
+                             where_to_buy=None,
+                             cell=None,
+                             count=None,
+                             min_residue=None,
+                             warranty_period=None,
+                             necessary_amount=None,
+                             part_id=None,
+                             category_id=None,
+                             warehouse_id=None,
+                             specifications=None,
+                             deleted=None):
 
         self.pgsql_connetction.session.query(WarehouseParts).filter_by(id=id).update({
             'where_to_buy': where_to_buy if where_to_buy is not None else WarehouseParts.where_to_buy,
@@ -5364,7 +4613,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица ШАБЛОНОВ УВЕДОМЛЕНИЙ =========================================================================================
+    # Таблица ШАБЛОНОВ УВЕДОМЛЕНИЙ =========================================================================================
 
     def add_notification_template(self, title, template, deleted):
 
@@ -5389,7 +4638,8 @@ class DbInteraction():
                 )
             ).order_by(NotificationTemplate.title)
         else:
-            notification_template = self.pgsql_connetction.session.query(NotificationTemplate).order_by(NotificationTemplate.title)
+            notification_template = self.pgsql_connetction.session.query(NotificationTemplate).order_by(
+                NotificationTemplate.title)
 
         result = {'success': True}
         count = notification_template.count()
@@ -5432,17 +4682,18 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-# Таблица СОБЫТИЙ ДЛЯ УВЕДОМЛЕНИЙ ======================================================================================
+    # Таблица СОБЫТИЙ ДЛЯ УВЕДОМЛЕНИЙ ======================================================================================
 
-    def add_notification_events(self, event, target_audience, statuses, notification_type, notification_template_id, deleted):
+    def add_notification_events(self, event, target_audience, statuses, notification_type, notification_template_id,
+                                deleted):
 
         notification_events = NotificationEvents(
-                        event=event,
-                        target_audience=target_audience,
-                        statuses=statuses,
-                        notification_type=notification_type,
-                        notification_template_id=notification_template_id,
-                        deleted=deleted
+            event=event,
+            target_audience=target_audience,
+            statuses=statuses,
+            notification_type=notification_type,
+            notification_template_id=notification_template_id,
+            deleted=deleted
         )
         self.pgsql_connetction.session.add(notification_events)
         self.pgsql_connetction.session.commit()
@@ -5471,7 +4722,8 @@ class DbInteraction():
                 )
             ).order_by(NotificationEvents.id)
         else:
-            notification_events = self.pgsql_connetction.session.query(NotificationEvents).order_by(NotificationEvents.id)
+            notification_events = self.pgsql_connetction.session.query(NotificationEvents).order_by(
+                NotificationEvents.id)
 
         result = {'success': True}
         count = notification_events.count()
@@ -5531,9 +4783,6 @@ class DbInteraction():
             return id
 
 
-
-
-
 if __name__ == '__main__':
     start_time = time.time()
     db = DbInteraction(
@@ -5558,7 +4807,6 @@ if __name__ == '__main__':
     # column = Column('discount', FLOAT)
     # db.add_column(OrderParts.__table__, column)
 
-
     # db.create_all_tables()
     # db.initial_data()
     # db.update_date_from_remonline()
@@ -5570,7 +4818,6 @@ if __name__ == '__main__':
     # seconds = int((dtime % 3600) % 60)
     # print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
 
-
     # pages = db.get_orders()['count']/50
     # types = []
     # for page in tqdm(range(int(pages)+1), desc='Обработка...', position=0):
@@ -5580,13 +4827,3 @@ if __name__ == '__main__':
     # types = set(types)
     # print('count:', len(types))
     # pprint(types)
-
-
-
-
-
-
-
-
-
-

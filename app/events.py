@@ -129,6 +129,7 @@ def send_sms(number, text):
     result = requests.post(url, data=json.dumps(body), headers=headers)
 
     print(f'send SMS to: {number} text: {text} status: {result.status_code}')
+    # print(f'send SMS to: {number} text: {text} status: ок')
 
 
 def event_change_status_to(db, order, new_status):
