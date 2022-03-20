@@ -1,4 +1,5 @@
 from datetime import datetime
+from pprint import pprint
 
 from sqlalchemy import Column, Integer, ForeignKey, VARCHAR, UniqueConstraint, SMALLINT, DateTime, JSON
 from sqlalchemy import ARRAY, TEXT, BOOLEAN, INTEGER, TIMESTAMP, FLOAT
@@ -808,3 +809,9 @@ class NotificationEvents(Base):
 # 4 - Обращения: для клиентов
 # 5 - Обращения: для менеджеров
 # 6 - Задачи: для исполнителей
+
+# tables = Base.metadata.tables.keys()
+# print(type(tables))
+# print(len(tables))
+# for table in tables:
+#     print(table)

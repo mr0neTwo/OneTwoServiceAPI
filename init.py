@@ -1,16 +1,13 @@
-import traceback
+import random
 from pprint import pprint
 
-try:
-    a = 0
-    b = 1
-    print(b/a)
-except Exception as ex:
-    print(ex.args[-1])
-    # print(ex)
-    # pprint(dir(ex))
-    print(traceback.format_exc())
-finally:
-    print('finally')
+from data import equipment_type
 
-print('next code')
+
+
+t_fil = [{
+    'title': random.choice(equipment_type)[:random.randint(30, 50)],
+    'deleted': bool(random.randint(0, 1))
+} for x in range(10)] + [False, False, False]
+
+pprint(t_fil)

@@ -1,3 +1,4 @@
+import traceback
 from pprint import pprint
 
 import requests
@@ -265,6 +266,14 @@ def GetCashTransaction(cashName,
     return list_dict
 
 
+def error550(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except:
+            print(traceback.format_exc())
+            return {'success': False, 'message': 'server error'}, 550
+    return wrapper
 
 
 

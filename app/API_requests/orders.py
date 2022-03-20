@@ -19,7 +19,7 @@ def get_orders():
         return {'success': False, 'message': "Request don't has json body"}, 400
 
     id = request_body.get('id')
-    if id and type(id) != int:
+    if id is not None and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
     page = request_body.get('page', 0)

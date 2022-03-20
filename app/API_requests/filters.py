@@ -19,7 +19,7 @@ def get_babges():
         return {'success': False, 'message': "Request don't has json body"}, 400
 
     employee_access = request_body.get('employee_access')
-    if employee_access and type(employee_access) != int:
+    if employee_access is not None and type(employee_access) != int:
         return {'success': False, 'message': "employee_access is not integer"}, 400
 
     try:
@@ -42,7 +42,7 @@ def get_custom_filters():
         return {'success': False, 'message': "Request don't has json body"}, 400
 
     id = request_body.get('id')
-    if id and type(id) != int:
+    if id is not None and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
     employee_id = request_body.get('employee_id')
@@ -73,23 +73,23 @@ def custom_filters():
         return {'success': False, 'message': "Request don't has json body"}, 400
 
     id = request_body.get('id')
-    if id and type(id) != int:
+    if id is not None and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
     employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
+    if employee_id is not None and type(employee_id) != int:
         return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
+    if employee_id is not None and db_iteraction.get_employee(id=employee_id)['count'] == 0:
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
     filters = request_body.get('filters')
 
     title = request_body.get('title')
-    if title:
+    if title is not None:
         title = str(title)
 
     general = request_body.get('general')
-    if general:
+    if general is not None:
         general = bool(general)
 
     if request.method == 'POST':

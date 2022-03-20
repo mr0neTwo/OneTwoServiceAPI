@@ -3,6 +3,9 @@ import json
 import requests
 from num2words import num2words
 
+from app.db.interaction.db_iteraction import config
+
+
 def timestamp_to_string(timestamp):
     return datetime.fromtimestamp(timestamp).strftime('%d.%m.%y %H:%M')
 
@@ -126,10 +129,11 @@ def send_sms(number, text):
         "text": text
     }
 
-    result = requests.post(url, data=json.dumps(body), headers=headers)
-
-    print(f'send SMS to: {number} text: {text} status: {result.status_code}')
-    # print(f'send SMS to: {number} text: {text} status: ок')
+    if config['SEND_SMS']:
+        result = requests.post(url, data=json.dumps(body), headers=headers)
+        print(f'send SMS to: {number} text: {text} status: {result.status_code}')
+    else:
+        print(f'send SMS to: {number} text: {text} status: ок')
 
 
 def event_change_status_to(db, order, new_status):

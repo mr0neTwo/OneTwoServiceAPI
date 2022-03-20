@@ -71,7 +71,8 @@ class PGSQL_connetction:
             cursor.execute(f'CREATE DATABASE {db_name}')
             print(f'База данных {db_name} успешно создана')
         except psql.errors.DuplicateDatabase:
-            print(f'База данных {db_name} уже существует')
+            # print(f'База данных {db_name} уже существует')
+            a=1
         finally:
             conn.close()
 

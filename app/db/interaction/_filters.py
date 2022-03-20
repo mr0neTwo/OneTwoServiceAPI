@@ -1,8 +1,6 @@
 from sqlalchemy import or_
 from app.db.models.models import CustomFilters
 
-# Таблица БЕДЖЕЙ ===============================================================================
-
 def get_badges(self, employee_access):
     statuses = self.get_status()['data']
 
