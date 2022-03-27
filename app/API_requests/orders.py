@@ -170,21 +170,27 @@ def get_orders():
     if id_label:
         id_label = str(id_label)
 
-    # kindof_good = request_body.get('kindof_good')
-    # if kindof_good is not None:
-    #     kindof_good = str(kindof_good)
-    #
-    # brand = request_body.get('brand')
-    # if brand:
-    #     brand = str(brand)
-    #
+    kindof_good = request_body.get('kindof_good')
+    if kindof_good is not None and type(kindof_good) != int:
+        return {'success': False, 'message': "kindof_good is not integer"}, 400
+    if kindof_good is not None and db_iteraction.get_equipment_type(id=kindof_good)[0]['count'] == 0:
+        return {'success': False, 'message': 'kindof_good is not defined'}, 400
+
+    brand = request_body.get('brand')
+    if brand is not None and type(brand) != int:
+        return {'success': False, 'message': "brand is not integer"}, 400
+    if brand is not None and db_iteraction.get_equipment_brand(id=brand)[0]['count'] == 0:
+        return {'success': False, 'message': 'brand is not defined'}, 400
+
     # model = request_body.get('model')
     # if model:
     #     model = str(model)
-    #
-    # subtype = request_body.get('subtype')
-    # if subtype:
-    #     subtype = str(subtype)
+
+    subtype = request_body.get('subtype')
+    if subtype is not None and type(subtype) != int:
+        return {'success': False, 'message': "subtype is not integer"}, 400
+    if subtype is not None and db_iteraction.get_equipment_subtype(id=subtype)[0]['count'] == 0:
+        return {'success': False, 'message': 'subtype is not defined'}, 400
 
     serial = request_body.get('serial')
     if serial is not None:
@@ -246,10 +252,10 @@ def get_orders():
             manager_id=manager_id,                  # list - id сотрудника - полное совпадение одного из списка
 
             id_label=id_label,
-            # kindof_good=kindof_good,
-            # brand=brand,
+            kindof_good=kindof_good,
+            brand=brand,
             # model=model,
-            # subtype=subtype,
+            subtype=subtype,
             serial=serial,
             client_name=client_name,
             client_phone=client_phone,
@@ -378,25 +384,25 @@ def orders():
     kindof_good = request_body.get('kindof_good')
     if kindof_good is not None and type(kindof_good) != int:
         return {'success': False, 'message': "kindof_good is not integer"}, 400
-    if kindof_good is not None and db_iteraction.get_equipment_type(id=kindof_good)['count'] == 0:
+    if kindof_good is not None and db_iteraction.get_equipment_type(id=kindof_good)[0]['count'] == 0:
         return {'success': False, 'message': 'kindof_good is not defined'}, 400
 
     brand = request_body.get('brand')
     if brand is not None and type(brand) != int:
         return {'success': False, 'message': "brand is not integer"}, 400
-    if brand is not None and db_iteraction.get_equipment_brand(id=brand)['count'] == 0:
+    if brand is not None and db_iteraction.get_equipment_brand(id=brand)[0]['count'] == 0:
         return {'success': False, 'message': 'brand is not defined'}, 400
 
     subtype = request_body.get('subtype')
     if subtype is not None and type(subtype) != int:
         return {'success': False, 'message': "subtype is not integer"}, 400
-    if subtype is not None and db_iteraction.get_equipment_subtype(id=subtype)['count'] == 0:
+    if subtype is not None and db_iteraction.get_equipment_subtype(id=subtype)[0]['count'] == 0:
         return {'success': False, 'message': 'subtype is not defined'}, 400
 
     model = request_body.get('model')
     if model is not None and type(model) != int:
         return {'success': False, 'message': "model is not integer"}, 400
-    if model is not None and db_iteraction.get_equipment_model(id=model)['count'] == 0:
+    if model is not None and db_iteraction.get_equipment_model(id=model)[0]['count'] == 0:
         return {'success': False, 'message': 'model is not defined'}, 400
 
     id_label = request_body.get('id_label')

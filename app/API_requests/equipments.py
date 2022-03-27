@@ -265,7 +265,6 @@ def equipment_brand():
         return db_iteraction.del_equipment_brand(id=id)  # int - id записи - полное совпаден
 
 
-
 @equipments_api.route('/get_equipment_subtype', methods=['POST'])
 @jwt_required()
 def get_equipment_subtype():
@@ -361,6 +360,7 @@ def equipment_subtype():
             return {'success': False, 'message': "list_for_join has not integer"}, 400
 
     r_filter = request_body.get('filter')
+    img = request_body.get('img')
 
     if request.method == 'POST':
 
@@ -377,23 +377,11 @@ def equipment_subtype():
             branches=branches,                      # [int, ...int] - Список филиалов
             deleted=deleted,                        # bool - Удален
             equipment_brand_id=equipment_brand_id,  # int - id бренда изделия
-            r_filter=r_filter                       # dict - фильтр ответных данных
+            r_filter=r_filter,                      # dict - фильтр ответных данных
+            img=img
         )
 
-        # загрузка изображения
-        img_uri = request_body.get('img')
-        if img_uri:
-            id_subtype = result[0]['data']['id']
-            with urlopen(img_uri) as response:
-                data = response.read()
-            url = f'build/static/data/PCB/subtype{id_subtype}.jpeg'
-            with open(url, 'wb') as f:
-                f.write(data)
-            url = f'data/PCB/subtype{id_subtype}.jpeg'
-            db_iteraction.edit_equipment_subtype(
-                id=id_subtype,
-                url=url
-            )
+
         return result
 
     # Проверим сущестует ли запись по данному id
@@ -401,16 +389,6 @@ def equipment_subtype():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
-
-        # загрузка/замена изображения
-        img_uri = request_body.get('img')
-        if img_uri:
-            with urlopen(img_uri) as response:
-                data = response.read()
-            url = f'build/static/data/PCB/subtype{id}.jpeg'
-            with open(url, 'wb') as f:
-                f.write(data)
-            url = f'data/PCB/subtype{id}.jpeg'
 
         result = db_iteraction.edit_equipment_subtype(
             id=id,                                  # int - id записи - полное совпаден
@@ -421,7 +399,8 @@ def equipment_subtype():
             deleted=deleted,                        # bool - Удален
             equipment_brand_id=equipment_brand_id,  # int - id типа изделия
             list_for_join=list_for_join,            # [int, ..int] - Список id элементов для объединение
-            r_filter=r_filter                       # dict - фильтр ответных данных
+            r_filter=r_filter,                      # dict - фильтр ответных данных
+            img=img
         )
 
         return result

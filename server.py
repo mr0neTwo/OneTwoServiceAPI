@@ -1583,17 +1583,6 @@ def get_clients():
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
-    ad_campaign_id = request_body.get('ad_campaign_id')
-    if ad_campaign_id and type(ad_campaign_id) != int:
-        return {'success': False, 'message': "ad_campaign_id is not integer"}, 400
-
-    if ad_campaign_id and db_iteraction.get_adCampaign(id=ad_campaign_id)['count'] == 0:
-        return {'success': False, 'message': 'ad_campaign_id is not defined'}, 400
-
-    address = request_body.get('address')
-    if address:
-        address = str(address)
-
     conflicted = request_body.get('conflicted')
     if conflicted:
         conflicted = bool(conflicted)
@@ -1602,20 +1591,8 @@ def get_clients():
     if deleted:
         deleted = bool(deleted)
 
-    name_doc = request_body.get('name_doc')
-    if name_doc:
-        name_doc = str(name_doc)
 
-    discount_code = request_body.get('discount_code')
-    if discount_code:
-        discount_code = str(discount_code)
 
-    discount_goods = request_body.get('discount_goods', 0)
-    if discount_goods:
-        try:
-            discount_goods = float(discount_goods)
-        except:
-            return {'success': False, 'message': 'discount_goods is not number'}, 400
 
     discount_goods_margin_id = request_body.get('discount_goods_margin_id')
     if discount_goods_margin_id and type(discount_goods_margin_id) != int:

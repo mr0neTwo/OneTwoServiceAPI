@@ -1,4 +1,6 @@
+import os
 import traceback
+from urllib.request import urlopen
 
 from sqlalchemy import and_
 from app.db.models.models import EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel
@@ -18,7 +20,7 @@ def add_equipment_type(self, title, icon, url, branches, deleted, r_filter):
             deleted=deleted
         )
         self.pgsql_connetction.session.add(equipment_type)
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         result = {'success': True}
         if r_filter:
             equipment_types = self.pgsql_connetction.session.query(EquipmentType).filter(
@@ -52,7 +54,6 @@ def add_equipment_type(self, title, icon, url, branches, deleted, r_filter):
             result['data'] = data
             result['page'] = r_filter.get('page', 0)
         else:
-            self.pgsql_connetction.session.refresh(equipment_type)
             data = {
                 'id': equipment_type.id,
                 'title': equipment_type.title,
@@ -63,11 +64,11 @@ def add_equipment_type(self, title, icon, url, branches, deleted, r_filter):
             }
             result['message'] = f'{equipment_type.id} added'
             result['data'] = data
-        self.pgsql_connetction.session.close()
+
+        self.pgsql_connetction.session.commit()
         return result, 201
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -112,11 +113,9 @@ def get_equipment_type(self, id=None, title=None, deleted=None, page=0):
 
         result['data'] = data
         result['page'] = page
-        self.pgsql_connetction.session.close()
         return result, 200
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -143,22 +142,27 @@ def edit_equipment_type(
         })
         # Если запрос содержит список для объединения
         if list_for_join is not None:
+
             # Пройдем циклом по вему списку
             for equipment_type in list_for_join:
+
                 # Отметим запись как удаленную
                 self.pgsql_connetction.session.query(EquipmentType)\
                     .filter_by(id=equipment_type)\
                     .update({'deleted': True})
+
                 # Получим список дочерних брендов
                 list_brands = self.pgsql_connetction.session.query(EquipmentBrand)\
                     .filter_by(equipment_type_id=equipment_type)
+
                 # Пройдем циклом по списку дочерних брендов
                 for equipment_brand in list_brands:
+
                     # Заменим родительский элемент
                     self.pgsql_connetction.session.query(EquipmentBrand)\
                         .filter_by(id=equipment_brand.id)\
                         .update({'equipment_type_id': id})
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         if r_filter:
             equipment_types = self.pgsql_connetction.session.query(EquipmentType).filter(
                 and_(
@@ -193,11 +197,10 @@ def edit_equipment_type(
             result['page'] = r_filter.get('page', 0)
         else:
             result = {'success': True, 'message': f'{id} changed'}
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -209,11 +212,9 @@ def del_equipment_type(self, id):
         if equipment_type:
             self.pgsql_connetction.session.delete(equipment_type)
             self.pgsql_connetction.session.commit()
-            self.pgsql_connetction.session.close()
             return {'success': True, 'message': f'{id} deleted'}, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -232,7 +233,7 @@ def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_typ
             equipment_type_id=equipment_type_id
         )
         self.pgsql_connetction.session.add(equipment_brand)
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         result = {'success': True}
         if r_filter:
             equipment_brands = self.pgsql_connetction.session.query(EquipmentBrand).filter(
@@ -281,11 +282,10 @@ def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_typ
             }
             result['message'] = f'{equipment_brand.id} added'
             result['data'] = data
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 201
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -330,11 +330,9 @@ def get_equipment_brand(self, id=None, title=None, equipment_type_id=None, delet
 
         result['data'] = data
         result['page'] = page
-        self.pgsql_connetction.session.close()
         return result, 200
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -383,7 +381,7 @@ def edit_equipment_brand(
                     self.pgsql_connetction.session.query(EquipmentSubtype) \
                         .filter_by(id=equipment_subtype.id) \
                         .update({'equipment_brand_id': id})
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         if r_filter:
             equipment_brands = self.pgsql_connetction.session.query(EquipmentBrand).filter(
                 and_(
@@ -421,11 +419,10 @@ def edit_equipment_brand(
             result['page'] = page
         else:
             result = {'success': True, 'message': f'{id} changed'}
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -437,11 +434,9 @@ def del_equipment_brand(self, id):
         if equipment_brand:
             self.pgsql_connetction.session.delete(equipment_brand)
             self.pgsql_connetction.session.commit()
-            self.pgsql_connetction.session.close()
             return {'success': True, 'message': f'{id} deleted'}, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -449,7 +444,7 @@ def del_equipment_brand(self, id):
 
 # Таблица МОДИФИКАЦИЙ ИЗДЕЛИЙ ==================================================================================
 
-def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_brand_id, r_filter):
+def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_brand_id, r_filter, img):
     try:
         equipment_subtype = EquipmentSubtype(
             title=title,
@@ -460,7 +455,25 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
             equipment_brand_id=equipment_brand_id
         )
         self.pgsql_connetction.session.add(equipment_subtype)
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
+
+        # загрузка изображения
+        if img:
+            # Загрузим данные из URI в переменную
+            with urlopen(img) as response:
+                data = response.read()
+            # Определим путь для сохранения файла
+            url_file = f'build/static/data/PCB/subtype{equipment_subtype.id}.jpeg'
+            # Запишим файл изображения по данному пути
+            with open(url_file, 'wb') as f:
+                f.write(data)
+            # Определим путь для доступа к этому файлу изображения
+            url = f'data/PCB/subtype{equipment_subtype.id}.jpeg'
+            # Сохраним этот путь в таблице данных
+            self.pgsql_connetction.session.query(EquipmentSubtype)\
+                .filter_by(id=equipment_subtype.id)\
+                .update({'url': url})
+
         result = {'success': True}
         if r_filter:
             equipment_subtypes = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
@@ -497,7 +510,7 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
             result['data'] = data
             result['page'] = page
         else:
-            self.pgsql_connetction.session.refresh(equipment_subtype)
+
             data = {
                 'id': equipment_subtype.id,
                 'title': equipment_subtype.title,
@@ -509,11 +522,10 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
             }
             result['message'] = f'{equipment_subtype.id} added'
             result['data'] = data
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 201
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -556,11 +568,9 @@ def get_equipment_subtype(self, id=None, title=None, equipment_brand_id=None, de
 
         result['data'] = data
         result['page'] = page
-        self.pgsql_connetction.session.close()
         return result, 200
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -576,9 +586,26 @@ def edit_equipment_subtype(
         deleted=None,
         equipment_brand_id=None,
         list_for_join=None,
-        r_filter=None
+        r_filter=None,
+        img=None
     ):
     try:
+        # Загрузка изображения
+        if img:
+            # Загрузим данные из URI в переменную
+            with urlopen(img) as response:
+                data = response.read()
+
+            # Определим путь для сохранения файла
+            url = f'build/static/data/PCB/subtype{id}.jpeg'
+
+            # Запишим файл изображения по данному пути
+            with open(url, 'wb') as f:
+                f.write(data)
+
+            # Определим путь для доступа к этому файлу изображения
+            url = f'data/PCB/subtype{id}.jpeg'
+
         self.pgsql_connetction.session.query(EquipmentSubtype).filter_by(id=id).update({
             'title': title if title is not None else EquipmentSubtype.title,
             'icon': icon if icon is not None else EquipmentSubtype.icon,
@@ -647,11 +674,10 @@ def edit_equipment_subtype(
             result['page'] = page
         else:
             result = {'success': True, 'message': f'{id} changed'}
-        self.pgsql_connetction.session.close()
+        # self.pgsql_connetction.session.close()
         return result, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -663,11 +689,11 @@ def del_equipment_subtype(self, id):
         if equipment_subtype:
             self.pgsql_connetction.session.delete(equipment_subtype)
             self.pgsql_connetction.session.commit()
-            self.pgsql_connetction.session.close()
+            # self.pgsql_connetction.session.close()
             return {'success': True, 'message': f'{id} deleted'}, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
+        # self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -686,7 +712,7 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
             equipment_subtype_id=equipment_subtype_id
         )
         self.pgsql_connetction.session.add(equipment_model)
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         result = {'success': True}
         if r_filter:
             equipment_models = self.pgsql_connetction.session.query(EquipmentModel).filter(
@@ -723,7 +749,6 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
             result['data'] = data
             result['page'] = page
         else:
-            self.pgsql_connetction.session.refresh(equipment_model)
             data = {
                 'id': equipment_model.id,
                 'title': equipment_model.title,
@@ -735,11 +760,10 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
             }
             result['message'] = f'{equipment_model.id} added'
             result['data'] = data
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 201
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -759,7 +783,6 @@ def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, de
         else:
             equipment_model = self.pgsql_connetction.session.query(EquipmentModel).order_by(EquipmentModel.title).order_by(EquipmentModel.id)
 
-        self.pgsql_connetction.session.expire_all()
         result = {'success': True}
         count = equipment_model.count()
         result['count'] = count
@@ -783,11 +806,9 @@ def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, de
 
         result['data'] = data
         result['page'] = page
-        self.pgsql_connetction.session.close()
         return result, 200
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -813,7 +834,7 @@ def edit_equipment_model(
             'deleted': deleted if deleted is not None else EquipmentModel.deleted,
             'equipment_subtype_id': equipment_subtype_id if equipment_subtype_id is not None else EquipmentModel.equipment_subtype_id,
         })
-        self.pgsql_connetction.session.commit()
+        self.pgsql_connetction.session.flush()
         if r_filter:
             equipment_models = self.pgsql_connetction.session.query(EquipmentModel).filter(
                 and_(
@@ -851,11 +872,10 @@ def edit_equipment_model(
             result['page'] = page
         else:
             result = {'success': True, 'message': f'{id} changed'}
-        self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -866,12 +886,10 @@ def del_equipment_model(self, id):
         equipment_model = self.pgsql_connetction.session.query(EquipmentModel).get(id)
         if equipment_model:
             self.pgsql_connetction.session.delete(equipment_model)
-            self.pgsql_connetction.session.commit()
-            self.pgsql_connetction.session.close()
+            self.pgsql_connetction.session. v()
             return {'success': True, 'message': f'{id} deleted'}, 202
     except:
         self.pgsql_connetction.session.rollback()
-        self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550

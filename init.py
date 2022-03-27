@@ -1,13 +1,13 @@
-import random
-from pprint import pprint
-
-from data import equipment_type
 
 
 
-t_fil = [{
-    'title': random.choice(equipment_type)[:random.randint(30, 50)],
-    'deleted': bool(random.randint(0, 1))
-} for x in range(10)] + [False, False, False]
+from urllib.request import urlopen
+from data import test_img
 
-pprint(t_fil)
+
+
+
+import base64
+data_uri = base64.b64encode(open('build/static/data/PCB/subtype31.jpeg', 'rb').read()).decode('utf-8')
+print(data_uri[:77] == test_img[23:100])
+print(test_img[23:100])

@@ -1,11 +1,12 @@
-import operator
+import base64
+import os
 import random
-from pprint import pprint
 
 import pytest
 import requests
 
-from data import equipment_type, equipment_brand, equipment_subtype, equipment_model
+from data.data import equipment_type, equipment_brand, equipment_subtype, equipment_model
+from data.test_images import img1, img2
 
 equipment_types = [{
     'id': x + 1,
@@ -189,6 +190,63 @@ emodel_for_edit = [
     }, {
         'id': random.randint(1, 40),
         'equipment_subtype_id': random.randint(1, 30)
+    }
+]
+etype_for_join = [
+    {
+        'id': 1,
+        'title': 'join1',
+        'list_for_join': [2, 3],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
+    }, {
+        'id': 4,
+        'title': 'join2',
+        'list_for_join': [5, 6, 7],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
+    }
+]
+ebrand_for_join = [
+    {
+        'id': 1,
+        'title': 'Brand(join1)',
+        'list_for_join': [2, 3],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
+    }, {
+        'id': 4,
+        'title': 'Brand(join2)',
+        'list_for_join': [5, 6, 7],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
+    }
+]
+esubtype_for_join = [
+    {
+        'id': 1,
+        'title': 'Subtype(join1)',
+        'list_for_join': [2, 3],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
+    }, {
+        'id': 4,
+        'title': 'Subtype(join2)',
+        'list_for_join': [5, 6, 7],
+        'filter': {
+            'title': '',
+            'deleted': False
+        }
     }
 ]
 
@@ -666,6 +724,324 @@ def test_get_equipment_models(server_url, headers, r_filter):
         'data': models
     }
 
-# todo: дописать тесты для join
-# todo: дописать тесты для добавление картинок
+
+@pytest.mark.parametrize('data', etype_for_join)
+def test_join_equipment_types(server_url, headers, data):
+
+    # Извлечем список id для объединения
+    list_for_join = data['list_for_join']
+
+    # Извлечем фильтр
+    r_filter = data.get('filter')
+
+    # Делаем запрос на изменение Типа техники в БД
+    result = requests.put(server_url + 'equipment_type', json=data, headers=headers).json()
+
+    #  Удаляем фильтер из данных для последующего сравнения
+    del data['filter']
+    del data['list_for_join']
+
+    # Обновляем тестовые данные, как бы это сделал обработчик запроса в БД
+    equipment_types[data['id'] - 1].update(data)
+
+    # Пройдем циклом по списку id
+    for etype_id in list_for_join:
+
+        # Отметим запись как удаленную
+        equipment_types[etype_id-1]['deleted'] = True
+
+        # Получим список дочерних брендов
+        list_brands = filter(lambda brand: brand['equipment_type_id'] == etype_id, equipment_brands)
+
+        # Пройдем циклом по списку дочерних брендов
+        for ebrand in list_brands:
+
+            # Заменим родительский элемент
+            equipment_brands[ebrand['id'] - 1]['equipment_type_id'] = data['id']
+
+
+
+    # Если фильтр содержит тело
+    if r_filter:
+
+        # Отсортируем данные одинаково (иначе тесты сыпятся)
+        result['data'] = filter_equipment(result['data'])
+
+        # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+        equipment_type = filter_equipment(
+            equipment_types,
+            title=r_filter.get('title'),
+            deleted=r_filter.get('deleted')
+        )
+        # Сравниваем данные
+        assert result == {
+            'success': True,
+            'count': len(equipment_type),
+            'page': 0,
+            'data': equipment_type
+        }
+    # Если фильтр не содержит тело
+    else:
+        # Сравниваем данные
+        assert result == {'success': True, 'message': f'{data["id"]} changed'}
+
+    # Проверим также изменения в брендах
+    # Делаем запрос Брендов в БД
+    result = requests.post(server_url + 'get_equipment_brand', json={}, headers=headers).json()
+
+    # Отсортируем данные одинаково (иначе тесты сыпятся)
+    result['data'] = filter_equipment(result['data'])
+
+    # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+    brands = filter_equipment(equipment_brands)
+
+    # Сравниваем данные
+    assert result == {
+        'success': True,
+        'count': len(brands),
+        'page': 0,
+        'data': brands
+    }
+
+
+@pytest.mark.parametrize('data', ebrand_for_join)
+def test_join_equipment_brands(server_url, headers, data):
+
+    # Извлечем список id для объединения
+    list_for_join = data['list_for_join']
+
+    # Извлечем фильтр
+    r_filter = data.get('filter')
+
+    # Делаем запрос на изменение Бренда техники в БД
+    result = requests.put(server_url + 'equipment_brand', json=data, headers=headers).json()
+
+    #  Удаляем фильтер из данных для последующего сравнения
+    del data['filter']
+    del data['list_for_join']
+
+    # Обновляем тестовые данные, как бы это сделал обработчик запроса в БД
+    equipment_brands[data['id'] - 1].update(data)
+
+    # Пройдем циклом по списку id
+    for ebrand_id in list_for_join:
+
+        # Отметим запись как удаленную
+        equipment_brands[ebrand_id-1]['deleted'] = True
+
+        # Получим список дочерних брендов
+        list_subtypes = filter(lambda subtype: subtype['equipment_brand_id'] == ebrand_id, equipment_subtypes)
+
+        # Пройдем циклом по списку дочерних модулей
+        for esubtype in list_subtypes:
+
+            # Заменим родительский элемент
+            equipment_subtypes[esubtype['id'] - 1]['equipment_brand_id'] = data['id']
+
+    # Если фильтр содержит тело
+    if r_filter:
+
+        # Отсортируем данные одинаково (иначе тесты сыпятся)
+        result['data'] = filter_equipment(result['data'])
+
+        # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+        brands = filter_equipment(
+            equipment_brands,
+            title=r_filter.get('title'),
+            deleted=r_filter.get('deleted'),
+            parents_id=r_filter.get('equipment_type_id'),
+            field_parents='equipment_type_id'
+        )
+        # Сравниваем данные
+        assert result == {
+            'success': True,
+            'count': len(brands),
+            'page': 0,
+            'data': brands
+        }
+    # Если фильтр не содержит тело
+    else:
+        # Сравниваем данные
+        assert result == {'success': True, 'message': f'{data["id"]} changed'}
+
+    # Проверим также изменения в Модулях
+    # Делаем запрос Модулей в БД
+    result = requests.post(server_url + 'get_equipment_subtype', json={}, headers=headers).json()
+
+    # Отсортируем данные одинаково (иначе тесты сыпятся)
+    result['data'] = filter_equipment(result['data'])
+
+    # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+    subtypes = filter_equipment(equipment_subtypes)
+
+    # Сравниваем данные
+    assert result == {
+        'success': True,
+        'count': len(subtypes),
+        'page': 0,
+        'data': subtypes
+    }
+
+
+@pytest.mark.parametrize('data', esubtype_for_join)
+def test_join_equipment_subtypes(server_url, headers, data):
+
+    # Извлечем список id для объединения
+    list_for_join = data['list_for_join']
+
+    # Извлечем фильтр
+    r_filter = data.get('filter')
+
+    # Делаем запрос на изменение Модуля техники в БД
+    result = requests.put(server_url + 'equipment_subtype', json=data, headers=headers).json()
+
+    #  Удаляем фильтер из данных для последующего сравнения
+    del data['filter']
+    del data['list_for_join']
+
+    # Обновляем тестовые данные, как бы это сделал обработчик запроса в БД
+    equipment_subtypes[data['id'] - 1].update(data)
+
+    # Пройдем циклом по списку id
+    for esubtype_id in list_for_join:
+
+        # Отметим запись как удаленную
+        equipment_subtypes[esubtype_id-1]['deleted'] = True
+
+        # Получим список дочерних моделей
+        list_models = filter(lambda model: model['equipment_subtype_id'] == esubtype_id, equipment_models)
+
+        # Пройдем циклом по списку дочерних модулей
+        for emodel in list_models:
+
+            # Заменим родительский элемент
+            equipment_models[emodel['id'] - 1]['equipment_subtype_id'] = data['id']
+
+    # Если фильтр содержит тело
+    if r_filter:
+
+        # Отсортируем данные одинаково (иначе тесты сыпятся)
+        result['data'] = filter_equipment(result['data'])
+
+        # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+        subtypes = filter_equipment(
+            equipment_subtypes,
+            title=r_filter.get('title'),
+            deleted=r_filter.get('deleted'),
+            parents_id=r_filter.get('equipment_brand_id'),
+            field_parents='equipment_brand_id'
+        )
+        # Сравниваем данные
+        assert result == {
+            'success': True,
+            'count': len(subtypes),
+            'page': 0,
+            'data': subtypes
+        }
+    # Если фильтр не содержит тело
+    else:
+        # Сравниваем данные
+        assert result == {'success': True, 'message': f'{data["id"]} changed'}
+
+    # Проверим также изменения в Моделях
+    # Делаем запрос Моделей в БД
+    result = requests.post(server_url + 'get_equipment_model', json={}, headers=headers).json()
+
+    # Отсортируем данные одинаково (иначе тесты сыпятся)
+    result['data'] = filter_equipment(result['data'])
+
+    # Фильтруем тестовые данные, как бы отфильтровал обработчик запроса к БД
+    models = filter_equipment(equipment_models)
+
+    # Сравниваем данные
+    assert result == {
+        'success': True,
+        'count': len(models),
+        'page': 0,
+        'data': models
+    }
+
+
+def test_create_subtype_with_img(server_url, headers):
+
+    # Определим данные
+    data = {
+        'id': 31,
+        'title': 'with_image',
+        'branches': [1, 2],
+        'deleted': False,
+        'icon': None,
+        'equipment_brand_id': 1,
+        'img': img1
+    }
+
+    # Делаем тестовый запрос на создание Типа техники в БД
+    result = requests.post(server_url + 'equipment_subtype', json=data, headers=headers).json()
+
+    # Удаляем картинку из запроса
+    del data['img']
+
+    # Добавим url, который должен появится
+    data['url'] = f'data/PCB/subtype{data["id"]}.jpeg'
+
+    # Сравниваем ответ
+    assert result == {
+        'success': True,
+        'data': data,
+        'message': f'{data["id"]} added'
+    }
+
+    # Проверим существует ли файл с изображением
+    data_uri = base64.b64encode(open('build/static/' + data['url'], 'rb').read()).decode('utf-8')
+    assert data_uri == img1[23:]
+
+    # Удалим файл
+    if os.path.isfile('build/static/' + data['url']):
+        os.remove('build/static/' + data['url'])
+
+
+def test_edit_subtype_with_img(server_url, headers):
+    # Определим данные
+    data = {
+        'id': 1,
+        'title': 'with_image_edit',
+        'branches': [1, 2],
+        'deleted': False,
+        'icon': None,
+        'equipment_brand_id': 1,
+        'img': img2
+    }
+
+    # Делаем тестовый запрос на создание Типа техники в БД
+    result = requests.put(server_url + 'equipment_subtype', json=data, headers=headers).json()
+
+    # Удаляем картинку из запроса
+    del data['img']
+
+    # Добавим url, который должен появится
+    data['url'] = f'data/PCB/subtype{data["id"]}.jpeg'
+
+    # Обновляем тестовые данные, как бы это сделал обработчик запроса в БД
+    equipment_subtypes[data['id'] - 1].update(data)
+
+    # Сравниваем данные
+    assert result == {'success': True, 'message': f'{data["id"]} changed'}
+
+    # Проверим существует ли файл с изображением
+    data_uri = base64.b64encode(open('build/static/' + data['url'], 'rb').read()).decode('utf-8')
+    assert data_uri == img2[23:]
+
+    # Удалим файл
+    if os.path.isfile('build/static/' + data['url']):
+        os.remove('build/static/' + data['url'])
+
+
+def test_data_valid(server_url, headers):
+
+    # Делаем запрос без тела json
+    result = requests.post(server_url + 'get_equipment_type', headers=headers).json()
+
+    # Сравниваем результат
+    assert result == {'success': False, 'message': "Request don't has json body"}
+
 # todo: дописать тесты для невалидных данных

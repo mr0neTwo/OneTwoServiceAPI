@@ -82,7 +82,7 @@ class PGSQL_connetction:
 if __name__ == '__main__':
 
     conn_test = PGSQL_connetction(
-       host='5.53.124.252',
+       host='localhost',
        port='5432',
        user='postgres',
        password='225567',

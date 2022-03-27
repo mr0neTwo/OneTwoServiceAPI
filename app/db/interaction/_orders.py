@@ -236,10 +236,8 @@ def get_orders(self,
                     (Orders.closed_at <= closed_at[1] if closed_at[1] else True) if closed_at else True,
                     (Orders.assigned_at >= assigned_at[0] if assigned_at[0] else True) if assigned_at else True,
                     (Orders.assigned_at <= assigned_at[1] if assigned_at[1] else True) if assigned_at else True,
-                    (Orders.estimated_done_at >= estimated_done_at[0] if estimated_done_at[
-                        0] else True) if estimated_done_at else True,
-                    (Orders.estimated_done_at <= estimated_done_at[1] if estimated_done_at[
-                        1] else True) if estimated_done_at else True,
+                    (Orders.estimated_done_at >= estimated_done_at[0] if estimated_done_at[0] else True) if estimated_done_at else True,
+                    (Orders.estimated_done_at <= estimated_done_at[1] if estimated_done_at[1] else True) if estimated_done_at else True,
                     (Orders.scheduled_for >= scheduled_for[0] if scheduled_for[0] else True) if scheduled_for else True,
                     (Orders.scheduled_for <= scheduled_for[1] if scheduled_for[1] else True) if scheduled_for else True,
                     (Orders.warranty_date >= warranty_date[0] if warranty_date[0] else True) if warranty_date else True,
@@ -255,17 +253,17 @@ def get_orders(self,
 
                     Orders.cell == cell if cell else True,
                     Orders.id_label.ilike(f'%{id_label}%') if id_label else True,
-                    # Orders.kindof_good == kindof_good if kindof_good else True,
-                    # Orders.brand == brand if brand else True,
-                    # Orders.model == model if model else True,
-                    # Orders.subtype == subtype if subtype else True,
+                    Orders.kindof_good_id == kindof_good if kindof_good is not None else True,
+                    Orders.brand_id == brand if brand is not None else True,
+                    # Orders.model_id == model if model is not None else True,
+                    Orders.subtype_id == subtype if subtype is not None else True,
                     # Orders.serial.ilike(f'%{serial}%') if serial else True,
                     Orders.client.property.mapper.class_.name.ilike(f'%{client_name}%') if client_name else True,
                     # Orders.client.property.mapper.class_.phone[0].ilike(f'%{client_name}%') if client_phone else True,
 
-                    Orders.urgent == urgent if urgent != None else True,
-                    (Orders.estimated_done_at < time_now()) if overdue else True,
-                    (Orders.status_deadline < time_now()) if status_overdue else True
+                    Orders.urgent == urgent if urgent is not None else True,
+                    (Orders.estimated_done_at < time_now()) if overdue is not None else True,
+                    (Orders.status_deadline < time_now()) if status_overdue is not None else True
                 )
             ).order_by(
                 getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
@@ -274,7 +272,6 @@ def get_orders(self,
             .order_by(
             getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
 
-    self.pgsql_connetction.session.expire_all()
     result = {'success': True}
     count = orders.count()
     result['count'] = count
@@ -534,6 +531,7 @@ def get_orders(self,
 
     result['data'] = data
     result['page'] = page
+    # self.pgsql_connetction.session.close()
     return result
 
 

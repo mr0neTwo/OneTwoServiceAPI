@@ -1,5 +1,8 @@
+import traceback
+
 from sqlalchemy import or_
-from app.db.models.models import CustomFilters
+from app.db.models.models import CustomFilters, Orders, time_now
+
 
 def get_badges(self, employee_access):
     statuses = self.get_status()['data']
@@ -25,22 +28,15 @@ def get_badges(self, employee_access):
             'client_id': None
         }
     }
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge1['filter']['status_id'])) \
+            .filter(Orders.engineer_id.in_(badge1['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge1['filter']['status_id']))
 
-    badge1['count'] = self.get_orders(
-        status_id=badge1['filter']['status_id'],
-        page=badge1['filter']['page'],
-        urgent=badge1['filter']['urgent'],
-        overdue=badge1['filter']['overdue'],
-        status_overdue=badge1['filter']['status_overdue'],
-        engineer_id=badge1['filter']['engineer_id'],
-        order_type_id=badge1['filter']['order_type_id'],
-        manager_id=badge1['filter']['manager_id'],
-        created_at=badge1['filter']['created_at'],
-        kindof_good=badge1['filter']['kindof_good'],
-        brand=badge1['filter']['brand'],
-        subtype=badge1['filter']['subtype'],
-        client_id=badge1['filter']['client_id']
-    )['count']
+    badge1['count'] = orders.count()
 
     badge2 = {
         'id': 2,
@@ -64,21 +60,17 @@ def get_badges(self, employee_access):
         }
     }
 
-    badge2['count'] = self.get_orders(
-        status_id=badge2['filter']['status_id'],
-        page=badge2['filter']['page'],
-        urgent=badge2['filter']['urgent'],
-        overdue=badge2['filter']['overdue'],
-        status_overdue=badge2['filter']['status_overdue'],
-        engineer_id=badge2['filter']['engineer_id'],
-        order_type_id=badge2['filter']['order_type_id'],
-        manager_id=badge2['filter']['manager_id'],
-        created_at=badge2['filter']['created_at'],
-        kindof_good=badge2['filter']['kindof_good'],
-        brand=badge2['filter']['brand'],
-        subtype=badge2['filter']['subtype'],
-        client_id=badge2['filter']['client_id']
-    )['count']
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge2['filter']['status_id'])) \
+            .filter(Orders.urgent.is_(badge2['filter']['urgent'])) \
+            .filter(Orders.engineer_id.in_(badge2['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge2['filter']['status_id'])) \
+            .filter(Orders.urgent.is_(badge2['filter']['urgent']))
+
+    badge2['count'] = orders.count()
 
     badge3 = {
         'id': 3,
@@ -102,21 +94,15 @@ def get_badges(self, employee_access):
         }
     }
 
-    badge3['count'] = self.get_orders(
-        status_id=badge3['filter']['status_id'],
-        page=badge3['filter']['page'],
-        urgent=badge3['filter']['urgent'],
-        overdue=badge3['filter']['overdue'],
-        status_overdue=badge3['filter']['status_overdue'],
-        engineer_id=badge3['filter']['engineer_id'],
-        order_type_id=badge3['filter']['order_type_id'],
-        manager_id=badge3['filter']['manager_id'],
-        created_at=badge3['filter']['created_at'],
-        kindof_good=badge3['filter']['kindof_good'],
-        brand=badge3['filter']['brand'],
-        subtype=badge3['filter']['subtype'],
-        client_id=badge3['filter']['client_id']
-    )['count']
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge3['filter']['status_id'])) \
+            .filter(Orders.engineer_id.in_(badge3['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge3['filter']['status_id']))
+
+    badge3['count'] = orders.count()
 
     badge4 = {
         'id': 4,
@@ -140,21 +126,17 @@ def get_badges(self, employee_access):
         }
     }
 
-    badge4['count'] = self.get_orders(
-        status_id=badge4['filter']['status_id'],
-        page=badge4['filter']['page'],
-        urgent=badge4['filter']['urgent'],
-        overdue=badge4['filter']['overdue'],
-        status_overdue=badge4['filter']['status_overdue'],
-        engineer_id=badge4['filter']['engineer_id'],
-        order_type_id=badge4['filter']['order_type_id'],
-        manager_id=badge4['filter']['manager_id'],
-        created_at=badge4['filter']['created_at'],
-        kindof_good=badge4['filter']['kindof_good'],
-        brand=badge4['filter']['brand'],
-        subtype=badge4['filter']['subtype'],
-        client_id=badge4['filter']['client_id']
-    )['count']
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge4['filter']['status_id'])) \
+            .filter(Orders.estimated_done_at < time_now()) \
+            .filter(Orders.engineer_id.in_(badge4['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge4['filter']['status_id'])) \
+            .filter(Orders.estimated_done_at < time_now())
+
+    badge4['count'] = orders.count()
 
     badge5 = {
         'id': 5,
@@ -178,21 +160,17 @@ def get_badges(self, employee_access):
         }
     }
 
-    badge5['count'] = self.get_orders(
-        status_id=badge5['filter']['status_id'],
-        page=badge5['filter']['page'],
-        urgent=badge5['filter']['urgent'],
-        overdue=badge5['filter']['overdue'],
-        status_overdue=badge5['filter']['status_overdue'],
-        engineer_id=badge5['filter']['engineer_id'],
-        order_type_id=badge5['filter']['order_type_id'],
-        manager_id=badge5['filter']['manager_id'],
-        created_at=badge5['filter']['created_at'],
-        kindof_good=badge5['filter']['kindof_good'],
-        brand=badge5['filter']['brand'],
-        subtype=badge5['filter']['subtype'],
-        client_id=badge5['filter']['client_id']
-    )['count']
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge5['filter']['status_id'])) \
+            .filter(Orders.status_deadline < time_now()) \
+            .filter(Orders.engineer_id.in_(badge5['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge5['filter']['status_id'])) \
+            .filter(Orders.status_deadline < time_now())
+
+    badge5['count'] = orders.count()
 
     badge6 = {
         'id': 6,
@@ -216,79 +194,126 @@ def get_badges(self, employee_access):
         }
     }
 
-    badge6['count'] = self.get_orders(
-        status_id=badge6['filter']['status_id'],
-        page=badge6['filter']['page'],
-        urgent=badge6['filter']['urgent'],
-        overdue=badge6['filter']['overdue'],
-        status_overdue=badge6['filter']['status_overdue'],
-        engineer_id=badge6['filter']['engineer_id'],
-        order_type_id=badge6['filter']['order_type_id'],
-        manager_id=badge6['filter']['manager_id'],
-        created_at=badge6['filter']['created_at'],
-        kindof_good=badge6['filter']['kindof_good'],
-        brand=badge6['filter']['brand'],
-        subtype=badge6['filter']['subtype'],
-        client_id=badge6['filter']['client_id']
-    )['count']
+    if employee_access:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge6['filter']['status_id'])) \
+            .filter(Orders.engineer_id.in_(badge6['filter']['engineer_id']))
+    else:
+        orders = self.pgsql_connetction.session.query(Orders) \
+            .filter(Orders.status_id.in_(badge6['filter']['status_id']))
+
+    badge6['count'] = orders.count()
 
     result = {'success': True}
     result['data'] = [badge1, badge2, badge3, badge4, badge5, badge6]
 
     return result
 
+
 # Таблица ПОЛЬЗОВАТЕЛЬСКИХ ФИЛЬТРОВ ======================================================================
 
+
 def add_custom_filters(self, title, filters, employee_id, general=False):
-    custom_filters = CustomFilters(
-        title=title,
-        filters=filters,
-        employee_id=employee_id,
-        general=general
-    )
-    self.pgsql_connetction.session.add(custom_filters)
-    self.pgsql_connetction.session.commit()
-    self.pgsql_connetction.session.refresh(custom_filters)
-    return custom_filters.id
+    try:
+        custom_filter = CustomFilters(
+            title=title,
+            filters=filters,
+            employee_id=employee_id,
+            general=general
+        )
+        self.pgsql_connetction.session.add(custom_filter)
+        self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+        custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
+            or_(
+                CustomFilters.employee_id == employee_id,
+                CustomFilters.general.is_(True)
+            ))
+        count = custom_filters.count()
+        result['count'] = count
+
+        data = []
+        for row in custom_filters:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'filters': row.filters,
+                'employee_id': row.employee_id,
+                'general': row.general
+            })
+        result['message'] = f'{custom_filter.id} added'
+        result['data'] = data
+        self.pgsql_connetction.session.commit()
+        return result, 201
+    except:
+        self.pgsql_connetction.session.rollback()
+        print(traceback.format_exc())
+        result = {'success': False, 'message': 'server error'}
+        return result, 550
+
 
 def get_custom_filters(self, employee_id):
-    custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
-        or_(
-            CustomFilters.employee_id == employee_id,
-            CustomFilters.general == True,
-        ))
+    try:
+        custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
+            or_(
+                CustomFilters.employee_id == employee_id,
+                CustomFilters.general.is_(True)
+            ))
 
-    self.pgsql_connetction.session.expire_all()
-    result = {'success': True}
-    count = custom_filters.count()
-    result['count'] = count
+        result = {'success': True}
+        count = custom_filters.count()
+        result['count'] = count
 
-    data = []
-    for row in custom_filters:
-        data.append({
-            'id': row.id,
-            'title': row.title,
-            'filters': row.filters,
-            'employee_id': row.employee_id,
-            'general': row.general,
-            'active': False
-        })
+        data = []
+        for row in custom_filters:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'filters': row.filters,
+                'employee_id': row.employee_id,
+                'general': row.general
+            })
 
-    result['data'] = data
-    return result
+        result['data'] = data
+        return result, 200
+    except:
+        self.pgsql_connetction.session.rollback()
+        print(traceback.format_exc())
+        result = {'success': False, 'message': 'server error'}
+        return result, 550
 
-def edit_custom_filters(self, id, title=None, filters=None, general=None):
-    self.pgsql_connetction.session.query(CustomFilters).filter_by(id=id).update({
-        'title': title if title is not None else CustomFilters.title,
-        'filters': filters if filters is not None else CustomFilters.filters,
-        'general': general if general is not None else CustomFilters.general
-    })
-    self.pgsql_connetction.session.commit()
-    return id
 
-def del_custom_filters(self, id):
-    custom_filters = self.pgsql_connetction.session.query(CustomFilters).get(id)
-    if custom_filters:
-        self.pgsql_connetction.session.delete(custom_filters)
+def del_custom_filters(self, id, employee_id):
+    try:
+        custom_filter = self.pgsql_connetction.session.query(CustomFilters).get(id)
+        if custom_filter:
+            self.pgsql_connetction.session.delete(custom_filter)
+            self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+        custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
+            or_(
+                CustomFilters.employee_id == employee_id,
+                CustomFilters.general.is_(True)
+            ))
+        count = custom_filters.count()
+        result['count'] = count
+
+        data = []
+        for row in custom_filters:
+            data.append({
+                'id': row.id,
+                'title': row.title,
+                'filters': row.filters,
+                'employee_id': row.employee_id,
+                'general': row.general
+            })
+        result['data'] = data
         self.pgsql_connetction.session.commit()
-        return self.get_custom_filters(1)
+        return result, 202
+    except:
+        self.pgsql_connetction.session.rollback()
+        print(traceback.format_exc())
+        result = {'success': False, 'message': 'server error'}
+        return result, 550

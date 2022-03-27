@@ -53,14 +53,11 @@ def get_custom_filters():
     if db_iteraction.get_employee(id=employee_id)['count'] == 0:
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
-    try:
-        result = db_iteraction.get_custom_filters(
-            employee_id=employee_id                        # int - id сотрудника - полное совпадение
-        )
-        return result, 200
-    except:
-        print(traceback.format_exc())
-        return {'success': False, 'message': 'server error'}, 550
+    result = db_iteraction.get_custom_filters(
+        employee_id=employee_id                        # int - id сотрудника - полное совпадение
+    )
+    return result
+
 
 
 @filters_api.route('/custom_filters', methods=['POST', 'PUT', 'DELETE'])
@@ -103,40 +100,16 @@ def custom_filters():
         if not filters:
             return {'success': False, 'message': 'filters required'}, 400
 
-        try:
-            db_iteraction.add_custom_filters(
-                title=title,                    # str - Название фильтра - обязательное поле
-                filters=filters,                # json - фильтр - обязательное поле
-                employee_id=employee_id,        # int - id сотрудника - обязательное поле
-                general=general                 # bool - Общий - обязательное поле
-            )
-            return {'success': True, 'message': f'{title} added'}, 201
-        except:
-            print(traceback.format_exc())
-            return {'success': False, 'message': 'server error'}, 550
-
-    # Проверим сущестует ли запись по данному id
-    # if db_iteraction.get_custom_filters(id=id)['count'] == 0:
-    #     return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-        try:
-            db_iteraction.edit_custom_filters(
-                id=id,                    # int - id записи - полное совпаден
-                title=title,              # str - Новое название филиала
-                filters=filters,          # json - фильтр
-                general=general           # bool - общпй
-            )
-            return {'success': True, 'message': f'{id} changed'}, 202
-        except:
-            print(traceback.format_exc())
-            return {'success': False, 'message': 'server error'}, 550
+        result = db_iteraction.add_custom_filters(
+            title=title,                    # str - Название фильтра - обязательное поле
+            filters=filters,                # json - фильтр - обязательное поле
+            employee_id=employee_id,        # int - id сотрудника - обязательное поле
+            general=general                 # bool - Общий - обязательное поле
+        )
+        return result
 
     if request.method == 'DELETE':
-        try:
-            db_iteraction.del_custom_filters(
-                id=id)           # int - id записи - полное совпаден
-            return {'success': True, 'message': f'{id} deleted'}, 202
-        except:
-            print(traceback.format_exc())
-            return {'success': False, 'message': 'server error'}, 550
+        return db_iteraction.del_custom_filters(
+            id=id,                      # int - id записи - полное совпаден
+            employee_id=employee_id
+        )

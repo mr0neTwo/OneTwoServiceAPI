@@ -1,23 +1,19 @@
 import time
-from pprint import pprint
 import re
 
-from sqlalchemy import or_, and_, desc, func, Column, TEXT, JSON, INTEGER, ForeignKey, BOOLEAN, FLOAT
-from sqlalchemy.orm import contains_eager
+from sqlalchemy import and_, desc, func
 from werkzeug.security import generate_password_hash
 
 from app.db.client.client import PGSQL_connetction
 from app.db.models.models import Base, AdCampaign, Employees, Attachments, Branch, DiscountMargin, OrderType, \
-    StatusGroup, Status, Operations, OrderParts, Clients, Orders, time_now, MenuRows, TableHeaders, Badges, \
-    CustomFilters, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
+    StatusGroup, Status, OrderParts, Clients, time_now, MenuRows, TableHeaders, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
     GenerallyInfo, Counts, Schedule, DictMalfunction, DictPackagelist, Cashboxs, Payments, ItemPayments, Payrolls, \
     Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts, \
     NotificationTemplate, NotificationEvents
 
 from tqdm import tqdm
 
-from data import data_menu_rows, dataTableHeader, bages, equipment_type, equipment_brand, equipment_subtype, \
-    equipment_model, data_setting_menu, data_group_statuses, data_statuses, data_roles, data_branches, data_counts, \
+from data.data import data_menu_rows, dataTableHeader, bages, data_setting_menu, data_group_statuses, data_statuses, data_roles, data_branches, data_counts, \
     data_cashboxes, data_item_payments, data_group_service, data_service, data_margin
 
 from payments.alfa import alfa
@@ -64,8 +60,8 @@ class DbInteraction():
 
     # Imported methods
     from ._orders import add_orders, get_orders, edit_orders, del_orders
-    from ._filters import get_badges, add_custom_filters, get_custom_filters, edit_custom_filters, del_custom_filters
     from ._operations import add_operations, get_operations, edit_operations, del_operations
+    from ._filters import get_badges, add_custom_filters, get_custom_filters, del_custom_filters
     from ._equipments import add_equipment_type, get_equipment_type, edit_equipment_type, del_equipment_type
     from ._equipments import add_equipment_brand, get_equipment_brand, edit_equipment_brand, del_equipment_brand
     from ._equipments import add_equipment_subtype, get_equipment_subtype, edit_equipment_subtype, del_equipment_subtype
@@ -2044,6 +2040,7 @@ class DbInteraction():
 
         result['data'] = data
         result['page'] = page
+        # self.pgsql_connetction.session.close()
         return result
 
     def edit_clients(self,
@@ -2850,7 +2847,7 @@ class DbInteraction():
         self.pgsql_connetction.session.commit()
         self.pgsql_connetction.session.refresh(payments)
         payment_id = payments.id
-        self.pgsql_connetction.session.close()
+        # self.pgsql_connetction.session.close()
         return payment_id
 
     def get_payments(self,
