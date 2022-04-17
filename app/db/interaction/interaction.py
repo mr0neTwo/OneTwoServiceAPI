@@ -6,10 +6,11 @@ from werkzeug.security import generate_password_hash
 
 from app.db.client.client import PGSQL_connetction
 from app.db.models.models import Base, AdCampaign, Employees, Attachments, Branch, DiscountMargin, OrderType, \
-    StatusGroup, Status, OrderParts, Clients, time_now, MenuRows, TableHeaders, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
+    StatusGroup, Status, OrderParts, Clients, time_now, MenuRows, TableHeaders, EquipmentType, EquipmentBrand, \
+    EquipmentSubtype, EquipmentModel, SettingMenu, Roles, Phones, \
     GenerallyInfo, Counts, Schedule, DictMalfunction, DictPackagelist, Cashboxs, Payments, ItemPayments, Payrolls, \
     Payrules, GroupDictService, DictService, ServicePrices, Parts, Warehouse, WarehouseCategory, WarehouseParts, \
-    NotificationTemplate, NotificationEvents
+    NotificationTemplate, NotificationEvents, Events
 
 from tqdm import tqdm
 
@@ -59,13 +60,17 @@ class DbInteraction():
         self.engine = self.pgsql_connetction.connection
 
     # Imported methods
-    from ._orders import add_orders, get_orders, edit_orders, del_orders
+    from ._orders import add_orders, get_orders, edit_orders, del_orders, get_order, get_orders_by_filter, get_order_by_id, add_order_comment
     from ._operations import add_operations, get_operations, edit_operations, del_operations
     from ._filters import get_badges, add_custom_filters, get_custom_filters, del_custom_filters
     from ._equipments import add_equipment_type, get_equipment_type, edit_equipment_type, del_equipment_type
     from ._equipments import add_equipment_brand, get_equipment_brand, edit_equipment_brand, del_equipment_brand
     from ._equipments import add_equipment_subtype, get_equipment_subtype, edit_equipment_subtype, del_equipment_subtype
     from ._equipments import add_equipment_model, get_equipment_model, edit_equipment_model, del_equipment_model
+    from ._change_order_status import change_order_status
+    from ._payments import add_payments, get_payments, edit_payments, del_payments
+    from ._order_parts import add_oder_parts, get_oder_parts, edit_oder_parts, del_oder_parts
+
 
     def create_all_tables(self):
         '''
@@ -1615,161 +1620,7 @@ class DbInteraction():
             return id
 
 
-    # Таблица ЗАПЧАСТЕЙ ==================================================================================
 
-    def add_oder_parts(self,
-                       amount,
-                       cost,
-                       discount_value,
-                       engineer_id,
-                       price,
-                       total,
-                       title,
-                       comment,
-                       percent,
-                       discount,
-                       deleted,
-                       warranty_period,
-                       created_at,
-                       order_id):
-
-        oder_parts = OrderParts(
-            amount=amount,
-            cost=cost,
-            discount_value=discount_value,
-            engineer_id=engineer_id,
-            price=price,
-            total=total,
-            title=title,
-            comment=comment,
-            percent=percent,
-            discount=discount,
-            deleted=deleted,
-            warranty_period=warranty_period,
-            created_at=created_at,
-            order_id=order_id
-        )
-        self.pgsql_connetction.session.add(oder_parts)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(oder_parts)
-        return oder_parts.id
-
-    def get_oder_parts(self,
-                       id=None,
-                       cost=None,
-                       discount_value=None,
-                       engineer_id=None,
-                       price=None,
-                       total=None,
-                       title=None,
-                       deleted=None,
-                       warranty_period=None,
-                       created_at=None,
-                       updated_at=None,
-                       order_id=None,
-                       page=0):
-
-        if any([id, cost, discount_value, engineer_id, price, total, title, deleted != None,
-                warranty_period, created_at, updated_at, order_id]):
-            oder_parts = self.pgsql_connetction.session.query(OrderParts).filter(
-                and_(
-                    OrderParts.id == id if id else True,
-                    OrderParts.title.like(f'%{title}%') if title else True,
-                    OrderParts.cost == cost if cost else True,
-                    OrderParts.discount_value == discount_value if discount_value else True,
-                    OrderParts.price == price if price else True,
-                    OrderParts.discount_value == discount_value if discount_value else True,
-                    OrderParts.total == total if total else True,
-                    (deleted or OrderParts.deleted.is_(False)) if deleted != None else True,
-                    OrderParts.warranty_period == warranty_period if warranty_period else True,
-                    OrderParts.order_id == order_id if order_id else True,
-                    (OrderParts.created_at >= created_at[0] if created_at[0] else True) if created_at else True,
-                    (OrderParts.created_at <= created_at[1] if created_at[1] else True) if created_at else True,
-                )
-            )
-        else:
-            oder_parts = self.pgsql_connetction.session.query(OrderParts)
-
-        self.pgsql_connetction.session.expire_all()
-        result = {'success': True}
-        count = oder_parts.count()
-        result['count'] = count
-
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
-
-        if page > max_page and max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
-
-        data = []
-        for row in oder_parts[50 * page: 50 * (page + 1)]:
-            data.append({
-                'id': row.id,
-                'amount': row.amount,
-                'cost': row.cost,
-                'discount_value': row.discount_value,
-                'engineer_id': row.engineer_id,
-                'price': row.price,
-                'total': row.total,
-                'title': row.title,
-                'comment': row.comment,
-                'percent': row.percent,
-                'discount': row.discount,
-                'deleted': row.deleted,
-                'warranty': (row.created_at + row.warranty_period) > time_now(),
-                'warranty_period': row.warranty_period,
-                'created_at': row.created_at,
-                'updated_at': row.updated_at,
-                'order_id': row.order_id
-            })
-
-        result['data'] = data
-        result['page'] = page
-        return result
-
-    def edit_oder_parts(self,
-                        id,
-                        amount=None,
-                        cost=None,
-                        discount_value=None,
-                        engineer_id=None,
-                        price=None,
-                        total=None,
-                        title=None,
-                        comment=None,
-                        percent=None,
-                        discount=None,
-                        deleted=None,
-                        warranty_period=None,
-                        created_at=None,
-                        order_id=None
-                        ):
-
-        self.pgsql_connetction.session.query(OrderParts).filter_by(id=id).update({
-            'amount': amount if amount is not None else OrderParts.amount,
-            'cost': cost if cost is not None else OrderParts.cost,
-            'discount_value': discount_value if discount_value is not None else OrderParts.discount_value,
-            'engineer_id': engineer_id if engineer_id is not None else OrderParts.engineer_id,
-            'price': price if price is not None else OrderParts.price,
-            'total': total if total is not None else OrderParts.total,
-            'title': title if title is not None else OrderParts.title,
-            'comment': comment if comment is not None else OrderParts.comment,
-            'percent': percent if percent is not None else OrderParts.percent,
-            'discount': discount if discount is not None else OrderParts.discount,
-            'deleted': deleted if deleted is not None else OrderParts.deleted,
-            'warranty_period': warranty_period if warranty_period is not None else OrderParts.warranty_period,
-            'created_at': created_at if created_at is not None else OrderParts.created_at,
-            'order_id': order_id if order_id is not None else OrderParts.order_id,
-        })
-        self.pgsql_connetction.session.commit()
-        return id
-
-    def del_oder_parts(self, id):
-
-        oder_parts = self.pgsql_connetction.session.query(OrderParts).get(id)
-        if oder_parts:
-            self.pgsql_connetction.session.delete(oder_parts)
-            self.pgsql_connetction.session.commit()
-            return id
 
     # Таблица ТЕЛЕФОНОВ ==================================================================================
 
@@ -2741,7 +2592,6 @@ class DbInteraction():
         else:
             cashbox = self.pgsql_connetction.session.query(Cashboxs).order_by(Cashboxs.id)
 
-        # self.pgsql_connetction.session.expire_all()
         result = {'success': True}
         count = cashbox.count()
         result['count'] = count
@@ -2802,269 +2652,7 @@ class DbInteraction():
             self.pgsql_connetction.session.commit()
             return id
 
-    # Таблица ТРАНЗАКЦИЙ =================================================================================
 
-    def add_payments(self,
-                     cashflow_category,
-                     description,
-                     deposit,
-                     income,
-                     outcome,
-                     direction,
-                     can_print_fiscal,
-                     deleted,
-                     is_fiscal,
-                     created_at,
-                     custom_created_at,
-                     tags,
-                     relation_id,
-                     cashbox_id,
-                     client_id,
-                     employee_id,
-                     order_id
-                     ):
-
-        payments = Payments(
-            cashflow_category=cashflow_category,
-            description=description,
-            deposit=deposit,
-            income=income,
-            outcome=outcome,
-            direction=direction,
-            can_print_fiscal=can_print_fiscal,
-            deleted=deleted,
-            is_fiscal=is_fiscal,
-            created_at=created_at,
-            custom_created_at=custom_created_at,
-            tags=tags,
-            relation_id=relation_id,
-            cashbox_id=cashbox_id,
-            client_id=client_id,
-            employee_id=employee_id,
-            order_id=order_id
-        )
-        self.pgsql_connetction.session.add(payments)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(payments)
-        payment_id = payments.id
-        # self.pgsql_connetction.session.close()
-        return payment_id
-
-    def get_payments(self,
-                     id=None,
-                     cashflow_category=None,
-                     direction=None,
-                     deleted=None,
-                     custom_created_at=None,
-                     tags=None,
-                     cashbox_id=None,
-                     client_id=None,
-                     employee_id=None,
-                     order_id=None,
-                     relation_id=None
-                     ):
-
-        if any([id, cashflow_category, direction, deleted != None, custom_created_at, tags, cashbox_id,
-                client_id, employee_id, order_id]):
-            payments = self.pgsql_connetction.session.query(Payments).filter(
-                and_(
-                    Payments.id == id if id else True,
-                    Payments.cashflow_category.like(f'%{cashflow_category}%') if cashflow_category else True,
-                    Payments.direction == direction if direction else True,
-                    (deleted or Payments.deleted.is_(False)) if deleted != None else True,
-                    (Payments.custom_created_at >= custom_created_at[0] if custom_created_at[
-                        0] else True) if custom_created_at else True,
-                    (Payments.custom_created_at <= custom_created_at[1] if custom_created_at[
-                        1] else True) if custom_created_at else True,
-                    tags._in(Payments.tags) if tags else True,
-                    Payments.relation_id == relation_id if relation_id else True,
-                    Payments.cashbox_id == cashbox_id if cashbox_id else True,
-                    Payments.client_id == client_id if client_id else True,
-                    Payments.employee_id == employee_id if employee_id else True,
-                    Payments.order_id == order_id if order_id else True
-                )
-            ).order_by(desc(Payments.custom_created_at))
-        else:
-            payments = self.pgsql_connetction.session.query(Payments).order_by(desc(Payments.custom_created_at))
-
-        result = {'success': True}
-        count = payments.count()
-        result['count'] = count
-
-        data = []
-        for row in payments:
-            deposit = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome)) \
-                .filter(Payments.cashbox_id == row.cashbox.id) \
-                .filter(Payments.deleted != True) \
-                .filter(Payments.custom_created_at <= row.custom_created_at) \
-                .scalar()
-
-            data.append({
-                'id': row.id,
-                'cashflow_category': row.cashflow_category,
-                'description': row.description,
-                'deposit': deposit,
-                'income': row.income,
-                'outcome': row.outcome,
-                'direction': row.direction,
-                'can_print_fiscal': row.can_print_fiscal,
-                'deleted': row.deleted,
-                'is_fiscal': row.is_fiscal,
-                'created_at': row.created_at,
-                'custom_created_at': row.custom_created_at,
-                'tags': row.tags,
-                'relation_id': row.relation_id,
-                'cashbox': {
-                    'id': row.cashbox.id,
-                    'title': row.cashbox.title,
-                    'type': row.cashbox.type
-                } if row.cashbox else {},
-                'client': {
-                    'id': row.client.id,
-                    'name': row.client.name,
-                    'phone': [ph.number for ph in row.client.phone] if row.client.phone else []
-                } if row.client else {},
-                'employee': {
-                    'id': row.employee.id,
-                    'name': f'{row.employee.last_name} {row.employee.first_name}'
-                } if row.employee else {},
-                'order': {
-                    'id': row.order.id,
-                    'id_label': row.order.id_label
-                } if row.order else {}
-            })
-
-        result['data'] = data
-        # self.pgsql_connetction.session.commit()
-        return result
-
-    # def change_payment_deposit(self, start_date, cashbox_id):
-    #     if print_logs:
-    #         start_time=time.time()
-    #         print('Начало оновления баланса платежей')
-    #     payments = self.pgsql_connetction.session.query(Payments).filter(
-    #         and_(
-    #             Payments.deleted == False,
-    #             Payments.custom_created_at >= start_date,
-    #             Payments.cashbox_id == cashbox_id
-    #         )
-    #     ).order_by(Payments.custom_created_at)
-    #     if print_logs:
-    #         print(f'Список платежей определен: {time.time() - start_time} сек.')
-    #
-    #     payments2 = self.pgsql_connetction.session.query(Payments).filter(
-    #         and_(
-    #             Payments.deleted == False,
-    #             Payments.custom_created_at < start_date,
-    #             Payments.cashbox_id == cashbox_id
-    #         )
-    #     ).order_by(Payments.custom_created_at)
-    #     if print_logs:
-    #         print(f'Список оставшихся платежей определен: {time.time() - start_time} сек.')
-    #
-    #     if payments.count():
-    #         deposit = payments2[-1].deposit if payments2.count() else 0
-    #         if print_logs:
-    #             print(f'Стартовый баланс определен: {time.time() - start_time} сек.')
-    #
-    #         for row in tqdm(payments, desc=f'Обнавление платежей {cashbox_id}', position=0, total=payments.count()):
-    #             deposit = deposit + row.income + row.outcome
-    #             self.pgsql_connetction.session.query(Payments).filter_by(id=row.id).update({'deposit': deposit})
-    #             self.pgsql_connetction.session.commit()
-    #         if print_logs:
-    #             print(f'Балансы платежей изменены: {time.time() - start_time} сек.')
-    #         payments = self.pgsql_connetction.session.query(Payments).filter(
-    #             and_(
-    #                 Payments.deleted == False,
-    #                 Payments.custom_created_at >= start_date,
-    #                 Payments.cashbox_id == cashbox_id
-    #             )
-    #         ).order_by(Payments.custom_created_at)
-    #         if print_logs:
-    #             print(f'Запрошены измененные платежи: {time.time() - start_time} сек.')
-    #         self.edit_cashbox(id=cashbox_id,
-    #                           balance=payments[-1].deposit,
-    #                           title=None,
-    #                           type=None,
-    #                           isGlobal=None,
-    #                           isVirtual=None,
-    #                           deleted=None,
-    #                           permissions=None,
-    #                           employees=None,
-    #                           branch_id=None
-    #                           )
-    #         if print_logs:
-    #             print(f'Баланс кассы изменет: {time.time() - start_time} сек.')
-    #     else:
-    #         print('Платежи не найдены')
-    #         self.edit_cashbox(id=cashbox_id,
-    #                           balance=payments2[-1].deposit,
-    #                           title=None,
-    #                           type=None,
-    #                           isGlobal=None,
-    #                           isVirtual=None,
-    #                           deleted=None,
-    #                           permissions=None,
-    #                           employees=None,
-    #                           branch_id=None
-    #                           )
-    #         if print_logs:
-    #             print(f'Баланс кассы изменет: {time.time() - start_time} сек.')
-    #
-    #     if print_logs:
-    #         print(f'Конец изменения баланса платежей: {time.time() - start_time} сек.')
-    #     return {'success': True}
-
-    def edit_payments(self,
-                      id,
-                      cashflow_category=None,
-                      description=None,
-                      deposit=None,
-                      income=None,
-                      outcome=None,
-                      direction=None,
-                      can_print_fiscal=None,
-                      deleted=None,
-                      is_fiscal=None,
-                      created_at=None,
-                      custom_created_at=None,
-                      tags=None,
-                      relation_id=None,
-                      cashbox_id=None,
-                      client_id=None,
-                      employee_id=None,
-                      order_id=None
-                      ):
-
-        self.pgsql_connetction.session.query(Payments).filter_by(id=id).update({
-            'cashflow_category': cashflow_category if cashflow_category is not None else Payments.cashflow_category,
-            'description': description if description is not None else Payments.description,
-            'deposit': deposit if deposit is not None else Payments.deposit,
-            'income': income if income is not None else Payments.income,
-            'outcome': outcome if outcome is not None else Payments.outcome,
-            'direction': direction if direction is not None else Payments.direction,
-            'can_print_fiscal': can_print_fiscal if can_print_fiscal is not None else Payments.can_print_fiscal,
-            'deleted': deleted if deleted is not None else Payments.deleted,
-            'is_fiscal': is_fiscal if is_fiscal is not None else Payments.is_fiscal,
-            'created_at': created_at if created_at is not None else Payments.created_at,
-            'custom_created_at': custom_created_at is not None if custom_created_at else Payments.custom_created_at,
-            'tags': tags if tags is not None else Payments.tags,
-            'relation_id': relation_id if relation_id is not None else Payments.relation_id,
-            'cashbox_id': cashbox_id if cashbox_id is not None else Payments.cashbox_id,
-            'client_id': client_id if client_id is not None else Payments.client_id,
-            'employee_id': employee_id if employee_id is not None else Payments.employee_id,
-            'order_id': order_id if order_id is not None else Payments.order_id
-        })
-        self.pgsql_connetction.session.commit()
-        return id
-
-    def del_payments(self, id):
-
-        payments = self.pgsql_connetction.session.query(Payments).get(id)
-        if payments:
-            self.pgsql_connetction.session.delete(payments)
-            self.pgsql_connetction.session.commit()
-            return id
 
     # Таблица СЛОВАРЬ КОМПЛЕКТАЦИЙ =========================================================================
 
@@ -4271,7 +3859,7 @@ if __name__ == '__main__':
     )
 
     # Создание новых таблиц
-    # db.create_tables([NotificationTemplate.__table__, NotificationEvents.__table__])
+    # db.create_tables([Events.__table__])
 
     # # Добавление столбца
     # column = Column('percent', BOOLEAN)

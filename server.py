@@ -2,27 +2,25 @@ from datetime import timedelta
 from pprint import pprint
 import time
 import os
-# from base64 import b64decode
 from urllib.request import urlopen
 
 
 from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
-from flask_cors import CORS, cross_origin
-# from flask_login import LoginManager, login_manager, login_user, login_required, logout_user, current_user
+from flask_cors import CORS
 
-import threading
 from flask_jwt_extended import create_access_token, decode_token
 from flask_jwt_extended import JWTManager, jwt_required
-# from flask_session import Session
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from app.API_requests.change_order_status import change_status_api
 from app.API_requests.equipments import equipments_api
 from app.API_requests.filters import filters_api
 from app.API_requests.operations import operation_api
+from app.API_requests.order_parts import order_parts_api
 from app.API_requests.orders import orders_api
+from app.API_requests.payments import payment_api
 from app.db.interaction.db_iteraction import db_iteraction, config
-from app.events import event_change_status_to, event_create_order
 
 
 import ssl
@@ -46,6 +44,9 @@ app.register_blueprint(operation_api)
 app.register_blueprint(filters_api)
 app.register_blueprint(orders_api)
 app.register_blueprint(equipments_api)
+app.register_blueprint(change_status_api)
+app.register_blueprint(payment_api)
+app.register_blueprint(order_parts_api)
 
 jwt = JWTManager(app)
 
@@ -106,7 +107,6 @@ def shutdown():
         terminate_func()
 
 
-
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -114,6 +114,7 @@ def serve(path):
         return send_from_directory(app.static_folder, path)
     else:
         return render_template('index.html')
+
 
 @app.route('/start12', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def get_start():
@@ -129,6 +130,7 @@ def get_start():
     seconds = int((dtime % 3600) % 60)
     print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
     return {'success': True}, 200
+
 
 @app.route('/login')
 def login():
@@ -173,6 +175,7 @@ def get_ad_campaign():
         name=name           # str - Имя рекламной компании - частичное совпадение
     )
     return result, 200
+
 
 @app.route('/ad_campaign', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -220,6 +223,7 @@ def ad_campaign():
         db_iteraction.del_adCampaign(
             id=id)                        # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_employee', methods=['POST'])
 @jwt_required()
@@ -292,6 +296,7 @@ def get_employee():
 
     )
     return result, 200
+
 
 @app.route('/employee', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -441,6 +446,7 @@ def employee():
     if request.method == 'DELETE':
         db_iteraction.del_employee(id=id)                         # int - id сотрудника - полное совпадение
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/change_userpassword', methods=['PUT'])
 # @jwt_required()
@@ -1308,264 +1314,6 @@ def status():
             id=id)                              # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/get_order_parts', methods=['POST'])
-@jwt_required()
-def get_order_parts():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    # Проверка соответствию типов данных
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    amount = request_body.get('amount', 1)
-    if amount and type(amount) != int:
-        return {'success': False, 'message': "amount is not integer"}, 400
-
-    cost = request_body.get('cost', 0)
-    if cost:
-        try:
-            cost = float(cost)
-        except:
-            return {'success': False, 'message': 'Cost is not number'}, 400
-
-    discount_value = request_body.get('discount_value', 0)
-    if discount_value:
-        try:
-            discount_value = float(discount_value)
-        except:
-            return {'success': False, 'message': 'Discount_value is not number'}, 400
-
-    engineer_id = request_body.get('engineer_id')
-    if engineer_id and type(engineer_id) != int:
-        return {'success': False, 'message': "Engineer_id is not integer"}, 400
-    if engineer_id:
-        if db_iteraction.get_employee(id=engineer_id)['count'] == 0:
-            return {'success': False, 'message': 'engineer_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id:
-        if db_iteraction.get_orders(id=order_id)['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-    price = request_body.get('price', 0)
-    if price:
-        try:
-            price = float(price)
-        except:
-            return {'success': False, 'message': 'price is not number'}, 400
-
-    total = request_body.get('total', 0)
-    if total:
-        try:
-            total = float(total)
-        except:
-            return {'success': False, 'message': 'total is not number'}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    warranty_period = request_body.get('warranty_period', 0)
-    if warranty_period and type(warranty_period) != int:
-        return {'success': False, 'message': "warranty_period is not integer"}, 400
-
-    created_at = request_body.get('created_at')
-
-    if created_at:
-        if type(created_at) != list:
-            return {'success': False, 'message': "Created_at is not list"}, 400
-        if len(created_at) != 2:
-            return {'success': False, 'message': "Created_at is not correct"}, 400
-        if (type(created_at[0]) != int) or (type(created_at[1]) != int):
-            return {'success': False, 'message': "Created_at has not integers"}, 400
-
-    result = db_iteraction.get_oder_parts(
-        id=id,                              # int - id статуса - полное совпадение
-        cost=cost,                          # int - себестоимость - полное совпадение
-        discount_value=discount_value,      # float - сумма скидки - подное совпадение
-        engineer_id=engineer_id,            # int - id инженера - полное сопвпадение
-        price=price,                        # float - цена услуги - полное совпадение
-        total=total,
-        title=title,                        # str - наименование услуги - частичное совпадение
-        deleted=deleted,
-        warranty_period=warranty_period,    # int - гарантийный период - полное совпадение
-        created_at=created_at,              # [int, int] - дата создания - промежуток дат
-        order_id=order_id,                  # int - id заказа
-        page=page                           # int - Старница погинации
-    )
-    return result, 200
-
-@app.route('/order_parts', methods=['POST', 'GET', 'PUT', 'DELETE'])
-@jwt_required()
-def order_parts():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    # Проверка соответствию типов данных
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    amount = request_body.get('amount', 1)
-    if amount and type(amount) != int:
-        return {'success': False, 'message': "amount is not integer"}, 400
-
-    cost = request_body.get('cost', 0)
-    if cost:
-        try:
-            cost = float(cost)
-        except:
-            return {'success': False, 'message': 'Cost is not number'}, 400
-
-    discount_value = request_body.get('discount_value', 0)
-    if discount_value:
-        try:
-            discount_value = float(discount_value)
-        except:
-            return {'success': False, 'message': 'Discount_value is not number'}, 400
-
-    discount = request_body.get('discount', 0)
-    if discount:
-        try:
-            discount = float(discount)
-        except:
-            return {'success': False, 'message': 'discount is not number'}, 400
-
-    engineer_id = request_body.get('engineer_id')
-    if engineer_id and type(engineer_id) != int:
-        return {'success': False, 'message': "Engineer_id is not integer"}, 400
-    if engineer_id:
-        if db_iteraction.get_employee(id=engineer_id)['count'] == 0:
-            return {'success': False, 'message': 'engineer_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id:
-        if db_iteraction.get_orders(id=order_id)['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-    price = request_body.get('price', 0)
-    if price:
-        try:
-            price = float(price)
-        except:
-            return {'success': False, 'message': 'price is not number'}, 400
-
-    total = request_body.get('total', 0)
-    if total:
-        try:
-            total = float(total)
-        except:
-            return {'success': False, 'message': 'total is not number'}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    comment = request_body.get('comment')
-    if comment:
-        comment = str(comment)
-
-    percent = request_body.get('percent')
-    if percent and type(percent) != bool:
-        return {'success': False, 'message': 'percent is not boolean'}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    warranty_period = request_body.get('warranty_period', 0)
-    if warranty_period and type(warranty_period) != int:
-        return {'success': False, 'message': "warranty_period is not integer"}, 400
-
-    created_at = request_body.get('created_at')
-
-    if request.method == 'POST':
-
-        if created_at and type(created_at) != int:
-            return {'success': False, 'message': "created_at is not integer"}, 400
-
-        if not engineer_id:
-            return {'success': False, 'message': 'engineer_id required'}, 400
-
-        if not title:
-            return {'success': False, 'message': 'title required'}, 400
-
-        db_iteraction.add_oder_parts(
-            amount=amount,                          # int - количество - по дефолту 1
-            cost=cost,                              # int - себестоимость - по дефолту 0
-            discount_value=discount_value,          # float - сумма скидки - по дефолту 0
-            engineer_id=engineer_id,                # int - id инженера - обязательное поле
-            price=price,                            # float - цена услуги - по дефолту 0
-            total=total,
-            title=title,                            # str - наименование услуги - обязательное поле
-            comment=comment,
-            percent=percent,
-            discount=discount,
-            deleted=deleted,
-            warranty_period=warranty_period,        # int - гарантийный период - по дефолту 0
-            created_at=created_at,                  # int - дата создания - по дефоту now
-            order_id=order_id                       # int - id заказа
-        )
-        return {'success': True, 'message': f'{title} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_oder_parts(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-
-        created_at = request_body.get('created_at', 0)
-        if created_at and type(created_at) != int:
-            return {'success': False, 'message': "created_at is not integer"}, 400
-
-
-        db_iteraction.edit_oder_parts(
-            id=id,                                      # int - id записи - полное совпаден
-            amount=amount,                              # int - Новое количество
-            cost=cost,                                  # float - Новая себестоимость
-            discount_value=discount_value,              # float - Новая сумма скидки
-            engineer_id=engineer_id,                    # int - Новый id инженера
-            price=price,                                # int - Новая стоимость услуги
-            total=total,
-            title=title,                                # str - Новое наименование услуги
-            comment=comment,
-            percent=percent,
-            discount=discount,
-            deleted=deleted,
-            warranty_period=warranty_period,            # int - Новый срок гаранти
-            created_at=created_at,                      # int - Новая дата создания
-            order_id=order_id,                          # int - id заказа
-        )
-        return {'success': True, 'message': f'{request_body.get("id")} changed'}, 202
-
-    if request.method == 'DELETE':
-        db_iteraction.del_oder_parts(id=id)                  # int - id записи - полное совпаден
-        return {'success': True, 'message': f'{id} deleted'}, 202
-
 @app.route('/get_clients', methods=['POST'])
 @jwt_required()
 def get_clients():
@@ -1679,6 +1427,7 @@ def get_clients():
         # notes=notes,                                                # str - Заметки - частичное совпадение
     )
     return result, 200
+
 
 @app.route('/clients', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1984,353 +1733,6 @@ def clients():
             id=id)           # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/change_order_status', methods=['POST'])
-@jwt_required()
-def change_order_status():
-
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
-
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 290
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-    order = db_iteraction.get_orders(id=id)
-    # Проверим сущестует ли запись по данному id
-    if order['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-    order = order['data'][0]
-
-    status_id = request_body.get('status_id')
-    if not status_id:
-        return {'success': False, 'message': 'status_id required'}, 400
-    if type(status_id) != int:
-        return {'success': False, 'message': "status_id is not integer"}, 400
-    new_status = db_iteraction.get_status(id=status_id)
-    if new_status['count'] == 0:
-        return {'success': False, 'message': 'status_id is not defined'}, 400
-    new_status = new_status['data'][0]
-
-    current_status = order['status']
-    # print('Текущий статус: ', current_status['name'])
-    # print('Новый статус: ', new_status['name'])
-
-    db_iteraction.edit_orders(
-        id=id,
-        status_id=status_id
-    )
-
-# Запишим сотрудника, который закрыл заказ =============================================================================
-
-    if current_status['group'] == 6:
-        db_iteraction.edit_orders(
-            id=id,
-            closed_by_id=user_id
-        )
-
-# Расчет Начислений по статусу Готов ===================================================================================
-
-    # Если переход в группу Готов с груп ниже или групп Закрыт не успешно
-    if new_status['group'] == 4 and (not current_status['group'] in [4, 5, 6]):
-        # Проверим существую ли операции по данном заказу
-        if order['operations']:
-            # Пройдем циклом по всем операциям
-            for operation in order['operations']:
-                # проверим не удалена ли опарация
-                if not operation['deleted']:
-                    # Проверим есть ли у данного инженера правило с коэффициентом для данной операции
-                    rules = db_iteraction.get_payrules(
-                        type_rule=4,  # Инженуру за работу/услугу
-                        employee_id=operation['engineer_id'],
-                        order_type=order['order_type']['id'],
-                        check_status=4  # По группе статусов Готов
-                    )
-                    # Проверим есть ли в самой операции особое правило начисления
-                    if operation['dict_service'] and (operation['dict_service']['earnings_percent'] or operation['dict_service']['earnings_summ']):
-                        # Проверим существуют ли правила начисления процента за данную работу
-                        if operation['dict_service']['earnings_percent']:
-                            if rules['count'] > 0:
-                                rule = rules['data'][0]
-                                # Определяем сумму вознаграждения
-                                income = operation['dict_service']['earnings_percent'] * operation['total'] / 100 * rule['coefficient']
-                            else:
-                                income = operation['dict_service']['earnings_percent'] * operation['total'] / 100
-                            # Добавим начисление
-                            if income != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=5,  # 5 - за работу по статусу Готов
-                                    relation_id=operation['id'],
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=2,  # 2 - приход
-                                    description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                    income=income
-                                )
-                                del income
-                        # Проверим существуют ли правила начисления суммы за данную работу
-                        if operation['dict_service']['earnings_summ']:
-                            if rules['count'] > 0:
-                                rule = rules['data'][0]
-                                # Определяем сумму вознаграждения
-                                income = operation['dict_service']['earnings_summ'] * rule['coefficient']
-                            else:
-                                income = operation['dict_service']['earnings_summ']
-                            # Добавим начисление
-                            if income != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=5,  # 5 - за работу по статусу Готов
-                                    relation_id=operation['id'],
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=2,  # 2 - приход
-                                    description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                    income=income
-                                )
-                    # Если в самой операции нет особых правил начисления
-                    else:
-                        # Пройдем циклом по всем правилам начисления если таковые есть
-                        if rules['count'] > 0:
-                            for rule in rules['data']:
-                                # Если мы начисляем процент
-                                if rule['method'] == 0:
-                                    # Пройдем по списку коэфициентов и цен и определим сумму начисления
-                                    income = 0
-                                    for row in rule['count_coeff']:
-                                        if row['cost'] <= operation['total']:
-                                            income = row['coef'] * operation['total'] / 100
-                                    # Добавим начисление
-                                    if income != 0:
-                                        db_iteraction.add_payroll(
-                                            relation_type=5,  # 5 - за работу по статусу Готов
-                                            relation_id=operation['id'],
-                                            employee_id=operation['engineer_id'],
-                                            order_id=order['id'],
-                                            direction=2,  # 2 - приход
-                                            description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                            income=income
-                                        )
-                                        del income
-                                else:
-                                    # Пройдем по списку коэфициентов и цен и определим сумму начисления
-                                    income = 0
-                                    for row in rule['count_coeff']:
-                                        if row['cost'] <= operation['total']:
-                                            income = row['coef']
-                                    # Добавим начисление
-                                    if income != 0:
-                                        db_iteraction.add_payroll(
-                                            relation_type=5,  # 5 - за работу по статусу Готов
-                                            relation_id=operation['id'],
-                                            employee_id=operation['engineer_id'],
-                                            order_id=order['id'],
-                                            direction=2,  # 2 - приход
-                                            description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                            income=income
-                                        )
-                                        del income
-    #  =====================================================================================================================
-
-    # Списания при возврате статуса с Готов ===============================================================================
-
-    # Если переход с группу Готов в любой другой групу кроме Доставка и Закрыт
-    if (not new_status['group'] in [4, 5, 6]) and current_status['group'] in [4, 5, 6]:
-        # Проверим существую ли операции по данном заказу
-        if order['operations']:
-            # Пройдем циклом по всем операциям
-            for operation in order['operations']:
-                # проверим не удалена ли опарация
-                if not operation['deleted']:
-                    # Найдем все начисления по данной операции
-                    payrolls = db_iteraction.get_payrolls(
-                        direction=2,  # все которые с приходом
-                        deleted=False,  # Не удаленные
-                        reimburse=False,  # Не возмещенные
-                        relation_type=5,  # Начисленные за работу по статусу Готов
-                        relation_id=operation['id']  # Принадлежащие данной операции
-                    )
-                    # Если начисления имеются
-                    if payrolls['count'] > 0:
-                        for payroll in payrolls['data']:
-                            if payroll['income'] != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=11,  # Возврат заказа
-                                    relation_id=payroll['id'],  # id начисления за которое делается возмещение
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=1,
-                                    description=f'''Возврат за операцию "{operation['title']}" в заказе {order['id_label']}''',
-                                    outcome=-payroll['income'],
-                                )
-                                # Отметим операцию как возмещенную
-                                db_iteraction.edit_payroll(id=payroll['id'], reimburse=True)
-
-    # ======================================================================================================================
-
-
-
-# Расчет Начислений по статусу Успешно закрыт ========================================================================
-
-    # Если переход в группу Закрыт успешно с любой другой групы
-    if new_status['group'] == 6 and current_status['group'] != 6:
-        # Проверим существуют ли операции по данном заказу
-        if order['operations']:
-            # Пройдем циклом по всем операциям
-            for operation in order['operations']:
-                # проверим не удалена ли опарация
-                if not operation['deleted']:
-                    # Проверим есть ли у данного инженера правило с коэффициентом для данной операции
-                    rules = db_iteraction.get_payrules(
-                        type_rule=4,  # Инженуру за работу/услугу
-                        employee_id=operation['engineer_id'],
-                        order_type=order['order_type']['id'],
-                        check_status=6  # По группе статусов Успешно закрыт
-                    )
-                    # Проверим есть ли в самой операции особое правило начисления
-                    if operation['dict_service'] and (operation['dict_service']['earnings_percent'] or operation['dict_service']['earnings_summ']):
-                        # print('Особые правила начиления')
-                        # Проверим существуют ли правила начисления процента за данную работу
-                        if operation['dict_service']['earnings_percent']:
-                            if rules['count'] > 0:
-                                rule = rules['data'][0]
-                                # Определяем сумму вознаграждения
-                                income = operation['dict_service']['earnings_percent'] * operation['total'] / 100 * rule['coefficient']
-                            else:
-                                income = operation['dict_service']['earnings_percent'] * operation['total'] / 100
-                            # Добавим начисление
-                            if income != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=4,  # 4 - за работу по статусу Закрыт
-                                    relation_id=operation['id'],
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=2,  # 2 - приход
-                                    description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                    income=income,
-                                )
-                                del income
-                        # Проверим существуют ли правила начисления суммы за данную работу
-                        if operation['dict_service']['earnings_summ']:
-                            if rules['count'] > 0:
-                                rule = rules['data'][0]
-                                # Определяем сумму вознаграждения
-                                income = operation['dict_service']['earnings_summ'] * rule['coefficient']
-                            else:
-                                income = operation['dict_service']['earnings_summ']
-                            # Добавим начисление
-                            if income != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=4,  # 4 - за работу по статусу Закрыт
-                                    relation_id=operation['id'],
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=2,  # 2 - приход
-                                    description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                    income=income
-                                )
-                                del income
-                    # Если в самой операции нет особых правил начисления
-                    else:
-                        # print('Обычные правила начиления')
-                        # Пройдем циклом по всем правилам начисления если таковые есть
-                        if rules['count'] > 0:
-                            for rule in rules['data']:
-                                # Если мы начисляем процент
-                                if rule['method'] == 0:
-                                    # Пройдем по списку коэфициентов и цен и определим сумму начисления
-                                    income = 0
-                                    for row in rule['count_coeff']:
-                                        if row['cost'] <= operation['total']:
-                                            income = row['coef'] * operation['total'] / 100
-                                    # Добавим начисление
-                                    if income != 0:
-                                        db_iteraction.add_payroll(
-                                            relation_type=4,  # 4 - за работу по статусу закрыт
-                                            relation_id=operation['id'],
-                                            employee_id=operation['engineer_id'],
-                                            order_id=order['id'],
-                                            direction=2,  # 2 - приход
-                                            description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                            income=income
-                                        )
-                                        del income
-                                else:
-                                    # Пройдем по списку коэфициентов и цен и определим сумму начисления
-                                    income = 0
-                                    for row in rule['count_coeff']:
-                                        if row['cost'] <= operation['total']:
-                                            income = row['coef']
-                                    # Добавим начисление
-                                    if income != 0:
-                                        db_iteraction.add_payroll(
-                                            relation_type=4,  # 4 - за работу по статусу закрыт
-                                            relation_id=operation['id'],
-                                            employee_id=operation['engineer_id'],
-                                            order_id=order['id'],
-                                            direction=2,  # 2 - приход
-                                            description=f'''Начисление за работу "{operation['title']}" в заказе {order['id_label']}''',
-                                            income=income
-                                        )
-                                        del income
-#  =====================================================================================================================
-
-# Списания при возврате статуса с Закрыт ===============================================================================
-
-    # Если переход в группу Закрыт успешно с любой другой групы
-    if new_status['group'] != 6 and current_status['group'] == 6:
-        # Проверим существую ли операции по данном заказу
-        if order['operations']:
-            # Пройдем циклом по всем операциям
-            for operation in order['operations']:
-                # проверим не удалена ли опарация
-                if not operation['deleted']:
-                    # Найдем все начисления по данной операции
-                    payrolls = db_iteraction.get_payrolls(
-                        direction=2,                # все которые с приходом
-                        deleted=False,              # Не удаленные
-                        reimburse=False,            # Не возмещенные
-                        relation_type=4,            # Начисленные за работу по статусу закрыт
-                        relation_id=operation['id'] # Принадлежащие данной операции
-                    )
-                    # Если начисления имеются
-                    if payrolls['count'] > 0:
-                        for payroll in payrolls['data']:
-                            if payroll['income'] != 0:
-                                db_iteraction.add_payroll(
-                                    relation_type=11,               # Возврат заказа
-                                    relation_id=payroll['id'],      # id начисления за которое делается возмещение
-                                    employee_id=operation['engineer_id'],
-                                    order_id=order['id'],
-                                    direction=1,
-                                    description=f'''Возврат за операцию "{operation['title']}" в заказе {order['id_label']}''',
-                                    outcome=-payroll['income'],
-                                )
-                                # Отметим операцию как возмещенную
-                                db_iteraction.edit_payroll(id=payroll['id'], reimburse=True)
-
-# ======================================================================================================================
-
-    # 3 Проверяем Если новый статус Готов, а текущий меньше
-    # 4 Добавляем начисления по текущим правилам начисления ЗП
-
-    # 7 Проверяем Если теущий статус Готов, а новый ниже
-    # 8 Добавляем списания по имеющимся зачислениям
-    # 9 Проверямем Если текущий статус Закрыт, а новый друго
-    # 10 Добавляем списания по имеющимся зачислениям
-
-# Отправка уведомлений =================================================================================================
-
-    # Отправляем SMS при событиях сменты статуса
-    event_change_status_to(db_iteraction, order, new_status)
-
-
-    return {'success': True, 'message': f'{id} changed'}, 202
 
 @app.route('/get_menu_rows', methods=['POST'])
 @jwt_required()
@@ -2396,6 +1798,7 @@ def get_setting_menu():
         group_name=group_name               # [str, ...str] - Список имен групп
     )
     return result, 200
+
 
 @app.route('/get_roles', methods=['POST'])
 @jwt_required()
@@ -3230,396 +2633,6 @@ def cashbox():
             id=id)                      # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/get_payments', methods=['POST'])
-@jwt_required()
-def get_payments():
-    if print_logs:
-        start_time = time.time()
-        print(f'Начало выполнение запроса {start_time}')
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    cashflow_category = request_body.get('cashflow_category')
-    if cashflow_category:
-        cashflow_category = str(cashflow_category)
-
-    direction = request_body.get('direction')
-    if direction and type(direction) != int:
-        return {'success': False, 'message': "direction is not integer"}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    custom_created_at = request_body.get('custom_created_at')
-    if custom_created_at:
-        if type(custom_created_at) != list:
-            return {'success': False, 'message': "custom_created_at is not list"}, 400
-        if len(custom_created_at) != 2:
-            return {'success': False, 'message': "custom_created_at is not correct"}, 400
-        if type(custom_created_at[0]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-        if type(custom_created_at[1]) and type(custom_created_at[1]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-
-    tags = request_body.get('tags')
-    if tags:
-        tags = str(tags)
-
-    cashbox_id = request_body.get('cashbox_id')
-    if cashbox_id and type(cashbox_id) != int:
-        return {'success': False, 'message': "cashbox_id is not integer"}, 400
-    if cashbox_id and db_iteraction.get_cashbox(id=cashbox_id)['count'] == 0:
-        return {'success': False, 'message': 'cashbox_id is not defined'}, 400
-
-    client_id = request_body.get('client_id')
-    if client_id and type(client_id) != int:
-        return {'success': False, 'message': "client_id is not integer"}, 400
-    if client_id and db_iteraction.get_clients(id=client_id)['count'] == 0:
-        return {'success': False, 'message': 'client_id is not defined'}, 400
-
-    employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
-        return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
-        return {'success': False, 'message': 'employee_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-    if print_logs:
-        print(f'Верефикации данных: {time.time() - start_time} сек.')
-
-    result = db_iteraction.get_payments(
-        id=id,                                      # int - id  - полное совпадение
-        cashflow_category=cashflow_category,
-        direction=direction,
-        deleted=deleted,
-        custom_created_at=custom_created_at,
-        tags=tags,
-        cashbox_id=cashbox_id,
-        client_id=client_id,
-        employee_id=employee_id,
-        order_id=order_id
-    )
-    if print_logs:
-        print(f'Данные найдены и отправлены: {time.time() - start_time} сек.')
-    return result, 200
-
-@app.route('/payments', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def payments():
-    if print_logs:
-        start_time = time.time()
-        print(f'Начало выполнение запроса {start_time}')
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    cashflow_category = request_body.get('cashflow_category')
-    if cashflow_category:
-        cashflow_category = str(cashflow_category)
-
-    description = request_body.get('description')
-    if description:
-        description = str(description)
-
-    deposit = request_body.get('deposit')
-    if deposit:
-        try:
-            deposit = float(deposit)
-        except:
-            return {'success': False, 'message': 'deposit is not number'}, 400
-
-    income = request_body.get('income')
-    if income:
-        try:
-            income = float(income)
-        except:
-            return {'success': False, 'message': 'income is not number'}, 400
-
-    outcome = request_body.get('outcome')
-    if outcome:
-        try:
-            outcome = float(outcome)
-        except:
-            return {'success': False, 'message': 'balance is not number'}, 400
-
-    direction = request_body.get('direction')
-    if direction and type(direction) != int:
-        return {'success': False, 'message': "direction is not integer"}, 400
-
-    can_print_fiscal = request_body.get('can_print_fiscal')
-    if can_print_fiscal and type(can_print_fiscal) != bool:
-        return {'success': False, 'message': 'can_print_fiscal is not boolean'}, 400
-
-    is_fiscal = request_body.get('is_fiscal')
-    if is_fiscal and type(is_fiscal) != bool:
-        return {'success': False, 'message': 'is_fiscal is not boolean'}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    created_at = request_body.get('created_at')
-    if created_at and type(created_at) != int:
-        return {'success': False, 'message': "created_at is not integer"}, 400
-
-    custom_created_at = request_body.get('custom_created_at')
-    if custom_created_at and type(custom_created_at) != int:
-        return {'success': False, 'message': "custom_created_at is not integer"}, 400
-
-    tags = request_body.get('tags')
-    if tags and type(tags) != list:
-        return {'success': False, 'message': "tags is not list"}, 400
-    if tags:
-        if not all([type(tag) == str for tag in tags]):
-            return {'success': False, 'message': "tags has not string"}, 400
-
-    relation_id = request_body.get('relation_id')
-    if relation_id and type(relation_id) != int:
-        return {'success': False, 'message': "relation_id is not integer"}, 400
-
-    cashbox_id = request_body.get('cashbox_id')
-    if cashbox_id and type(cashbox_id) != int:
-        return {'success': False, 'message': "cashbox_id is not integer"}, 400
-    if cashbox_id and db_iteraction.get_cashbox(id=cashbox_id)['count'] == 0:
-        return {'success': False, 'message': 'cashbox_id is not defined'}, 400
-
-    target_cashbox_id = request_body.get('target_cashbox_id')
-    if target_cashbox_id and type(target_cashbox_id) != int:
-        return {'success': False, 'message': "target_cashbox_id is not integer"}, 400
-    if target_cashbox_id and db_iteraction.get_cashbox(id=target_cashbox_id)['count'] == 0:
-        return {'success': False, 'message': 'target_cashbox_id is not defined'}, 400
-
-    client_id = request_body.get('client_id')
-    if client_id and type(client_id) != int:
-        return {'success': False, 'message': "client_id is not integer"}, 400
-    if client_id and db_iteraction.get_clients(id=client_id)['count'] == 0:
-        return {'success': False, 'message': 'client_id is not defined'}, 400
-
-    employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
-        return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
-        return {'success': False, 'message': 'employee_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)['count'] == 0:
-        return {'success': False, 'message': 'order_id is not defined'}, 400
-
-
-    if request.method == 'POST':
-        payment1_id = db_iteraction.add_payments(
-            cashflow_category=cashflow_category,
-            description=description,
-            deposit=deposit,
-            income=income,
-            outcome=outcome,
-            direction=direction,
-            can_print_fiscal=can_print_fiscal,
-            deleted=deleted,
-            is_fiscal=is_fiscal,
-            created_at=created_at,
-            custom_created_at=custom_created_at,
-            tags=tags,
-            relation_id=None,
-            cashbox_id=cashbox_id,
-            client_id=client_id,
-            employee_id=employee_id,
-            order_id=order_id
-        )
-
-        # db_iteraction.edit_cashbox(
-        #     id=cashbox_id,
-        #     title=None,
-        #     balance=deposit,
-        #     type=None,
-        #     isGlobal=None,
-        #     isVirtual=None,
-        #     deleted=None,
-        #     permissions=None,
-        #     employees=None,
-        #     branch_id=None
-        # )
-
-        if target_cashbox_id:
-            # deposit=db_iteraction.get_cashbox(id=target_cashbox_id)['data'][0]['balance'] + abs(outcome)
-            payment2_id = db_iteraction.add_payments(
-                cashflow_category=cashflow_category,
-                description=description,
-                deposit=None,
-                income=abs(outcome),
-                outcome=income,
-                direction=direction,
-                can_print_fiscal=can_print_fiscal,
-                deleted=deleted,
-                is_fiscal=is_fiscal,
-                created_at=created_at,
-                custom_created_at=custom_created_at,
-                tags=tags,
-                relation_id=payment1_id,
-                cashbox_id=target_cashbox_id,
-                client_id=client_id,
-                employee_id=employee_id,
-                order_id=order_id
-            )
-
-            db_iteraction.edit_payments(
-                id=payment1_id,
-                cashflow_category=None,
-                description=None,
-                deposit=None,
-                income=None,
-                outcome=None,
-                direction=None,
-                can_print_fiscal=None,
-                deleted=None,
-                is_fiscal=None,
-                created_at=None,
-                custom_created_at=None,
-                tags=None,
-                relation_id=payment2_id,
-                cashbox_id=None,
-                client_id=None,
-                employee_id=None,
-                order_id=None
-            )
-
-            # db_iteraction.edit_cashbox(
-            #     id=target_cashbox_id,
-            #     title=None,
-            #     balance=deposit,
-            #     type=None,
-            #     isGlobal=None,
-            #     isVirtual=None,
-            #     deleted=None,
-            #     permissions=None,
-            #     employees=None,
-            #     branch_id=None
-            # )
-
-        # if custom_created_at != created_at:
-            # db_iteraction.change_payment_deposit(
-            #     cashbox_id=cashbox_id,
-            #     start_date=custom_created_at
-            # )
-            # if target_cashbox_id:
-                # db_iteraction.change_payment_deposit(
-                #     cashbox_id=target_cashbox_id,
-                #     start_date=custom_created_at
-                # )
-
-
-        return {'success': True, 'message': f'{cashflow_category} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_payments(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-
-    if request.method == 'PUT':
-        db_iteraction.edit_payments(
-            id=id,                          # int - id записи - полное совпаден
-            cashflow_category=cashflow_category,
-            description=description,
-            deposit=deposit,
-            income=income,
-            outcome=outcome,
-            direction=direction,
-            can_print_fiscal=can_print_fiscal,
-            deleted=deleted,
-            is_fiscal=is_fiscal,
-            created_at=created_at,
-            custom_created_at=custom_created_at,
-            tags=tags,
-            relation_id=relation_id,
-            cashbox_id=cashbox_id,
-            client_id=client_id,
-            employee_id=employee_id,
-            order_id=order_id
-        )
-
-        payment = db_iteraction.get_payments(id=id)['data'][0]
-        # db_iteraction.change_payment_deposit(
-        #     cashbox_id=payment['cashbox']['id'],
-        #     start_date=payment['custom_created_at']
-        # )
-
-        if payment['relation_id']:
-            db_iteraction.edit_payments(
-                id=payment['relation_id'],  # int - id записи - полное совпаден
-                cashflow_category=None,
-                description=None,
-                deposit=None,
-                income=None,
-                outcome=None,
-                direction=None,
-                can_print_fiscal=None,
-                deleted=deleted,
-                is_fiscal=None,
-                created_at=None,
-                custom_created_at=None,
-                tags=None,
-                relation_id=None,
-                cashbox_id=None,
-                client_id=None,
-                employee_id=None,
-                order_id=None
-            )
-        #     if print_logs:
-        #         print(f'Второй платеж изменен: {time.time() - start_time} сек.')
-        #
-        #     payment = db_iteraction.get_payments(id=payment['relation_id'])['data'][0]
-        #     db_iteraction.change_payment_deposit(
-        #         cashbox_id=payment['cashbox']['id'],
-        #         start_date=payment['custom_created_at']
-        #     )
-        #     if print_logs:
-        #         print(f'Балансы последующих платежей обновлены: {time.time() - start_time} сек.')
-
-        return {'success': True, 'message': f'{id} changed'}, 202
-
-    if request.method == 'DELETE':
-
-        db_iteraction.del_payments(
-            id=id)  # int - id записи - полное совпаден
-
-        # db_iteraction.change_payment_deposit(
-        #     cashbox_id=payment['cashbox']['id'],
-        #     start_date=payment['custom_created_at']
-        # )
-
-        if relation_id:
-
-            db_iteraction.del_payments(
-                id=relation_id)
-
-            # db_iteraction.change_payment_deposit(
-            #     cashbox_id=payment['cashbox']['id'],
-            #     start_date=payment['custom_created_at']
-            # )
-
-        return {'success': True, 'message': f'{id} deleted'}, 202
-
 @app.route('/get_payrolls', methods=['POST'])
 @jwt_required()
 def get_payrolls():
@@ -3673,7 +2686,7 @@ def get_payrolls():
     order_id = request_body.get('order_id')
     if order_id and type(order_id) != int:
         return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)['count'] == 0:
+    if order_id and db_iteraction.get_orders(id=order_id)[0]['count'] == 0:
             return {'success': False, 'message': 'order_id is not defined'}, 400
 
 
@@ -3790,7 +2803,7 @@ def payroll():
     order_id = request_body.get('order_id')
     if order_id and type(order_id) != int:
         return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)['count'] == 0:
+    if order_id and db_iteraction.get_orders(id=order_id)[0]['count'] == 0:
         return {'success': False, 'message': 'order_id is not defined'}, 400
 
 

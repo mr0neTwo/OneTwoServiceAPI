@@ -1,3 +1,4 @@
+import inspect
 import os
 import traceback
 from urllib.request import urlopen
@@ -21,27 +22,26 @@ def add_equipment_type(self, title, icon, url, branches, deleted, r_filter):
         )
         self.pgsql_connetction.session.add(equipment_type)
         self.pgsql_connetction.session.flush()
+
         result = {'success': True}
         if r_filter:
-            equipment_types = self.pgsql_connetction.session.query(EquipmentType).filter(
-                and_(
-                    EquipmentType.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentType.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentType.title).order_by(EquipmentType.id)
-            count = equipment_types.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentType)
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentType.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentType.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentType.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            if r_filter.get('page', 0) > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_types = query.all()
 
             data = []
-
-            for row in equipment_types[num * r_filter.get('page', 0): num * (r_filter.get('page', 0) + 1)]:
+            for row in equipment_types:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -76,32 +76,25 @@ def add_equipment_type(self, title, icon, url, branches, deleted, r_filter):
 
 def get_equipment_type(self, id=None, title=None, deleted=None, page=0):
     try:
-        if any([id, title, deleted is not None]):
-            equipment_type = self.pgsql_connetction.session.query(EquipmentType).filter(
-                and_(
-                    EquipmentType.id == id if id else True,
-                    EquipmentType.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentType.deleted.is_(False)) if deleted is not None else True
-                )
-            ).order_by(EquipmentType.title).order_by(EquipmentType.id)
+        query = self.pgsql_connetction.session.query(EquipmentType)
 
-        else:
-            equipment_type = self.pgsql_connetction.session.query(EquipmentType)\
-                .order_by(EquipmentType.title).order_by(EquipmentType.id)
+        if id is not None: query = query.filter(EquipmentType.id == id)
+        if title is not None: query = query.filter(EquipmentType.title.ilike(f'%{title}%'))
+        if deleted is not None: query = query.filter(deleted or EquipmentType.deleted.is_(False))
+
+        query = query.order_by(EquipmentType.title)
+
         result = {'success': True}
-        count = equipment_type.count()
-        result['count'] = count
 
-        num = 50
+        result['count'] = query.count()
 
-        max_page = count // num if count % num > 0 else count // num - 1
+        query = query.limit(50)
+        if page: query = query.offset(page * 50)
 
-        if page > max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
+        equipment_type = query.all()
 
         data = []
-
-        for row in equipment_type[num * page: num * (page + 1)]:
+        for row in equipment_type:
             data.append({
                 'id': row.id,
                 'title': row.title,
@@ -133,13 +126,15 @@ def edit_equipment_type(
         r_filter=None
     ):
     try:
-        self.pgsql_connetction.session.query(EquipmentType).filter_by(id=id).update({
-            'title': title if title is not None else EquipmentType.title,
-            'icon': icon if icon is not None else EquipmentType.icon,
-            'url': url if url is not None else EquipmentType.url,
-            'branches': branches if branches is not None else EquipmentType.branches,
-            'deleted': deleted if deleted is not None else EquipmentType.deleted
-        })
+        equipment_type = self.pgsql_connetction.session.query(EquipmentType).get(id)
+        fields = inspect.getfullargspec(edit_equipment_type).args[:-2]  # список имен всех аргументов текущей фнкции
+        for field in fields:
+            war = locals()[field]   # Находим переменную от имени и присваеваем war
+            if war is not None:
+                setattr(equipment_type, field, war)
+
+        list_update = [equipment_type]
+
         # Если запрос содержит список для объединения
         if list_for_join is not None:
 
@@ -147,9 +142,9 @@ def edit_equipment_type(
             for equipment_type in list_for_join:
 
                 # Отметим запись как удаленную
-                self.pgsql_connetction.session.query(EquipmentType)\
-                    .filter_by(id=equipment_type)\
-                    .update({'deleted': True})
+                etype = self.pgsql_connetction.session.query(EquipmentType).get(equipment_type)
+                etype.deleted = True
+                list_update.append(etype)
 
                 # Получим список дочерних брендов
                 list_brands = self.pgsql_connetction.session.query(EquipmentBrand)\
@@ -159,31 +154,33 @@ def edit_equipment_type(
                 for equipment_brand in list_brands:
 
                     # Заменим родительский элемент
-                    self.pgsql_connetction.session.query(EquipmentBrand)\
-                        .filter_by(id=equipment_brand.id)\
-                        .update({'equipment_type_id': id})
+                    brand = self.pgsql_connetction.session.query(EquipmentBrand).get(equipment_brand.id)
+                    brand.equipment_type_id = id
+                    list_update.append(brand)
+
+        self.pgsql_connetction.session.add_all(list_update)
         self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+
         if r_filter:
-            equipment_types = self.pgsql_connetction.session.query(EquipmentType).filter(
-                and_(
-                    EquipmentType.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentType.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentType.title).order_by(EquipmentType.id)
-            result = {'success': True}
-            count = equipment_types.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentType)
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentType.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentType.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentType.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            if r_filter.get('page', 0) > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_types = query.all()
 
             data = []
-
-            for row in equipment_types[num * r_filter.get('page', 0): num * (r_filter.get('page', 0) + 1)]:
+            for row in equipment_types:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -197,6 +194,7 @@ def edit_equipment_type(
             result['page'] = r_filter.get('page', 0)
         else:
             result = {'success': True, 'message': f'{id} changed'}
+
         self.pgsql_connetction.session.commit()
         return result, 202
     except:
@@ -234,29 +232,29 @@ def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_typ
         )
         self.pgsql_connetction.session.add(equipment_brand)
         self.pgsql_connetction.session.flush()
+
         result = {'success': True}
+
         if r_filter:
-            equipment_brands = self.pgsql_connetction.session.query(EquipmentBrand).filter(
-                and_(
-                    EquipmentBrand.equipment_type_id == r_filter['equipment_type_id'] if r_filter.get('equipment_type_id') else True,
-                    EquipmentBrand.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentBrand.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentBrand.title).order_by(EquipmentBrand.id)
-            count = equipment_brands.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentBrand)
+            if r_filter.get('equipment_type_id') is not None:
+                query = query.filter(EquipmentBrand.equipment_type_id == r_filter['equipment_type_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentBrand.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentBrand.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentBrand.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_brands = query.all()
 
             data = []
-
-            for row in equipment_brands[num * page: num * (page + 1)]:
+            for row in equipment_brands:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -268,7 +266,7 @@ def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_typ
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
             self.pgsql_connetction.session.refresh(equipment_brand)
             data = {
@@ -293,31 +291,26 @@ def add_equipment_brand(self, title, icon, url, branches, deleted, equipment_typ
 
 def get_equipment_brand(self, id=None, title=None, equipment_type_id=None, deleted=None, page=0):
     try:
-        if any([id, title, equipment_type_id, deleted is not None]):
-            equipment_brand = self.pgsql_connetction.session.query(EquipmentBrand).filter(
-                and_(
-                    EquipmentBrand.id == id if id else True,
-                    EquipmentBrand.equipment_type_id == equipment_type_id if equipment_type_id else True,
-                    EquipmentBrand.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentBrand.deleted.is_(False)) if deleted is not None else True
-                )
-            ).order_by(EquipmentBrand.title).order_by(EquipmentBrand.id)
-        else:
-            equipment_brand = self.pgsql_connetction.session.query(EquipmentBrand)\
-                .order_by(EquipmentBrand.title).order_by(EquipmentBrand.id)
+        query = self.pgsql_connetction.session.query(EquipmentBrand)
+
+        if id is not None: query = query.filter(EquipmentBrand.id == id)
+        if equipment_type_id is not None: query = query.filter(EquipmentBrand.equipment_type_id == equipment_type_id)
+        if title is not None: query = query.filter(EquipmentBrand.title.ilike(f'%{title}%'))
+        if deleted is not None: query = query.filter(deleted or EquipmentBrand.deleted.is_(False))
+
+        query = query.order_by(EquipmentBrand.title)
 
         result = {'success': True}
-        count = equipment_brand.count()
-        result['count'] = count
 
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
+        result['count'] = query.count()
 
-        if page > max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
+        query = query.limit(50)
+        if page: query = query.offset(page * 50)
+
+        equipment_brand = query.all()
 
         data = []
-
-        for row in equipment_brand[50 * page: 50 * (page + 1)]:
+        for row in equipment_brand:
             data.append({
                 'id': row.id,
                 'title': row.title,
@@ -351,14 +344,15 @@ def edit_equipment_brand(
         r_filter=None
      ):
     try:
-        self.pgsql_connetction.session.query(EquipmentBrand).filter_by(id=id).update({
-            'title': title if title is not None else EquipmentBrand.title,
-            'icon': icon if icon is not None else EquipmentBrand.icon,
-            'url': url if url is not None else EquipmentBrand.url,
-            'branches': branches if branches is not None else EquipmentBrand.branches,
-            'deleted': deleted if deleted is not None else EquipmentBrand.deleted,
-            'equipment_type_id': equipment_type_id if equipment_type_id is not None else EquipmentBrand.equipment_type_id,
-        })
+        equipment_brand = self.pgsql_connetction.session.query(EquipmentBrand).get(id)
+        fields = inspect.getfullargspec(edit_equipment_brand).args[:-2]  # список имен всех аргументов текущей фнкции
+        for field in fields:
+            war = locals()[field]  # Находим переменную от имени и присваеваем war
+            if war is not None:
+                setattr(equipment_brand, field, war)
+
+        list_update = [equipment_brand]
+
         # Если запрос содержит список для объединения
         if list_for_join is not None:
 
@@ -366,9 +360,9 @@ def edit_equipment_brand(
             for equipment_brand in list_for_join:
 
                 # Отметим запись как удаленную
-                self.pgsql_connetction.session.query(EquipmentBrand) \
-                    .filter_by(id=equipment_brand) \
-                    .update({'deleted': True})
+                brand = self.pgsql_connetction.session.query(EquipmentBrand).get(equipment_brand)
+                brand.deleted = True
+                list_update.append(brand)
 
                 # Получим список дочерних модулей
                 list_subtype = self.pgsql_connetction.session.query(EquipmentSubtype) \
@@ -378,33 +372,35 @@ def edit_equipment_brand(
                 for equipment_subtype in list_subtype:
 
                     # Заменим родительский элемент
-                    self.pgsql_connetction.session.query(EquipmentSubtype) \
-                        .filter_by(id=equipment_subtype.id) \
-                        .update({'equipment_brand_id': id})
+                    subtype = self.pgsql_connetction.session.query(EquipmentSubtype).get(equipment_subtype.id)
+                    subtype.equipment_brand_id = id
+                    list_update.append(subtype)
+
+        self.pgsql_connetction.session.add_all(list_update)
         self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+
         if r_filter:
-            equipment_brands = self.pgsql_connetction.session.query(EquipmentBrand).filter(
-                and_(
-                    EquipmentBrand.equipment_type_id == r_filter['equipment_type_id'] if r_filter.get('equipment_type_id') else True,
-                    EquipmentBrand.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentBrand.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentBrand.title).order_by(EquipmentBrand.id)
-            result = {'success': True}
-            count = equipment_brands.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentBrand)
+            if r_filter.get('equipment_type_id') is not None:
+                query = query.filter(EquipmentBrand.equipment_type_id == r_filter['equipment_type_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentBrand.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentBrand.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentBrand.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_brands = query.all()
 
             data = []
-
-            for row in equipment_brands[num * page: num * (page + 1)]:
+            for row in equipment_brands:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -416,7 +412,7 @@ def edit_equipment_brand(
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
             result = {'success': True, 'message': f'{id} changed'}
         self.pgsql_connetction.session.commit()
@@ -457,6 +453,8 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
         self.pgsql_connetction.session.add(equipment_subtype)
         self.pgsql_connetction.session.flush()
 
+        result = {'success': True}
+
         # загрузка изображения
         if img:
             # Загрузим данные из URI в переменную
@@ -474,29 +472,27 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
                 .filter_by(id=equipment_subtype.id)\
                 .update({'url': url})
 
-        result = {'success': True}
         if r_filter:
-            equipment_subtypes = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
-                and_(
-                    EquipmentSubtype.equipment_brand_id == r_filter['equipment_brand_id'] if r_filter.get('equipment_brand_id') else True,
-                    EquipmentSubtype.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentSubtype.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentSubtype.title).order_by(EquipmentSubtype.id)
-            count = equipment_subtypes.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentSubtype)
+            if r_filter.get('equipment_brand_id') is not None:
+                query = query.filter(EquipmentSubtype.equipment_brand_id == r_filter['equipment_brand_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentSubtype.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentSubtype.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentSubtype.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_subtypes = query.all()
 
             data = []
 
-            for row in equipment_subtypes[num * page: num * (page + 1)]:
+            for row in equipment_subtypes:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -508,7 +504,7 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
 
             data = {
@@ -533,29 +529,26 @@ def add_equipment_subtype(self, title, icon, url, branches, deleted, equipment_b
 
 def get_equipment_subtype(self, id=None, title=None, equipment_brand_id=None, deleted=None, page=0):
     try:
-        if any([id, title, equipment_brand_id, deleted is not None]):
-            equipment_subtype = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
-                and_(
-                    EquipmentSubtype.id == id if id else True,
-                    EquipmentSubtype.equipment_brand_id == equipment_brand_id if equipment_brand_id else True,
-                    EquipmentSubtype.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentSubtype.deleted.is_(False)) if deleted is not None else True
-                )
-            ).order_by(EquipmentSubtype.title).order_by(EquipmentSubtype.id)
-        else:
-            equipment_subtype = self.pgsql_connetction.session.query(EquipmentSubtype).order_by(EquipmentSubtype.title).order_by(EquipmentSubtype.id)
+        query = self.pgsql_connetction.session.query(EquipmentSubtype)
+
+        if id is not None: query = query.filter(EquipmentSubtype.id == id)
+        if equipment_brand_id is not None: query = query.filter(EquipmentSubtype.equipment_brand_id == equipment_brand_id)
+        if title is not None: query = query.filter(EquipmentSubtype.title.ilike(f'%{title}%'))
+        if deleted is not None: query = query.filter(deleted or EquipmentSubtype.deleted.is_(False))
+
+        query = query.order_by(EquipmentSubtype.title)
 
         result = {'success': True}
-        count = equipment_subtype.count()
-        result['count'] = count
 
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
+        result['count'] = query.count()
 
-        if page > max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
+        query = query.limit(50)
+        if page: query = query.offset(page * 50)
+
+        equipment_subtype = query.all()
 
         data = []
-        for row in equipment_subtype[50 * page: 50 * (page + 1)]:
+        for row in equipment_subtype:
             data.append({
                 'id': row.id,
                 'title': row.title,
@@ -606,14 +599,15 @@ def edit_equipment_subtype(
             # Определим путь для доступа к этому файлу изображения
             url = f'data/PCB/subtype{id}.jpeg'
 
-        self.pgsql_connetction.session.query(EquipmentSubtype).filter_by(id=id).update({
-            'title': title if title is not None else EquipmentSubtype.title,
-            'icon': icon if icon is not None else EquipmentSubtype.icon,
-            'url': url if url is not None else EquipmentSubtype.url,
-            'branches': branches if branches is not None else EquipmentSubtype.branches,
-            'deleted': deleted if deleted is not None else EquipmentSubtype.deleted,
-            'equipment_brand_id': equipment_brand_id if equipment_brand_id is not None else EquipmentSubtype.equipment_brand_id,
-        })
+        equipment_subtype = self.pgsql_connetction.session.query(EquipmentSubtype).get(id)
+        fields = inspect.getfullargspec(edit_equipment_subtype).args[:-2]  # список имен всех аргументов текущей фнкции
+        for field in fields:
+            war = locals()[field]  # Находим переменную от имени и присваеваем war
+            if war is not None:
+                setattr(equipment_subtype, field, war)
+
+        list_update = [equipment_subtype]
+
         # Если запрос содержит список для объединения
         if list_for_join is not None:
 
@@ -621,9 +615,9 @@ def edit_equipment_subtype(
             for equipment_subtype in list_for_join:
 
                 # Отметим запись как удаленную
-                self.pgsql_connetction.session.query(EquipmentSubtype) \
-                    .filter_by(id=equipment_subtype) \
-                    .update({'deleted': True})
+                subtype = self.pgsql_connetction.session.query(EquipmentSubtype).get(equipment_subtype)
+                subtype.deleted = True
+                list_update.append(subtype)
 
                 # Получим список дочерних модулей
                 list_models = self.pgsql_connetction.session.query(EquipmentModel) \
@@ -633,33 +627,35 @@ def edit_equipment_subtype(
                 for equipment_model in list_models:
 
                     # Заменим родительский элемент
-                    self.pgsql_connetction.session.query(EquipmentModel) \
-                        .filter_by(id=equipment_model.id) \
-                        .update({'equipment_subtype_id': id})
-        self.pgsql_connetction.session.commit()
+                    model = self.pgsql_connetction.session.query(EquipmentModel).get(equipment_model.id)
+                    model.equipment_subtype_id = id
+                    list_update.append(model)
+
+        self.pgsql_connetction.session.add_all(list_update)
+        self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+
         if r_filter:
-            equipment_subtypes = self.pgsql_connetction.session.query(EquipmentSubtype).filter(
-                and_(
-                    EquipmentSubtype.equipment_brand_id == r_filter['equipment_brand_id'] if r_filter.get('equipment_brand_id') else True,
-                    EquipmentSubtype.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentSubtype.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentSubtype.title).order_by(EquipmentSubtype.id)
-            result = {'success': True}
-            count = equipment_subtypes.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentSubtype)
+            if r_filter.get('equipment_brand_id') is not None:
+                query = query.filter(EquipmentSubtype.equipment_brand_id == r_filter['equipment_brand_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentSubtype.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentSubtype.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentSubtype.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_subtypes = query.all()
 
             data = []
-
-            for row in equipment_subtypes[num * page: num * (page + 1)]:
+            for row in equipment_subtypes:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -671,10 +667,10 @@ def edit_equipment_subtype(
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
             result = {'success': True, 'message': f'{id} changed'}
-        # self.pgsql_connetction.session.close()
+        self.pgsql_connetction.session.commit()
         return result, 202
     except:
         self.pgsql_connetction.session.rollback()
@@ -689,11 +685,9 @@ def del_equipment_subtype(self, id):
         if equipment_subtype:
             self.pgsql_connetction.session.delete(equipment_subtype)
             self.pgsql_connetction.session.commit()
-            # self.pgsql_connetction.session.close()
             return {'success': True, 'message': f'{id} deleted'}, 202
     except:
         self.pgsql_connetction.session.rollback()
-        # self.pgsql_connetction.session.close()
         print(traceback.format_exc())
         result = {'success': False, 'message': 'server error'}
         return result, 550
@@ -713,29 +707,31 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
         )
         self.pgsql_connetction.session.add(equipment_model)
         self.pgsql_connetction.session.flush()
+
         result = {'success': True}
+
         if r_filter:
-            equipment_models = self.pgsql_connetction.session.query(EquipmentModel).filter(
-                and_(
-                    EquipmentModel.equipment_subtype_id == r_filter['equipment_subtype_id'] if r_filter.get('equipment_subtype_id') else True,
-                    EquipmentModel.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentModel.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentModel.title).order_by(EquipmentModel.id)
-            count = equipment_models.count()
-            result['count'] = count
 
-            num = 50
+            query = self.pgsql_connetction.session.query(EquipmentModel)
+            if r_filter.get('equipment_subtype_id') is not None:
+                query = query.filter(EquipmentModel.equipment_subtype_id == r_filter['equipment_subtype_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentModel.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentModel.deleted.is_(False))
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            query = query.order_by(EquipmentModel.title)
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            result['count'] = query.count()
+
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_models = query.all()
 
             data = []
 
-            for row in equipment_models[num * page: num * (page + 1)]:
+            for row in equipment_models:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -747,8 +743,9 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
+            self.pgsql_connetction.session.refresh(equipment_model)
             data = {
                 'id': equipment_model.id,
                 'title': equipment_model.title,
@@ -760,6 +757,7 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
             }
             result['message'] = f'{equipment_model.id} added'
             result['data'] = data
+
         self.pgsql_connetction.session.commit()
         return result, 201
     except:
@@ -771,29 +769,30 @@ def add_equipment_model(self, title, icon, url, branches, deleted, equipment_sub
 
 def get_equipment_model(self, id=None, title=None, equipment_subtype_id=None, deleted=None, page=0):
     try:
-        if any([id, title, equipment_subtype_id, deleted is not None]):
-            equipment_model = self.pgsql_connetction.session.query(EquipmentModel).filter(
-                and_(
-                    EquipmentModel.id == id if id else True,
-                    EquipmentModel.equipment_subtype_id == equipment_subtype_id if equipment_subtype_id else True,
-                    EquipmentModel.title.ilike(f'%{title}%') if title else True,
-                    (deleted or EquipmentModel.deleted.is_(False)) if deleted is not None else True
-                )
-            ).order_by(EquipmentModel.title).order_by(EquipmentModel.id)
-        else:
-            equipment_model = self.pgsql_connetction.session.query(EquipmentModel).order_by(EquipmentModel.title).order_by(EquipmentModel.id)
+        query = self.pgsql_connetction.session.query(EquipmentModel)
+
+        if id is not None:
+            query = query.filter(EquipmentModel.id == id)
+        if equipment_subtype_id is not None:
+            query = query.filter(EquipmentModel.equipment_subtype_id == equipment_subtype_id)
+        if title is not None:
+            query = query.filter(EquipmentModel.title.ilike(f'%{title}%'))
+        if deleted is not None:
+            query = query.filter(deleted or EquipmentModel.deleted.is_(False))
+
+        query = query.order_by(EquipmentModel.title)
 
         result = {'success': True}
-        count = equipment_model.count()
-        result['count'] = count
 
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
+        result['count'] = query.count()
 
-        if page > max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
+        query = query.limit(50)
+        if page: query = query.offset(page * 50)
+
+        equipment_model = query.all()
 
         data = []
-        for row in equipment_model[50 * page: 50 * (page + 1)]:
+        for row in equipment_model:
             data.append({
                 'id': row.id,
                 'title': row.title,
@@ -826,38 +825,38 @@ def edit_equipment_model(
         r_filter=None
     ):
     try:
-        self.pgsql_connetction.session.query(EquipmentModel).filter_by(id=id).update({
-            'title': title if title is not None else EquipmentModel.title,
-            'icon': icon if icon is not None else EquipmentModel.icon,
-            'url': url if url is not None else EquipmentModel.url,
-            'branches': branches if branches is not None else EquipmentModel.branches,
-            'deleted': deleted if deleted is not None else EquipmentModel.deleted,
-            'equipment_subtype_id': equipment_subtype_id if equipment_subtype_id is not None else EquipmentModel.equipment_subtype_id,
-        })
+        equipment_model = self.pgsql_connetction.session.query(EquipmentModel).get(id)
+        fields = inspect.getfullargspec(edit_equipment_model).args[:-2]  # список имен всех аргументов текущей фнкции
+        for field in fields:
+            war = locals()[field]  # Находим переменную от имени и присваеваем war
+            if war is not None:
+                setattr(equipment_model, field, war)
+
+        self.pgsql_connetction.session.add(equipment_model)
         self.pgsql_connetction.session.flush()
+
+        result = {'success': True}
+
         if r_filter:
-            equipment_models = self.pgsql_connetction.session.query(EquipmentModel).filter(
-                and_(
-                    EquipmentModel.equipment_subtype_id == r_filter['equipment_subtype_id'] if r_filter.get('equipment_subtype_id') else True,
-                    EquipmentModel.title.ilike(f"%{r_filter['title']}%") if r_filter.get('title') else True,
-                    (r_filter['deleted'] or EquipmentModel.deleted.is_(False)) if r_filter.get('deleted') is not None else True
-                )
-            ).order_by(EquipmentModel.title).order_by(EquipmentModel.id)
-            result = {'success': True}
-            count = equipment_models.count()
-            result['count'] = count
+            query = self.pgsql_connetction.session.query(EquipmentModel)
+            if r_filter.get('equipment_subtype_id') is not None:
+                query = query.filter(EquipmentModel.equipment_subtype_id == r_filter['equipment_subtype_id'])
+            if r_filter.get('title') is not None:
+                query = query.filter(EquipmentModel.title.ilike(f"%{r_filter['title']}%"))
+            if r_filter.get('deleted') is not None:
+                query = query.filter(r_filter['deleted'] or EquipmentModel.deleted.is_(False))
 
-            num = 50
+            query = query.order_by(EquipmentModel.title)
 
-            max_page = count // num if count % num > 0 else count // num - 1
+            result['count'] = query.count()
 
-            page = r_filter.get('page', 0)
-            if page > max_page != -1:
-                return {'success': False, 'message': 'page is not defined'}, 400
+            query = query.limit(50)
+            if r_filter.get('page', 0): query = query.offset(r_filter['page'] * 50)
+
+            equipment_brands = query.all()
 
             data = []
-
-            for row in equipment_models[num * page: num * (page + 1)]:
+            for row in equipment_brands:
                 data.append({
                     'id': row.id,
                     'title': row.title,
@@ -869,7 +868,7 @@ def edit_equipment_model(
                 })
 
             result['data'] = data
-            result['page'] = page
+            result['page'] = r_filter.get('page', 0)
         else:
             result = {'success': True, 'message': f'{id} changed'}
         self.pgsql_connetction.session.commit()

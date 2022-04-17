@@ -259,7 +259,7 @@ def filter_equipment(list_equipments, title=None, deleted=None, parents_id=None,
         list_equipments = list(filter(lambda e: deleted or e['deleted'] is deleted, list_equipments))
     if parents_id:
         list_equipments = list(filter(lambda e: e[field_parents] == parents_id, list_equipments))
-    return sorted(list_equipments, key=lambda e: e['title'].lower())
+    return sorted(list_equipments, key=lambda e: e['id'])
 
 
 @pytest.mark.parametrize('equipment_type', equipment_types)

@@ -1,13 +1,16 @@
+import inspect
 
+from app.db.interaction.interaction import DbInteraction
+from app.db.models.models import Events, Clients
 
+db = DbInteraction(
+    host='5.53.124.252',
+    port='5432',
+    user='postgres',
+    password='225567',
+    db_name='one_two',
+    rebuild_db=False
+)
 
-from urllib.request import urlopen
-from data import test_img
-
-
-
-
-import base64
-data_uri = base64.b64encode(open('build/static/data/PCB/subtype31.jpeg', 'rb').read()).decode('utf-8')
-print(data_uri[:77] == test_img[23:100])
-print(test_img[23:100])
+# Создание новых таблиц
+db.create_tables([Events.__table__])

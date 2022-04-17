@@ -20,6 +20,9 @@ class AdCampaign(Base):
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID рекламной компании
     name = Column(VARCHAR(50))                                   # Имя рекламной компании
 
+    # def to_dict(self):
+    #     return {'id': self.id, 'name': self.name}
+
 # Таблица ролей
 class Roles(Base):
 
@@ -338,14 +341,14 @@ class Orders(Base):
 
     id_label = Column(TEXT)                                                         # Номер заказа
     prefix = Column(TEXT)                                                           # Префикс
-    serial = Column(TEXT)                                                           # Серийный номер
-    malfunction = Column(TEXT)                                                      # Тип устройства
-    packagelist = Column(TEXT)                                                      # Комплектация
-    appearance = Column(TEXT)                                                       # Внешний вид устройства
-    engineer_notes = Column(TEXT)                                                   # Заметки инженера
-    manager_notes = Column(TEXT)                                                    # Заметки менеджера
-    resume = Column(TEXT)                                                           # Пояснение
-    cell = Column(TEXT)                                                             # Ячейка
+    serial = Column(TEXT, default='')                                               # Серийный номер
+    malfunction = Column(TEXT, default='')                                          # Тип устройства
+    packagelist = Column(TEXT, default='')                                          # Комплектация
+    appearance = Column(TEXT, default='')                                           # Внешний вид устройства
+    engineer_notes = Column(TEXT, default='')                                       # Заметки инженера
+    manager_notes = Column(TEXT, default='')                                        # Заметки менеджера
+    resume = Column(TEXT, default='')                                               # Пояснение
+    cell = Column(TEXT, default='')                                                 # Ячейка
 
     estimated_cost = Column(FLOAT)                                                  # Ориентировочная стоимость
     missed_payments = Column(FLOAT)                                                 # Пропущеный платеж (Возможно нужно убрать)
@@ -641,12 +644,12 @@ class Payrolls(Base):
 
     description = Column(TEXT)  # Описание
 
-    income = Column(FLOAT)  # Входящяя сумма
-    outcome = Column(FLOAT)  # Иcходящая сумму
+    income = Column(FLOAT, default=0)  # Входящяя сумма
+    outcome = Column(FLOAT, default=0)  # Иcходящая сумму
     direction = Column(INTEGER)  # Направление платежа
 
-    deleted = Column(BOOLEAN)  # Платеж удален
-    reimburse = Column(BOOLEAN) # Совершен возврат
+    deleted = Column(BOOLEAN, default=False)  # Платеж удален
+    reimburse = Column(BOOLEAN, default=False) # Совершен возврат
 
     created_at = Column(INTEGER, default=time_now)  # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)  # Дата обновления
@@ -674,6 +677,7 @@ class Payrolls(Base):
 # 9 Премия
 # 10 Взыскания
 # 11 Возврат заказа
+# 12 Выплата ЗП
 
 class Payrules(Base):
     __tablename__ = 'payrules'
@@ -810,8 +814,54 @@ class NotificationEvents(Base):
 # 5 - Обращения: для менеджеров
 # 6 - Задачи: для исполнителей
 
-# tables = Base.metadata.tables.keys()
-# print(type(tables))
-# print(len(tables))
-# for table in tables:
-#     print(table)
+
+class Events(Base):
+    __tablename__ = 'events'
+
+    id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
+
+    created_at = Column(INTEGER, default=time_now)
+    object_type = Column(INTEGER)
+    object_id = Column(INTEGER)
+    event_type = Column(TEXT)
+    changed = Column(ARRAY(JSON))
+    id_status_ref = f'{Status.__tablename__}.{Status.id.name}'
+    current_status_id = Column(ForeignKey(id_status_ref), nullable=True)
+    id_branch_ref = f'{Branch.__tablename__}.{Branch.id.name}'
+    branch_id = Column(ForeignKey(id_branch_ref), nullable=True)
+    id_employee_ref = f'{Employees.__tablename__}.{Employees.id.name}'
+    employee_id = Column(ForeignKey(id_employee_ref), nullable=True)
+
+    current_status = relationship('Status', foreign_keys=[current_status_id])
+
+# object_type:
+# 1 - Заказ
+# 2 - Сотрудник
+# 4 - Филиал
+# 5 - Работа в заказе
+# 6 - Платеж
+# 7 - Запчасть
+
+# event_type_for_order:         event_type_for_operation:   event_type_for_payment: event_type_for_order_part:
+# CREATE_ORDER                  ADD_OPERATION               ADD_PAYMENT             ADD_ORDER_PART
+# ASSIGN_ENGINEER               CHANGE_DATA                 DELETE_PAYMENT          DELETE_ORDER_PART
+# CHANGE_ENGINEER               DELETE_OPERATION                                    CHANGE_ORDER_PART
+# ASSIGN_MANAGER
+# CHANGE_MANAGER
+# ADD_CLIENT
+# CHANGE_CLIENT
+# CHANGE_DATA
+# CHANGE_ESTIMATED_DONE_AT
+# ADD_OPERATION
+# DELETE_OPERATION
+# CHANGE_OPERATION
+# ADD_ORDER_PART
+# DELETE_ORDER_PART
+# CHANGE_ORDER_PART
+# ADD_PAYMENT
+# DELETE_PAYMENT
+# CHANGE_STATUS
+# ADD_COMMENT
+# SEND_SMS
+# SEND_EMAIL
+# MOVE_TO

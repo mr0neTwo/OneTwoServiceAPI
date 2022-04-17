@@ -4,7 +4,7 @@ from sqlalchemy import or_
 from app.db.models.models import CustomFilters, Orders, time_now
 
 
-def get_badges(self, employee_access):
+def get_badges(self, employee_access=None):
     statuses = self.get_status()['data']
 
     badge1 = {
@@ -28,15 +28,13 @@ def get_badges(self, employee_access):
             'client_id': None
         }
     }
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge1['filter']['status_id'])) \
-            .filter(Orders.engineer_id.in_(badge1['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge1['filter']['status_id']))
 
-    badge1['count'] = orders.count()
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge1['filter']['status_id']))
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge1['filter']['engineer_id']))
+
+
+    badge1['count'] = query.count()
 
     badge2 = {
         'id': 2,
@@ -60,17 +58,12 @@ def get_badges(self, employee_access):
         }
     }
 
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge2['filter']['status_id'])) \
-            .filter(Orders.urgent.is_(badge2['filter']['urgent'])) \
-            .filter(Orders.engineer_id.in_(badge2['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge2['filter']['status_id'])) \
-            .filter(Orders.urgent.is_(badge2['filter']['urgent']))
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge2['filter']['status_id']))
+    query = query.filter(Orders.urgent.is_(badge2['filter']['urgent']))
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge2['filter']['engineer_id']))
 
-    badge2['count'] = orders.count()
+    badge2['count'] = query.count()
 
     badge3 = {
         'id': 3,
@@ -94,15 +87,11 @@ def get_badges(self, employee_access):
         }
     }
 
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge3['filter']['status_id'])) \
-            .filter(Orders.engineer_id.in_(badge3['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge3['filter']['status_id']))
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge3['filter']['status_id']))
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge3['filter']['engineer_id']))
 
-    badge3['count'] = orders.count()
+    badge3['count'] = query.count()
 
     badge4 = {
         'id': 4,
@@ -126,17 +115,12 @@ def get_badges(self, employee_access):
         }
     }
 
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge4['filter']['status_id'])) \
-            .filter(Orders.estimated_done_at < time_now()) \
-            .filter(Orders.engineer_id.in_(badge4['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge4['filter']['status_id'])) \
-            .filter(Orders.estimated_done_at < time_now())
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge4['filter']['status_id']))
+    query = query.filter(Orders.estimated_done_at < time_now())
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge4['filter']['engineer_id']))
 
-    badge4['count'] = orders.count()
+    badge4['count'] = query.count()
 
     badge5 = {
         'id': 5,
@@ -160,17 +144,12 @@ def get_badges(self, employee_access):
         }
     }
 
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge5['filter']['status_id'])) \
-            .filter(Orders.status_deadline < time_now()) \
-            .filter(Orders.engineer_id.in_(badge5['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge5['filter']['status_id'])) \
-            .filter(Orders.status_deadline < time_now())
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge5['filter']['status_id']))
+    query = query.filter(Orders.status_deadline < time_now())
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge5['filter']['engineer_id']))
 
-    badge5['count'] = orders.count()
+    badge5['count'] = query.count()
 
     badge6 = {
         'id': 6,
@@ -194,15 +173,11 @@ def get_badges(self, employee_access):
         }
     }
 
-    if employee_access:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge6['filter']['status_id'])) \
-            .filter(Orders.engineer_id.in_(badge6['filter']['engineer_id']))
-    else:
-        orders = self.pgsql_connetction.session.query(Orders) \
-            .filter(Orders.status_id.in_(badge6['filter']['status_id']))
+    query = self.pgsql_connetction.session.query(Orders)
+    query = query.filter(Orders.status_id.in_(badge6['filter']['status_id']))
+    if employee_access: query = query.filter(Orders.engineer_id.in_(badge6['filter']['engineer_id']))
 
-    badge6['count'] = orders.count()
+    badge6['count'] = query.count()
 
     result = {'success': True}
     result['data'] = [badge1, badge2, badge3, badge4, badge5, badge6]
@@ -225,6 +200,7 @@ def add_custom_filters(self, title, filters, employee_id, general=False):
         self.pgsql_connetction.session.flush()
 
         result = {'success': True}
+
         custom_filters = self.pgsql_connetction.session.query(CustomFilters).filter(
             or_(
                 CustomFilters.employee_id == employee_id,
