@@ -3,7 +3,7 @@ import traceback
 
 from sqlalchemy import desc, func
 
-from app.db.models.models import Payments, Cashboxs, time_now, Orders, Events
+from app.db.models.models import Payments, Cashboxs, Orders, Events, Payrolls
 
 
 def add_payments(
@@ -20,6 +20,7 @@ def add_payments(
         created_at,
         custom_created_at,
         tags,
+        relation_type,
         relation_id,
         cashbox_id,
         client_id,
@@ -46,6 +47,7 @@ def add_payments(
             created_at=created_at,
             custom_created_at=custom_created_at,
             tags=tags,
+            relation_type=relation_type,
             relation_id=relation_id,
             cashbox_id=cashbox_id,
             client_id=client_id,
@@ -71,6 +73,7 @@ def add_payments(
                 created_at=created_at,
                 custom_created_at=custom_created_at,
                 tags=tags,
+                relation_type=relation_type,
                 relation_id=payment.id,
                 cashbox_id=target_cashbox_id,
                 client_id=client_id,
@@ -175,7 +178,7 @@ def add_payments(
             for row in payments:
                 query = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome))
                 query = query.filter(Payments.cashbox_id == row.cashbox.id)
-                query = query.filter(Payments.deleted != True)
+                query = query.filter(Payments.deleted.is_(False))
                 query = query.filter(Payments.custom_created_at <= row.custom_created_at)
                 deposit = query.scalar()
 
@@ -193,6 +196,7 @@ def add_payments(
                     'created_at': row.created_at,
                     'custom_created_at': row.custom_created_at,
                     'tags': row.tags,
+                    'relation_type': row.relation_type,
                     'relation_id': row.relation_id,
                     'cashbox': {
                         'id': row.cashbox.id,
@@ -310,11 +314,11 @@ def get_payments(
 
         data = []
         for row in payments:
-            deposit = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome)) \
-                .filter(Payments.cashbox_id == row.cashbox.id) \
-                .filter(Payments.deleted.is_(False)) \
-                .filter(Payments.custom_created_at <= row.custom_created_at) \
-                .scalar()
+            query = self.pgsql_connetction.session.query(func.sum(Payments.income + Payments.outcome))
+            query = query.filter(Payments.cashbox_id == row.cashbox.id)
+            query = query.filter(Payments.deleted.is_(False))
+            query = query.filter(Payments.custom_created_at <= row.custom_created_at)
+            deposit = query.scalar()
     
             data.append({
                 'id': row.id,
@@ -330,6 +334,7 @@ def get_payments(
                 'created_at': row.created_at,
                 'custom_created_at': row.custom_created_at,
                 'tags': row.tags,
+                'relation_type': row.relation_type,
                 'relation_id': row.relation_id,
                 'cashbox': {
                     'id': row.cashbox.id,
@@ -377,6 +382,7 @@ def edit_payments(
         custom_created_at=None,
         tags=None,
         relation_id=None,
+        relation_type=None,
         cashbox_id=None,
         client_id=None,
         employee_id=None,
@@ -401,11 +407,17 @@ def edit_payments(
 
         self.pgsql_connetction.session.add(payment)
 
-        if payment.relation_id and deleted is not None:
+        if not payment.relation_type and payment.relation_id and deleted is not None:
             payment2 = self.pgsql_connetction.session.query(Payments).get(payment.relation_id)
             payment2.deleted = deleted
 
             self.pgsql_connetction.session.add(payment2)
+
+        if payment.relation_type == 1 and deleted is not None:
+            payroll = self.pgsql_connetction.session.query(Payrolls).get(payment.relation_id)
+            payroll.deleted = deleted
+
+            self.pgsql_connetction.session.add(payroll)
 
         if deleted is True:
             payment_event = Events(
@@ -518,6 +530,7 @@ def edit_payments(
                     'created_at': row.created_at,
                     'custom_created_at': row.custom_created_at,
                     'tags': row.tags,
+                    'relation_type': row.relation_type,
                     'relation_id': row.relation_id,
                     'cashbox': {
                         'id': row.cashbox.id,
@@ -589,7 +602,7 @@ def del_payments(self, id):
     try:
         payment = self.pgsql_connetction.session.query(Payments).get(id)
         if payment:
-            if payment.relation_id:
+            if not payment.relation_type and payment.relation_id:
                 payment2 = self.pgsql_connetction.session.query(Payments).get(payment.relation_id)
                 self.pgsql_connetction.session.delete(payment2)
             self.pgsql_connetction.session.delete(payment)

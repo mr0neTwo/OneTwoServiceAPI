@@ -622,6 +622,7 @@ class Payments(Base):
 
     tags = Column(ARRAY(TEXT))                                                      # Теги
 
+    relation_type = Column(INTEGER, default=0)                                      # Тип сзязи
     relation_id = Column(INTEGER)                                                   # id связанного платежа (для перемещения)
     id_cashbox_ref = f'{Cashboxs.__tablename__}.{Cashboxs.id.name}'
     cashbox_id = Column(INTEGER, ForeignKey(id_cashbox_ref), nullable=True)         # Касса
@@ -636,6 +637,11 @@ class Payments(Base):
     employee = relationship('Employees', foreign_keys=[employee_id])
     order = relationship('Orders', foreign_keys=[order_id])
     cashbox = relationship('Cashboxs', foreign_keys=[cashbox_id])
+
+# relation_type
+# 0 - перемещение (связь с вторым платежом)
+# 1 - Для начисления ЗП
+
 
 class Payrolls(Base):
     __tablename__ = 'payrolls'

@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime
 from pprint import pprint
 
 from sqlalchemy import or_, desc
@@ -48,7 +49,9 @@ def change_order_status(self, status_id, order_id, user_id, r_filter=None):
         # Обновим заказ
         order.status_id = status_id
         # Если заказ был закрыт сохраним сотрудника закрывшего заказ
-        if new_status.group == 6: order.closed_by_id = user_id
+        if new_status.group == 6:
+            order.closed_by_id = user_id
+            order.closed_at = int(datetime.now().timestamp())
         list_to_add.append(order)
 
         # Расчет Начислений по статусу Готов ===========================================================================
@@ -348,6 +351,7 @@ def change_order_status(self, status_id, order_id, user_id, r_filter=None):
 
         if r_filter:
             result['data'] = self.get_orders_by_filter(r_filter)
+            result['count'] = len(result['data'])
             result['page'] = r_filter.get('page', 0)
 
         if r_filter.get('update_badges'):

@@ -2,6 +2,7 @@ import traceback
 from pprint import pprint
 
 import requests
+from telebot import TeleBot
 from tqdm import tqdm
 
 def config_parser(config_path):
@@ -19,7 +20,21 @@ def config_parser(config_path):
 
 
 
+# list_name = ['Стас', 'Антон', 'Юра', 'Альбиночка']
+# list_telegram_id = [442971377, 633363605, 857858976, 315479668]
 
+def bot_send_message(employee_id, text):
+    # Создаем токен для бота
+    token = "1729021750:AAHObATFNa1uO0cyFrWZezNSG8YMBugNhjE"
+    dict_id = {
+        1: 442971377,
+        2: 633363605,
+        4: 857858976,
+        7: 315479668
+    }
+    # Подключаемся к боту
+    bot = TeleBot(token)
+    bot.send_message(dict_id[employee_id], text)
 
 my_api_key = "94ee4e09d9e247edaeab77e7ac63f368"
 

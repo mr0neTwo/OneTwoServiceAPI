@@ -1,5 +1,7 @@
 from app.db.interaction.interaction import DbInteraction
 from config import config
+from flask_apscheduler import APScheduler
+
 
 host = config['SERVER_HOST']
 port = config['SERVER_PORT']
@@ -19,3 +21,5 @@ db_iteraction = DbInteraction(
     db_name=db_name,
     rebuild_db=False
 )
+
+scheduler = APScheduler()

@@ -1,12 +1,13 @@
 import inspect
 import time
 import traceback
+from datetime import datetime
 from pprint import pprint
 
 from sqlalchemy import or_, desc, func
 
 from app.db.models.models import Orders, time_now, Clients, Phones, Events, Employees, Branch, AdCampaign, OrderType
-from app.db.models.models import EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel
+from app.db.models.models import Status, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel
 from app.events import event_create_order
 
 
@@ -344,9 +345,39 @@ def get_orders_by_filter(self, filter_order):
         if filter_order.get('urgent') is not None:
             query = query.filter(Orders.urgent.is_(filter_order['urgent']))
 
-        query = query.order_by(
-            getattr(Orders, filter_order.get('field_sort'), 'id') if filter_order.get('sort') == 'asc' else desc(
-                getattr(Orders, filter_order.get('field_sort'), 'id')))
+        if filter_order.get('field_sort') == 'status.name':
+            query = query.outerjoin(Status, Status.id == Orders.status_id)
+            query = query.order_by(Status.group if filter_order.get('sort') == 'asc' else desc(Status.group))
+            query = query.order_by(Status.id if filter_order.get('sort') == 'asc' else desc(Status.id))
+        elif filter_order.get('field_sort') == 'kindof_good':
+            query = query.outerjoin(EquipmentType, EquipmentType.id == Orders.kindof_good_id)
+            query = query.order_by(EquipmentType.title if filter_order.get('sort') == 'asc' else desc(EquipmentType.title))
+        elif filter_order.get('field_sort') == 'brand':
+            query = query.outerjoin(EquipmentBrand, EquipmentBrand.id == Orders.brand_id)
+            query = query.order_by(EquipmentBrand.title if filter_order.get('sort') == 'asc' else desc(EquipmentBrand.title))
+        elif filter_order.get('field_sort') == 'subtype':
+            query = query.outerjoin(EquipmentSubtype, EquipmentSubtype.id == Orders.subtype_id)
+            query = query.order_by(EquipmentSubtype.title if filter_order.get('sort') == 'asc' else desc(EquipmentSubtype.title))
+        elif filter_order.get('field_sort') == 'engineer_id':
+            query = query.outerjoin(Employees, Employees.id == Orders.engineer_id)
+            query = query.order_by(Employees.last_name if filter_order.get('sort') == 'asc' else desc(Employees.last_name))
+            query = query.order_by(Employees.first_name if filter_order.get('sort') == 'asc' else desc(Employees.first_name))
+        elif filter_order.get('field_sort') == 'manager_id':
+            query = query.outerjoin(Employees, Employees.id == Orders.manager_id)
+            query = query.order_by(Employees.last_name if filter_order.get('sort') == 'asc' else desc(Employees.last_name))
+            query = query.order_by(Employees.first_name if filter_order.get('sort') == 'asc' else desc(Employees.first_name))
+        elif filter_order.get('field_sort') == 'client.name':
+            query = query.outerjoin(Clients, Clients.id == Orders.client_id)
+            query = query.order_by(Clients.name if filter_order.get('sort') == 'asc' else desc(Clients.name))
+            query = query.order_by(Clients.id if filter_order.get('sort') == 'asc' else desc(Clients.id))
+        elif filter_order.get('field_sort') == 'ad_campaign_id':
+            query = query.outerjoin(AdCampaign, AdCampaign.id == Orders.ad_campaign_id)
+            query = query.order_by(AdCampaign.name if filter_order.get('sort') == 'asc' else desc(AdCampaign.name))
+        else:
+            query = query.order_by(
+                getattr(Orders, filter_order.get('field_sort'), 'id') if filter_order.get('sort') == 'asc' else desc(
+                    getattr(Orders, filter_order.get('field_sort'), 'id'))
+            )
 
         query = query.limit(50)
         if filter_order.get('page', 0): query = query.offset(filter_order['page'] * 50)
@@ -725,6 +756,7 @@ def add_orders(
 
         if r_filter:
             result['data'] = self.get_orders_by_filter(r_filter)
+            result['count'] = len(result['data'])
             result['page'] = r_filter.get('page', 0)
 
         if r_filter.get('update_badges'):
@@ -802,7 +834,36 @@ def get_orders(
                         EquipmentModel.title.ilike(f'%{search}%')
                     ))
 
-        query = query.order_by(getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
+        if field_sort == 'status.name':
+            query = query.outerjoin(Status, Status.id == Orders.status_id)
+            query = query.order_by(Status.group if sort == 'asc' else desc(Status.group))
+            query = query.order_by(Status.id if sort == 'asc' else desc(Status.id))
+        elif field_sort == 'kindof_good':
+            query = query.outerjoin(EquipmentType, EquipmentType.id == Orders.kindof_good_id)
+            query = query.order_by(EquipmentType.title if sort == 'asc' else desc(EquipmentType.title))
+        elif field_sort == 'brand':
+            query = query.outerjoin(EquipmentBrand, EquipmentBrand.id == Orders.brand_id)
+            query = query.order_by(EquipmentBrand.title if sort == 'asc' else desc(EquipmentBrand.title))
+        elif field_sort == 'subtype':
+            query = query.outerjoin(EquipmentSubtype, EquipmentSubtype.id == Orders.subtype_id)
+            query = query.order_by(EquipmentSubtype.title if sort == 'asc' else desc(EquipmentSubtype.title))
+        elif field_sort == 'engineer_id':
+            query = query.outerjoin(Employees, Employees.id == Orders.engineer_id)
+            query = query.order_by(Employees.last_name if sort == 'asc' else desc(Employees.last_name))
+            query = query.order_by(Employees.first_name if sort == 'asc' else desc(Employees.first_name))
+        elif field_sort == 'manager_id':
+            query = query.outerjoin(Employees, Employees.id == Orders.manager_id)
+            query = query.order_by(Employees.last_name if sort == 'asc' else desc(Employees.last_name))
+            query = query.order_by(Employees.first_name if sort == 'asc' else desc(Employees.first_name))
+        elif field_sort == 'client.name':
+            query = query.outerjoin(Clients, Clients.id == Orders.client_id)
+            query = query.order_by(Clients.name if sort == 'asc' else desc(Clients.name))
+            query = query.order_by(Clients.id if sort == 'asc' else desc(Clients.id))
+        elif field_sort == 'ad_campaign_id':
+            query = query.outerjoin(AdCampaign, AdCampaign.id == Orders.ad_campaign_id)
+            query = query.order_by(AdCampaign.name if sort == 'asc' else desc(AdCampaign.name))
+        else:
+            query = query.order_by(getattr(Orders, field_sort, 'id') if sort == 'asc' else desc(getattr(Orders, field_sort, 'id')))
 
         result = {'success': True}
         result['count'] = query.count()
@@ -1028,8 +1089,8 @@ def edit_orders(
                 employee_id=user_id,
                 changed=[{
                     'title': 'Изменен срок выполнения заказ',
-                    'current': {'title': order.estimated_done_at},
-                    'new': {'title': estimated_done_at}
+                    'current': {'title': datetime.fromtimestamp(order.estimated_done_at).strftime("%d.%m.%Y %H:%M")},
+                    'new': {'title': datetime.fromtimestamp(estimated_done_at).strftime("%d.%m.%Y %H:%M")}
                 }]
             )
             order_events.append(order_event)
@@ -1239,6 +1300,7 @@ def edit_orders(
         # Формироваиня списка заказов в соответсвии с фильтром запроса =================================================
         if r_filter:
             result['data'] = self.get_orders_by_filter(r_filter)
+            result['count'] = len(result['data'])
             result['page'] = r_filter.get('page', 0)
 
         if r_filter.get('update_badges'):

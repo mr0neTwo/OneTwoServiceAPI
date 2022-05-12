@@ -1,9 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pprint import pprint
 import time
 import os
 from urllib.request import urlopen
-
 
 from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
 from flask_cors import CORS
@@ -12,7 +11,9 @@ from flask_jwt_extended import create_access_token, decode_token
 from flask_jwt_extended import JWTManager, jwt_required
 
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_apscheduler import APScheduler
 
+from app.API_requests.cashboxes import cashboxes_api
 from app.API_requests.change_order_status import change_status_api
 from app.API_requests.equipments import equipments_api
 from app.API_requests.filters import filters_api
@@ -20,24 +21,19 @@ from app.API_requests.operations import operation_api
 from app.API_requests.order_parts import order_parts_api
 from app.API_requests.orders import orders_api
 from app.API_requests.payments import payment_api
-from app.db.interaction.db_iteraction import db_iteraction, config
+from app.API_requests.payrolls import payrolls_api
+from app.db.interaction.db_iteraction import db_iteraction, config, scheduler
 
+from app.reports.dailyReport import daily_report
 
 import ssl
-# pip freeze > requirements.txt
 
+# pip freeze > requirements.txt
 
 host = config['SERVER_HOST']
 port = config['SERVER_PORT']
 
 print_logs = False
-
-
-
-
-# context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-# context.load_cert_chain("server.crt", "server.key")
-
 
 app = Flask(__name__, static_folder="build/static", template_folder="build")
 app.register_blueprint(operation_api)
@@ -47,10 +43,14 @@ app.register_blueprint(equipments_api)
 app.register_blueprint(change_status_api)
 app.register_blueprint(payment_api)
 app.register_blueprint(order_parts_api)
+app.register_blueprint(cashboxes_api)
+app.register_blueprint(payrolls_api)
+app.register_blueprint(daily_report)
 
 jwt = JWTManager(app)
 
 app.config['SECRET_KEY'] = '07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79'
+app.config['SCHEDULER_API_ENABLED'] = True
 # app.permanent_session_lifetime = timedelta(days=1)
 # app.config.update(
 #     FLASK_ENV = 'development',
@@ -66,17 +66,23 @@ app.config['SECRET_KEY'] = '07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79'
 CORS(app, supports_credentials=True)
 # cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+scheduler.init_app(app)
+scheduler.start()
+
+
 # cors = CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5000"}})
 # logging.getLogger('flask_cors').level = logging.DEBUG
 
 
 @app.after_request
 def after_request(response):
-  response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
-  response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-  response.headers.add('Access-Control-Allow-Credentials', 'true')
-  return response
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 
 def page_not_found(err_description):
@@ -136,7 +142,8 @@ def get_start():
 def login():
     request_body = dict(request.json)
     if request.method == 'POST':
-        user = db_iteraction.get_employee(email=request_body['email'])['data'][0] if db_iteraction.get_employee(email=request_body['email'])['data'] else None
+        user = db_iteraction.get_employee(email=request_body['email'])['data'][0] if \
+        db_iteraction.get_employee(email=request_body['email'])['data'] else None
         if user:
             if check_password_hash(user['password'], request_body['password']):
                 expire_delta = timedelta(hours=12)
@@ -171,8 +178,8 @@ def get_ad_campaign():
         name = str(name)
 
     result = db_iteraction.get_adCampaign(
-        id=id,              # int - id рекламной компании - полное совпадение
-        name=name           # str - Имя рекламной компании - частичное совпадение
+        id=id,  # int - id рекламной компании - полное совпадение
+        name=name  # str - Имя рекламной компании - частичное совпадение
     )
     return result, 200
 
@@ -204,7 +211,7 @@ def ad_campaign():
             return {'success': False, 'message': 'name required'}, 400
 
         db_iteraction.add_adCampaign(
-            name=name           # str - Название рекламной компании - обязательное поле
+            name=name  # str - Название рекламной компании - обязательное поле
         )
         return {'success': True, 'message': f'{name} added'}, 201
 
@@ -214,14 +221,14 @@ def ad_campaign():
 
     if request.method == 'PUT':
         db_iteraction.edit_adCampaign(
-            id=id,                  # int - id записи - полное совпаден
-            name=name,              # str - Новое название рекламной компании
+            id=id,  # int - id записи - полное совпаден
+            name=name,  # str - Новое название рекламной компании
         )
         return {'success': True, 'message': f'{name} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_adCampaign(
-            id=id)                        # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
@@ -276,23 +283,22 @@ def get_employee():
     if role_id and type(role_id) != int:
         return {'success': False, 'message': "role_id is not integer"}, 400
 
-
     login = request_body.get('login')
     if login:
         login = str(login)
 
     result = db_iteraction.get_employee(
-        id=id,                               # int - id сотрудника - полное совпадение
-        first_name=first_name,               # str - Имя сотрудника - частичное совпадение
-        last_name=last_name,                 # str - Фамилия сотрудника - частичное совпадение
-        email=email,                         # str - Электронная почта сотрудника - частичное совпадение
-        phone=phone,                         # str - Телефон сотрудника - частичное совпадение
-        notes=notes,                         # str - Заметки о сотруднике - частичное совпадение
+        id=id,  # int - id сотрудника - полное совпадение
+        first_name=first_name,  # str - Имя сотрудника - частичное совпадение
+        last_name=last_name,  # str - Фамилия сотрудника - частичное совпадение
+        email=email,  # str - Электронная почта сотрудника - частичное совпадение
+        phone=phone,  # str - Телефон сотрудника - частичное совпадение
+        notes=notes,  # str - Заметки о сотруднике - частичное совпадение
         post=post,
-        deleted=deleted,                     # bool - Статус удален сотрудника
-        role_id=role_id,                     # str - Роль сотрудника - частичное совпадение
-        login=login,                         # str - Логин
-        page=page                            # int - Старница погинации
+        deleted=deleted,  # bool - Статус удален сотрудника
+        role_id=role_id,  # str - Роль сотрудника - частичное совпадение
+        login=login,  # str - Логин
+        page=page  # int - Старница погинации
 
     )
     return result, 200
@@ -388,21 +394,20 @@ def employee():
         if len(password) < 4:
             return {'success': False, 'message': 'password is short'}, 400
 
-
         db_iteraction.add_employee(
-            first_name=first_name,                              # str - Имя сотрудника
-            last_name=last_name,                                # str - Фамилия сотрудника
-            email=email,                                        # str - Электронная почта сотрудника - уникальное значение
-            phone=phone,                                        # str - Телфон сотрудника
-            notes=notes,                                        # str - Заметки
-            deleted=deleted,                                    # bool - Статус удален
+            first_name=first_name,  # str - Имя сотрудника
+            last_name=last_name,  # str - Фамилия сотрудника
+            email=email,  # str - Электронная почта сотрудника - уникальное значение
+            phone=phone,  # str - Телфон сотрудника
+            notes=notes,  # str - Заметки
+            deleted=deleted,  # bool - Статус удален
             inn=inn,
             doc_name=doc_name,
             post=post,
             permissions=permissions,
-            role_id=role_id,                                    # str - Роль сотрудника
-            login=login,                                        # str - Логин сотрудника - уникальное значение
-            password=generate_password_hash(password)           # str - Пароль сотрудника - обязательное поле,
+            role_id=role_id,  # str - Роль сотрудника
+            login=login,  # str - Логин сотрудника - уникальное значение
+            password=generate_password_hash(password)  # str - Пароль сотрудника - обязательное поле,
         )
         return {'success': True, 'message': f'{first_name} added'}, 201
 
@@ -424,27 +429,26 @@ def employee():
             if db_iteraction.get_employee(login=login)['data']:
                 return {'success': False, 'message': 'there is the same login'}, 400
 
-
         db_iteraction.edit_employee(
-            id=id,                                      # int - ID сотрудника -  полное совпадение
-            first_name=first_name,                      # str - Новое имя сотрудника
-            last_name=last_name,                        # str - Новая фамилия сотрудника
-            email=email,                                # str - Новый email сотрудника
-            phone=phone,                                # str - Новый телефон сотрудника
-            notes=notes,                                # str - Новый коментарий к сотруднику
-            deleted=deleted,                            # str - Статус удален сотрудника
+            id=id,  # int - ID сотрудника -  полное совпадение
+            first_name=first_name,  # str - Новое имя сотрудника
+            last_name=last_name,  # str - Новая фамилия сотрудника
+            email=email,  # str - Новый email сотрудника
+            phone=phone,  # str - Новый телефон сотрудника
+            notes=notes,  # str - Новый коментарий к сотруднику
+            deleted=deleted,  # str - Статус удален сотрудника
             inn=inn,
             doc_name=doc_name,
             post=post,
-            login=login,                                # str - Новый логин
-            role_id=role_id,                            # str - Новая роль сотрудника
+            login=login,  # str - Новый логин
+            role_id=role_id,  # str - Новая роль сотрудника
             permissions=permissions
             # password=generate_password_hash(password)   # str - Пароль сотрудника - обязательное поле,
         )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-        db_iteraction.del_employee(id=id)                         # int - id сотрудника - полное совпадение
+        db_iteraction.del_employee(id=id)  # int - id сотрудника - полное совпадение
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
@@ -476,12 +480,12 @@ def change_userpassword():
         return {'success': False, 'message': 'password is short'}, 400
 
     if request.method == 'PUT':
-
         db_iteraction.cange_userpassword(
             id=id,
             password=password
         )
         return {'success': True, 'message': f'{request_body.get("id")} changed'}, 202
+
 
 @app.route('/get_table_headers', methods=['POST'])
 @jwt_required()
@@ -520,13 +524,14 @@ def get_table_headers():
         visible = bool(visible)
 
     result = db_iteraction.get_table_headers(
-        id=id,                            # int - id поля - полное совпадение
-        title=title,                        # [str, ...str] - текст поля - полное совпадение
-        field=field,                         # [str, ...str] - имя поля - полное совпадение
-        employee_id=employee_id,            # int - id инженера, которому пренадлежит поле - полное совпадение
-        visible=visible                     # bool - статус отображения - - полное совпадение
+        id=id,  # int - id поля - полное совпадение
+        title=title,  # [str, ...str] - текст поля - полное совпадение
+        field=field,  # [str, ...str] - имя поля - полное совпадение
+        employee_id=employee_id,  # int - id инженера, которому пренадлежит поле - полное совпадение
+        visible=visible  # bool - статус отображения - - полное совпадение
     )
     return result, 200
+
 
 @app.route('/table_headers', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -583,29 +588,30 @@ def table_headers():
             return {'success': False, 'message': 'employee_id required'}, 400
 
         db_iteraction.add_table_headers(
-            title=title,                # str - Текст поля - обязательное поле
-            field=field,                # str - Имя поля - обязательное поле
-            width=width,                # str - Ширина поля - обязательное поле
-            employee_id=employee_id,    # int - id сотрудника - обязательное поле
-            visible=visible             # bool - Статус отображения
+            title=title,  # str - Текст поля - обязательное поле
+            field=field,  # str - Имя поля - обязательное поле
+            width=width,  # str - Ширина поля - обязательное поле
+            employee_id=employee_id,  # int - id сотрудника - обязательное поле
+            visible=visible  # bool - Статус отображения
         )
         return {'success': True, 'message': f'{title} added'}, 201
 
     if request.method == 'PUT':
         db_iteraction.edit_table_headers(
-            id=id,                          # int - id записи - полное совпаден
-            title=title,                    # str - Текст поля
-            field=field,                    # str - Имя поля
-            width=width,                    # str - Ширина поля
-            employee_id=employee_id,        # int - id сотрудника
-            visible=visible                 # bool - Статус отображения
+            id=id,  # int - id записи - полное совпаден
+            title=title,  # str - Текст поля
+            field=field,  # str - Имя поля
+            width=width,  # str - Ширина поля
+            employee_id=employee_id,  # int - id сотрудника
+            visible=visible  # bool - Статус отображения
         )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_table_headers(
-            id=id)           # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_attachments', methods=['POST'])
 @jwt_required()
@@ -638,7 +644,6 @@ def get_attachments():
     if filename:
         filename = str(filename)
 
-
     # Проверка массива дат для поиска
     created_at = request_body.get('created_at')
     if created_at:
@@ -650,13 +655,14 @@ def get_attachments():
             return {'success': False, 'message': "created_at has not integers"}, 400
 
     result = db_iteraction.get_attachments(
-        id=id,                                  # int - ID записи о вложении -  полное совпадение
-        created_by_id=created_by_id,            # int - ID сотрудника - полное совпадение
-        created_at=created_at,                  # array - Из двах дат в timestamp - диапазон выбоки по времени
-        filename=filename,                      # str - Имя файла - частичное совподение
-        page=page                               # Номер страницы для вывода пагинацией
+        id=id,  # int - ID записи о вложении -  полное совпадение
+        created_by_id=created_by_id,  # int - ID сотрудника - полное совпадение
+        created_at=created_at,  # array - Из двах дат в timestamp - диапазон выбоки по времени
+        filename=filename,  # str - Имя файла - частичное совподение
+        page=page  # Номер страницы для вывода пагинацией
     )
     return result, 200
+
 
 @app.route('/attachments', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -710,10 +716,10 @@ def attachments():
             return {'success': False, 'message': 'url required'}, 400
 
         db_iteraction.add_attachments(
-            created_by_id=created_by_id,            # int - ID сотрудника
-            created_at=created_at,                  # int (timestamp) - Дата создания, по дефолту now
-            filename=filename,                      # str - Имя файла
-            url=url,                                # str - Путь к файлу
+            created_by_id=created_by_id,  # int - ID сотрудника
+            created_at=created_at,  # int (timestamp) - Дата создания, по дефолту now
+            filename=filename,  # str - Имя файла
+            url=url,  # str - Путь к файлу
         )
         return {'success': True, 'message': f"{request_body.get('filename')} added"}, 201
 
@@ -722,19 +728,19 @@ def attachments():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
-
         db_iteraction.edit_attachments(
-            id=id,                                  # int - id записи - полное совпадение
-            created_by_id=created_by_id,            # int - Новый id инженера
-            created_at=created_at,                  # int - Ноывая дата создания
-            filename=filename,                      # str - Новое имя файла
-            url=url,                                # str - Новый путь к файлу
+            id=id,  # int - id записи - полное совпадение
+            created_by_id=created_by_id,  # int - Новый id инженера
+            created_at=created_at,  # int - Ноывая дата создания
+            filename=filename,  # str - Новое имя файла
+            url=url,  # str - Новый путь к файлу
         )
         return {'success': True, 'message': f"{id} changed"}, 202
 
     if request.method == 'DELETE':
-        db_iteraction.del_attachments(id=id)                    # int - id записи - полное совпадение
+        db_iteraction.del_attachments(id=id)  # int - id записи - полное совпадение
         return {'success': True, 'message': f"{id} deleted"}, 202
+
 
 @app.route('/get_branch', methods=['POST'])
 @jwt_required()
@@ -760,12 +766,13 @@ def get_branch():
     deleted = request_body.get('deleted')
 
     result = db_iteraction.get_branch(
-        id=id,                            # int - id филиала - полное совпадение
-        name=name,                        # str - Имя филиала - частичное совпадение
+        id=id,  # int - id филиала - полное совпадение
+        name=name,  # str - Имя филиала - частичное совпадение
         deleted=deleted,
-        page=page                         # int - Старница погинации
+        page=page  # int - Старница погинации
     )
     return result, 200
+
 
 @app.route('/branch', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -833,7 +840,7 @@ def branch():
             return {'success': False, 'message': 'name required'}, 400
 
         branch_id = db_iteraction.add_branch(
-            name=name,                          # str - Название филиала - обязательное поле
+            name=name,  # str - Название филиала - обязательное поле
             color=color,
             address=address,
             phone=phone,
@@ -844,7 +851,7 @@ def branch():
             documents_prefix=documents_prefix,
             employees=employees,
             deleted=deleted
-            )
+        )
         for day in schedule:
             db_iteraction.add_schedule(
                 start_time=day['start_time'],
@@ -861,8 +868,8 @@ def branch():
 
     if request.method == 'PUT':
         db_iteraction.edit_branch(
-            id=id,                    # int - id записи - полное совпаден
-            name=name,                # str - Новое название филиала
+            id=id,  # int - id записи - полное совпаден
+            name=name,  # str - Новое название филиала
             color=color,
             address=address,
             phone=phone,
@@ -888,8 +895,9 @@ def branch():
 
     if request.method == 'DELETE':
         db_iteraction.del_branch(
-            id=id)           # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_discount_margin', methods=['POST'])
 @jwt_required()
@@ -921,13 +929,14 @@ def get_discount_margin():
         title = str(title)
 
     result = db_iteraction.get_discount_margin(
-        id=id,                                  # int - id наценки - полное совпадение
-        title=title,                            # str - Имя наценки - частичное совпадение
+        id=id,  # int - id наценки - полное совпадение
+        title=title,  # str - Имя наценки - частичное совпадение
         margin_type=margin_type,
         deleted=deleted,
-        page=page                               # int - Старница погинации
+        page=page  # int - Старница погинации
     )
     return result, 200
+
 
 @app.route('/discount_margin', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -974,8 +983,8 @@ def discount_margin():
             return {'success': False, 'message': 'Title required'}, 400
 
         db_iteraction.add_discount_margin(
-            title=title,                            # str - Название наценки - обязательное поле
-            margin=margin,                           # float - Значение наценки - обязательное полу
+            title=title,  # str - Название наценки - обязательное поле
+            margin=margin,  # float - Значение наценки - обязательное полу
             margin_type=margin_type,
             deleted=deleted
         )
@@ -986,11 +995,10 @@ def discount_margin():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
-
         db_iteraction.edit_discount_margin(
-            id=id,                                              # int - id записи - полное совпаден
-            title=title,            # str - Новое название наценки
-            margin=margin,                               # str - Новое значение наценки
+            id=id,  # int - id записи - полное совпаден
+            title=title,  # str - Новое название наценки
+            margin=margin,  # str - Новое значение наценки
             margin_type=margin_type,
             deleted=deleted
         )
@@ -998,8 +1006,9 @@ def discount_margin():
 
     if request.method == 'DELETE':
         db_iteraction.del_discount_margin(
-            id=id)                          # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_order_type', methods=['POST'])
 @jwt_required()
@@ -1023,11 +1032,12 @@ def get_order_type():
         name = str(name)
 
     result = db_iteraction.get_order_type(
-        id=id,                              # int - id типа - полное совпадение
-        name=name,                          # str - Имя типа - частичное совпадение
-        page=page                           # int - Старница погинации
+        id=id,  # int - id типа - полное совпадение
+        name=name,  # str - Имя типа - частичное совпадение
+        page=page  # int - Старница погинации
     )
     return result, 200
+
 
 @app.route('/order_type', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1056,7 +1066,7 @@ def order_type():
             return {'success': False, 'message': 'Name required'}, 400
 
         db_iteraction.add_order_type(
-            name=name                    # str - Название типа - обязательное поле
+            name=name  # str - Название типа - обязательное поле
         )
         return {'success': True, 'message': f'{name} added'}, 201
 
@@ -1066,15 +1076,16 @@ def order_type():
 
     if request.method == 'PUT':
         db_iteraction.edit_order_type(
-            id=id,                                              # int - id записи - полное совпаден
-            name=name,              # str - Новое название типа
+            id=id,  # int - id записи - полное совпаден
+            name=name,  # str - Новое название типа
         )
         return {'success': True, 'message': f'{name} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_order_type(
-            id=id)                          # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_status_group', methods=['POST'])
 @jwt_required()
@@ -1102,12 +1113,13 @@ def get_status_group():
         return {'success': False, 'message': "type_group is not integer"}, 400
 
     result = db_iteraction.get_status_group(
-        id=id,                              # int - id группы статусов - полное совпадение
-        name=name,                          # str - Имя группы статуов - частичное совпадение
-        type_group=type_group,              # int - Номер группы - полное совпадение
-        page=page                           # int - Старница погинации
+        id=id,  # int - id группы статусов - полное совпадение
+        name=name,  # str - Имя группы статуов - частичное совпадение
+        type_group=type_group,  # int - Номер группы - полное совпадение
+        page=page  # int - Старница погинации
     )
     return result, 200
+
 
 @app.route('/status_group', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1151,9 +1163,9 @@ def status_group():
             return {'success': False, 'message': 'type_group required'}, 400
 
         db_iteraction.add_status_group(
-            name=name,                                     # str - Имя группы статуов - обязательное поле
-            type_group=type_group,                         # int - Номер группы - обязательное поле
-            color=color                                    # str - цвет группы
+            name=name,  # str - Имя группы статуов - обязательное поле
+            type_group=type_group,  # int - Номер группы - обязательное поле
+            color=color  # str - цвет группы
         )
         return {'success': True, 'message': f'{name} added'}, 201
 
@@ -1162,19 +1174,19 @@ def status_group():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
-
         db_iteraction.edit_status_group(
-            id=id,                                      # int - id записи - полное совпаден
-            name=name,                                  # str - Новое название группы статусов
-            type_group=type_group,                      # int - Новый номер группы
-            color=color                                 # str - Новый цвет группы
+            id=id,  # int - id записи - полное совпаден
+            name=name,  # str - Новое название группы статусов
+            type_group=type_group,  # int - Новый номер группы
+            color=color  # str - Новый цвет группы
         )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_status_group(
-            id=id)                              # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_status', methods=['POST'])
 @jwt_required()
@@ -1210,13 +1222,14 @@ def get_status():
         return {'success': False, 'message': 'group is not defined'}, 400
 
     result = db_iteraction.get_status(
-        id=id,                              # int - id статуса - полное совпадение
-        name=name,                          # str - Имя статуса - частичное совпадение
-        color=color,                        # str - Цвет статуса - полное совпадение
-        group=group,                        # int - Номер группы - полное совпадение
-        page=page                           # int - Старница погинации
+        id=id,  # int - id статуса - полное совпадение
+        name=name,  # str - Имя статуса - частичное совпадение
+        color=color,  # str - Цвет статуса - полное совпадение
+        group=group,  # int - Номер группы - полное совпадение
+        page=page  # int - Старница погинации
     )
     return result
+
 
 @app.route('/status', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1281,13 +1294,13 @@ def status():
             return {'success': False, 'message': 'color required'}, 400
 
         db_iteraction.add_status(
-            name=name,                                      # str - Имя группы статуов - обязательное поле
-            color=color,                                    # str - Цвет статуса - обязательное поле
-            group=group,                                    # int - Номер группы - обязательное поле
-            deadline=deadline,                              # int - Дедлайн статуса
-            comment_required=comment_required,              # bool - Требуется ли коментарий
-            payment_required=payment_required,              # bool - Требуется ли платеж
-            available_to=available_to                       # [int, ...int] - Список статусов доступных для прехода
+            name=name,  # str - Имя группы статуов - обязательное поле
+            color=color,  # str - Цвет статуса - обязательное поле
+            group=group,  # int - Номер группы - обязательное поле
+            deadline=deadline,  # int - Дедлайн статуса
+            comment_required=comment_required,  # bool - Требуется ли коментарий
+            payment_required=payment_required,  # bool - Требуется ли платеж
+            available_to=available_to  # [int, ...int] - Список статусов доступных для прехода
         )
         return {'success': True, 'message': f'{name} added'}, 201
 
@@ -1296,23 +1309,23 @@ def status():
         return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
-
         db_iteraction.edit_status(
-            id=id,                                  # int - id записи - полное совпаден
-            name=name,                              # str - Новое название статуса
-            color=color,                            # str - Новый цвет статуса
-            group=group,                            # int - Новый номер группы
-            deadline=deadline,                      # int - Новый дедлайн статуса
-            comment_required=comment_required,      # bool - Требуется коментарий
-            payment_required=payment_required,      # bool - Требуется платеж
-            available_to=available_to               # [int, ...int] - Новый список статусов для перехода
+            id=id,  # int - id записи - полное совпаден
+            name=name,  # str - Новое название статуса
+            color=color,  # str - Новый цвет статуса
+            group=group,  # int - Новый номер группы
+            deadline=deadline,  # int - Новый дедлайн статуса
+            comment_required=comment_required,  # bool - Требуется коментарий
+            payment_required=payment_required,  # bool - Требуется платеж
+            available_to=available_to  # [int, ...int] - Новый список статусов для перехода
         )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_status(
-            id=id)                              # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_clients', methods=['POST'])
 @jwt_required()
@@ -1339,9 +1352,6 @@ def get_clients():
     if deleted:
         deleted = bool(deleted)
 
-
-
-
     discount_goods_margin_id = request_body.get('discount_goods_margin_id')
     if discount_goods_margin_id and type(discount_goods_margin_id) != int:
         return {'success': False, 'message': "discount_goods_margin_id is not integer"}, 400
@@ -1360,7 +1370,8 @@ def get_clients():
     if discount_materials_margin_id and type(discount_materials_margin_id) != int:
         return {'success': False, 'message': "discount_materials_margin_id is not integer"}
 
-    if discount_materials_margin_id and db_iteraction.get_discount_margin(id=discount_materials_margin_id)['count'] == 0:
+    if discount_materials_margin_id and db_iteraction.get_discount_margin(id=discount_materials_margin_id)[
+        'count'] == 0:
         return {'success': False, 'message': 'discount_materials_margin_id is not defined'}, 400
 
     discount_services = request_body.get('discount_services', 0)
@@ -1405,15 +1416,15 @@ def get_clients():
             return {'success': False, 'message': "created_at has not integers"}, 400
 
     result = db_iteraction.get_clients(
-        id=id,                                                      # int - id клиента - полное совпадение
-        conflicted=conflicted,                                      # bool - Конфликтный - полное совпадение
-        email=email,                                                # str - Электронная почта - частичное совпадение
-        juridical=juridical,                                        # bool - Юридическое лицо - полное совпадение
+        id=id,  # int - id клиента - полное совпадение
+        conflicted=conflicted,  # bool - Конфликтный - полное совпадение
+        email=email,  # str - Электронная почта - частичное совпадение
+        juridical=juridical,  # bool - Юридическое лицо - полное совпадение
         deleted=deleted,
-        name=name,                                                  # str - ФИО клиета - частично совпадение
-        supplier=supplier,                                          # bool - Поставщик - полное совпадение
+        name=name,  # str - ФИО клиета - частично совпадение
+        supplier=supplier,  # bool - Поставщик - полное совпадение
         phone=phone,
-        page=page                                                   # int - Старница погинации
+        page=page  # int - Старница погинации
         # ad_campaign_id=ad_campaign_id,                              # int - id рекламной компании - прлное совпадение
         # address=address,                                            # str - Адрес клиента - частичное совпадение
         # name_doc=name_doc,                                          # str - Имя в печатных документах - частичное совпадение
@@ -1614,42 +1625,42 @@ def clients():
             return {'success': False, 'message': 'name required'}, 400
 
         id_create_client = db_iteraction.add_clients(
-            juridical=juridical,                                        # bool - Юридическое лицо
-            supplier=supplier,                                          # bool - Поставщик - полное совпадение
-            conflicted=conflicted,                                      # bool - Конфликтный
-            should_send_email=should_send_email,                        # bool - Согласен получать email
+            juridical=juridical,  # bool - Юридическое лицо
+            supplier=supplier,  # bool - Поставщик - полное совпадение
+            conflicted=conflicted,  # bool - Конфликтный
+            should_send_email=should_send_email,  # bool - Согласен получать email
             deleted=deleted,
             discount_good_type=discount_good_type,
             discount_materials_type=discount_materials_type,
             discount_service_type=discount_service_type,
 
-            name=name,                                                  # str - ФИО клиета - обязательное поле
-            name_doc=name_doc,                                          # str - Имя в печатных документах
-            email=email,                                                # str - Электронная почта
-            address=address,                                            # str - Адрес клиента
-            discount_code=discount_code,                                # str - Скидочная карта
-            notes=notes,                                                # str - Заметки
-            ogrn=ogrn,                                                  # str - ОГРН
-            inn=inn,                                                    # str - ИНН
-            kpp=kpp,                                                    # str - КПП
-            juridical_address=juridical_address,                        # str - Юредический адресс
-            director=director,                                          # str - Директор
-            bank_name=bank_name,                                        # str - Наименование банка
-            settlement_account=settlement_account,                      # str - Расчетный счет
-            corr_account=corr_account,                                  # str - Кор. счет
-            bic=bic,                                                    # str - БИК
+            name=name,  # str - ФИО клиета - обязательное поле
+            name_doc=name_doc,  # str - Имя в печатных документах
+            email=email,  # str - Электронная почта
+            address=address,  # str - Адрес клиента
+            discount_code=discount_code,  # str - Скидочная карта
+            notes=notes,  # str - Заметки
+            ogrn=ogrn,  # str - ОГРН
+            inn=inn,  # str - ИНН
+            kpp=kpp,  # str - КПП
+            juridical_address=juridical_address,  # str - Юредический адресс
+            director=director,  # str - Директор
+            bank_name=bank_name,  # str - Наименование банка
+            settlement_account=settlement_account,  # str - Расчетный счет
+            corr_account=corr_account,  # str - Кор. счет
+            bic=bic,  # str - БИК
 
-            discount_goods=discount_goods,                              # float - Скидка на товары
-            discount_materials=discount_materials,                      # float - Скидка на материалы
-            discount_services=discount_services,                        # float - скидка на услуги
+            discount_goods=discount_goods,  # float - Скидка на товары
+            discount_materials=discount_materials,  # float - Скидка на материалы
+            discount_services=discount_services,  # float - скидка на услуги
 
-            ad_campaign_id=ad_campaign_id,                              # int - id рекламной компании
-            discount_goods_margin_id=discount_goods_margin_id,          # int - id типа наценки
+            ad_campaign_id=ad_campaign_id,  # int - id рекламной компании
+            discount_goods_margin_id=discount_goods_margin_id,  # int - id типа наценки
             discount_materials_margin_id=discount_materials_margin_id,  # int - id типа наценки
             discount_service_margin_id=discount_service_margin_id,
 
-            tags=tags,                                                  # [str, ...str] - теги
-            created_at=created_at,                                      # int - дата создания
+            tags=tags,  # [str, ...str] - теги
+            created_at=created_at,  # int - дата создания
         )
         if phone:
             for ph in phone:
@@ -1669,42 +1680,42 @@ def clients():
 
     if request.method == 'PUT':
         db_iteraction.edit_clients(
-            id=id,                                                      # int - id записи - полное совпаден
-            juridical=juridical,                                        # bool - Юридическое лицо
-            supplier=supplier,                                          # bool - Поставщик - полное совпадение
-            conflicted=conflicted,                                      # bool - Конфликтный
-            should_send_email=should_send_email,                        # bool - Согласен получать email
+            id=id,  # int - id записи - полное совпаден
+            juridical=juridical,  # bool - Юридическое лицо
+            supplier=supplier,  # bool - Поставщик - полное совпадение
+            conflicted=conflicted,  # bool - Конфликтный
+            should_send_email=should_send_email,  # bool - Согласен получать email
             deleted=deleted,
             discount_good_type=discount_good_type,
             discount_materials_type=discount_materials_type,
             discount_service_type=discount_service_type,
 
-            name=name,                                                  # str - ФИО клиета - обязательное поле
-            name_doc=name_doc,                                          # str - Имя в печатных документах
-            email=email,                                                # str - Электронная почта
-            address=address,                                            # str - Адрес клиента
-            discount_code=discount_code,                                # str - Скидочная карта
-            notes=notes,                                                # str - Заметки
-            ogrn=ogrn,                                                  # str - ОГРН
-            inn=inn,                                                    # str - ИНН
-            kpp=kpp,                                                    # str - КПП
-            juridical_address=juridical_address,                        # str - Юредический адресс
-            director=director,                                          # str - Директор
-            bank_name=bank_name,                                        # str - Наименование банка
-            settlement_account=settlement_account,                      # str - Расчетный счет
-            corr_account=corr_account,                                  # str - Кор. счет
-            bic=bic,                                                    # str - БИК
+            name=name,  # str - ФИО клиета - обязательное поле
+            name_doc=name_doc,  # str - Имя в печатных документах
+            email=email,  # str - Электронная почта
+            address=address,  # str - Адрес клиента
+            discount_code=discount_code,  # str - Скидочная карта
+            notes=notes,  # str - Заметки
+            ogrn=ogrn,  # str - ОГРН
+            inn=inn,  # str - ИНН
+            kpp=kpp,  # str - КПП
+            juridical_address=juridical_address,  # str - Юредический адресс
+            director=director,  # str - Директор
+            bank_name=bank_name,  # str - Наименование банка
+            settlement_account=settlement_account,  # str - Расчетный счет
+            corr_account=corr_account,  # str - Кор. счет
+            bic=bic,  # str - БИК
 
-            discount_goods=discount_goods,                              # float - Скидка на товары
-            discount_materials=discount_materials,                      # float - Скидка на материалы
-            discount_services=discount_services,                        # float - скидка на услуги
+            discount_goods=discount_goods,  # float - Скидка на товары
+            discount_materials=discount_materials,  # float - Скидка на материалы
+            discount_services=discount_services,  # float - скидка на услуги
 
-            ad_campaign_id=ad_campaign_id,                              # int - id рекламной компании
-            discount_goods_margin_id=discount_goods_margin_id,          # int - id типа наценки
+            ad_campaign_id=ad_campaign_id,  # int - id рекламной компании
+            discount_goods_margin_id=discount_goods_margin_id,  # int - id типа наценки
             discount_materials_margin_id=discount_materials_margin_id,  # int - id типа наценки
             discount_service_margin_id=discount_service_margin_id,
 
-            tags=tags,                                                  # [str, ...str] - теги
+            tags=tags,  # [str, ...str] - теги
         )
         if phone:
             for ph in phone:
@@ -1730,7 +1741,7 @@ def clients():
 
     if request.method == 'DELETE':
         db_iteraction.del_clients(
-            id=id)           # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
@@ -1760,9 +1771,9 @@ def get_menu_rows():
         return {'success': False, 'message': "group_name include not str"}, 400
 
     result = db_iteraction.get_menu_row(
-        id=id,                              # int - id строчки - полное совпадение
-        title=title,                        # [str, ...str] - Список имен строчек
-        group_name=group_name               # [str, ...str] - Список имен групп
+        id=id,  # int - id строчки - полное совпадение
+        title=title,  # [str, ...str] - Список имен строчек
+        group_name=group_name  # [str, ...str] - Список имен групп
     )
     return result, 200
 
@@ -1793,9 +1804,9 @@ def get_setting_menu():
         return {'success': False, 'message': "group_name include not str"}, 400
 
     result = db_iteraction.get_setting_menu(
-        id=id,                              # int - id строчки - полное совпадение
-        title=title,                        # [str, ...str] - Список имен строчек
-        group_name=group_name               # [str, ...str] - Список имен групп
+        id=id,  # int - id строчки - полное совпадение
+        title=title,  # [str, ...str] - Список имен строчек
+        group_name=group_name  # [str, ...str] - Список имен групп
     )
     return result, 200
 
@@ -1822,11 +1833,12 @@ def get_roles():
         title = str(title)
 
     result = db_iteraction.get_role(
-        id=id,                              # int - id роли - полное совпадение
-        title=title,                        # str - Роль - частичное совпадение
-        page=page                           # int - Старница погинации
+        id=id,  # int - id роли - полное совпадение
+        title=title,  # str - Роль - частичное совпадение
+        page=page  # int - Старница погинации
     )
     return result, 200
+
 
 @app.route('/roles', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1895,14 +1907,14 @@ def roles():
             return {'success': False, 'message': 'title required'}, 400
 
         db_iteraction.add_role(
-            title=title,                                        # str - Роль - обязательное поле
-            earnings_visibility=earnings_visibility,            # bool - Видит только свою ЗП
-            leads_visibility=leads_visibility,                  # bool - Видит только свои обращения
-            orders_visibility=orders_visibility,                # bool - Видит тольк свои заказы
-            permissions=permissions,                            # [str, ...str] - Список разрешений
-            settable_statuses=settable_statuses,                # [int, ...int] - Может устанавливать статусы
-            visible_statuses=visible_statuses,                  # [int, ...int] - Может видеть статусы
-            settable_discount_margin=settable_discount_margin   # [int, ...int] - Может использовать цены
+            title=title,  # str - Роль - обязательное поле
+            earnings_visibility=earnings_visibility,  # bool - Видит только свою ЗП
+            leads_visibility=leads_visibility,  # bool - Видит только свои обращения
+            orders_visibility=orders_visibility,  # bool - Видит тольк свои заказы
+            permissions=permissions,  # [str, ...str] - Список разрешений
+            settable_statuses=settable_statuses,  # [int, ...int] - Может устанавливать статусы
+            visible_statuses=visible_statuses,  # [int, ...int] - Может видеть статусы
+            settable_discount_margin=settable_discount_margin  # [int, ...int] - Может использовать цены
         )
         return {'success': True, 'message': f'{title} added'}, 201
 
@@ -1912,22 +1924,23 @@ def roles():
 
     if request.method == 'PUT':
         db_iteraction.edit_role(
-            id=id,                                                  # int - id записи - полное совпаден
-            title=title,                                            # str - Новое название роли
-            earnings_visibility=earnings_visibility,                # bool - Видит только свою ЗП
-            leads_visibility=leads_visibility,                      # bool - Видит только свои обращения
-            orders_visibility=orders_visibility,                    # bool - Видит тольк свои заказы
-            permissions=permissions,                                # [str, ...str] - Новый список разрешений
-            settable_statuses=settable_statuses,                    # [int, ...int] - Новый список статуов, которые может устанавливать
-            visible_statuses=visible_statuses,                      # [int, ...int] - Новый список статуов, которые может видеть
-            settable_discount_margin = settable_discount_margin     # [int, ...int] - Может использовать цены
+            id=id,  # int - id записи - полное совпаден
+            title=title,  # str - Новое название роли
+            earnings_visibility=earnings_visibility,  # bool - Видит только свою ЗП
+            leads_visibility=leads_visibility,  # bool - Видит только свои обращения
+            orders_visibility=orders_visibility,  # bool - Видит тольк свои заказы
+            permissions=permissions,  # [str, ...str] - Новый список разрешений
+            settable_statuses=settable_statuses,  # [int, ...int] - Новый список статуов, которые может устанавливать
+            visible_statuses=visible_statuses,  # [int, ...int] - Новый список статуов, которые может видеть
+            settable_discount_margin=settable_discount_margin  # [int, ...int] - Может использовать цены
         )
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
         db_iteraction.del_roles(
-            id=id)                                  # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_generally_info', methods=['POST'])
 @jwt_required()
@@ -1942,11 +1955,11 @@ def get_generally_info():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-
     result = db_iteraction.get_generally_info(
-        id=id,                            # int - id филиала - полное совпадение
+        id=id,  # int - id филиала - полное совпадение
     )
     return result, 200
+
 
 @app.route('/generally_info', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -1960,7 +1973,6 @@ def generally_info():
     id = request_body.get('id')
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
-
 
     name = request_body.get('name')
     if name:
@@ -2054,7 +2066,7 @@ def generally_info():
 
     if request.method == 'PUT':
         db_iteraction.edit_generally_info(
-            id=id,                    # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             name=name,
             address=address,
             email=email,
@@ -2077,12 +2089,18 @@ def generally_info():
 
     if request.method == 'DELETE':
         db_iteraction.del_generally_info(
-            id=id)           # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_main_data', methods=['POST'])
 @jwt_required()
 def get_main_data():
+    # Достанем токен
+    token = request.headers['Authorization'][7:]
+    # Извлечем id пользователя из токена
+    user_id = decode_token(token)['sub']
+
     # Проверим содежит ли запрос тело json
     try:
         request_body = dict(request.json)
@@ -2116,8 +2134,8 @@ def get_main_data():
     status_group = db_iteraction.get_status_group()
     result['status_group'] = status_group['data']
 
-    cashboxes = db_iteraction.get_cashbox()
-    result['cashboxes'] = cashboxes['data']
+    cashboxes = db_iteraction.get_cashbox(user_id=user_id)
+    result['cashboxes'] = cashboxes[0]['data']
 
     item_payments = db_iteraction.get_item_payments()
     result['item_payments'] = item_payments['data']
@@ -2127,6 +2145,7 @@ def get_main_data():
 
     result['success'] = True
     return result, 200
+
 
 @app.route('/get_counts', methods=['POST'])
 @jwt_required()
@@ -2142,9 +2161,10 @@ def get_counts():
         return {'success': False, 'message': "id is not integer"}, 400
 
     result = db_iteraction.get_counts(
-        id=id                            # int - id  - полное совпадение
+        id=id  # int - id  - полное совпадение
     )
     return result, 200
+
 
 @app.route('/counts', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -2172,8 +2192,6 @@ def counts():
         description = str(description)
 
     if request.method == 'POST':
-
-
         db_iteraction.add_counts(
             prefix=prefix,
             count=count,
@@ -2188,7 +2206,7 @@ def counts():
 
     if request.method == 'PUT':
         db_iteraction.edit_counts(
-            id=id,                    # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             prefix=prefix,
             count=count,
             description=description
@@ -2197,8 +2215,9 @@ def counts():
 
     if request.method == 'DELETE':
         db_iteraction.del_counts(
-            id=id)           # int - id записи - полное совпаден
+            id=id)  # int - id записи - полное совпаден
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_malfunction', methods=['POST'])
 @jwt_required()
@@ -2222,11 +2241,12 @@ def get_malfunction():
         title = str(title)
 
     result = db_iteraction.get_malfunction(
-        id=id,                            # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         page=page,
         title=title
     )
     return result, 200
+
 
 @app.route('/malfunction', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -2260,7 +2280,7 @@ def malfunction():
         malfunction = db_iteraction.get_malfunction(title=title).get('data')
         if malfunction:
             db_iteraction.edit_malfunction(
-                id=malfunction[0]['id'],        # int - id записи - полное совпаден
+                id=malfunction[0]['id'],  # int - id записи - полное совпаден
                 title=title,
                 count=malfunction[0]['count'] + 1
             )
@@ -2278,7 +2298,7 @@ def malfunction():
 
     if request.method == 'PUT':
         db_iteraction.edit_malfunction(
-            id=id,              # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             count=count
         )
@@ -2289,13 +2309,14 @@ def malfunction():
         if del_ids:
             for ids in del_ids:
                 db_iteraction.del_malfunction(
-                    id=ids               # int - id записи - полное совпаден
+                    id=ids  # int - id записи - полное совпаден
                 )
         else:
             db_iteraction.del_malfunction(
                 id=id  # int - id записи - полное совпаден
             )
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_packagelist', methods=['POST'])
 @jwt_required()
@@ -2319,11 +2340,12 @@ def get_packagelist():
         title = str(title)
 
     result = db_iteraction.get_packagelist(
-        id=id,                            # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         page=page,
         title=title
     )
     return result, 200
+
 
 @app.route('/packagelist', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -2375,7 +2397,7 @@ def packagelist():
 
     if request.method == 'PUT':
         db_iteraction.edit_packagelist(
-            id=id,              # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             count=count
         )
@@ -2392,6 +2414,7 @@ def packagelist():
                 id=id  # int - id записи - полное совпаден
             )
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_item_payments', methods=['POST'])
 @jwt_required()
@@ -2419,11 +2442,12 @@ def get_item_payments():
         return {'success': False, 'message': "direction is not integer"}, 400
 
     result = db_iteraction.get_item_payments(
-        id=id,                            # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         page=page,
         direction=direction
     )
     return result, 200
+
 
 @app.route('/item_payments', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -2454,7 +2478,6 @@ def item_payments():
             return {'success': False, 'message': "del_ids has not integer"}, 400
 
     if request.method == 'POST':
-
         db_iteraction.add_item_payments(
             title=title,
             direction=direction
@@ -2468,7 +2491,7 @@ def item_payments():
 
     if request.method == 'PUT':
         db_iteraction.edit_item_payments(
-            id=id,              # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             direction=direction
         )
@@ -2486,374 +2509,6 @@ def item_payments():
             )
         return {'success': True, 'message': f'{id} deleted'}, 202
 
-@app.route('/get_cashbox', methods=['POST'])
-@jwt_required()
-def get_cashbox():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    isGlobal = request_body.get('isGlobal')
-    if isGlobal and type(isGlobal) != bool:
-        return {'success': False, 'message': 'isGlobal is not boolean'}, 400
-
-    isVirtual = request_body.get('isVirtual')
-    if isVirtual and type(isVirtual) != bool:
-        return {'success': False, 'message': 'isVirtual is not boolean'}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    branch_id = request_body.get('branch_id')
-    if branch_id and type(branch_id) != int:
-        return {'success': False, 'message': "branch_id is not integer"}, 400
-    if branch_id and db_iteraction.get_branch(id=branch_id)['count'] == 0:
-        return {'success': False, 'message': 'branch_id is not defined'}, 400
-
-
-
-    result = db_iteraction.get_cashbox(
-        id=id,                            # int - id  - полное совпадение
-        title=title,
-        isGlobal=isGlobal,
-        isVirtual=isVirtual,
-        deleted=deleted,
-        branch_id=branch_id
-    )
-    return result, 200
-
-@app.route('/cashbox', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def cashbox():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    title = request_body.get('title')
-    if title:
-        title = str(title)
-
-    balance = request_body.get('balance')
-    if balance:
-        try:
-            balance = float(balance)
-        except:
-            return {'success': False, 'message': 'balance is not number'}, 400
-
-    types = request_body.get('type')
-    if types and type(types) != int:
-        return {'success': False, 'message': "types is not integer"}, 400
-
-    isGlobal = request_body.get('isGlobal')
-    if isGlobal and type(isGlobal) != bool:
-        return {'success': False, 'message': 'isGlobal is not boolean'}, 400
-
-    isVirtual = request_body.get('isVirtual')
-    if isVirtual and type(isVirtual) != bool:
-        return {'success': False, 'message': 'isVirtual is not boolean'}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    permissions = request_body.get('permissions')
-    if permissions and type(permissions) != list:
-        return {'success': False, 'message': "permissions is not list"}, 400
-    if permissions:
-        if not all([type(permission) == str for permission in permissions]):
-            return {'success': False, 'message': "permissions has not string"}, 400
-
-    employees = request_body.get('employees')
-    # if employees and type(employees) != list:
-    #     return {'success': False, 'message': "employees is not list"}, 400
-    # if employees:
-    #     if not all([type(employee) == int for employee in employees]):
-    #         return {'success': False, 'message': "employees has not integer"}, 400
-
-    branch_id = request_body.get('branch_id')
-    if branch_id and type(branch_id) != int:
-        return {'success': False, 'message': "branch_id is not integer"}, 400
-    if branch_id and db_iteraction.get_branch(id=branch_id)['count'] == 0:
-        return {'success': False, 'message': 'branch_id is not defined'}, 400
-
-
-    if request.method == 'POST':
-        db_iteraction.add_cashbox(
-            title=title,
-            balance=balance,
-            type=types,
-            isGlobal=isGlobal,
-            isVirtual=isVirtual,
-            deleted=deleted,
-            permissions=permissions,
-            employees=employees,
-            branch_id=branch_id
-        )
-
-        return {'success': True, 'message': f'{title} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_cashbox(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-        db_iteraction.edit_cashbox(
-            id=id,              # int - id записи - полное совпаден
-            title=title,
-            balance=balance,
-            type=types,
-            isGlobal=isGlobal,
-            isVirtual=isVirtual,
-            deleted=deleted,
-            permissions=permissions,
-            employees=employees,
-            branch_id=branch_id
-        )
-        return {'success': True, 'message': f'{id} changed'}, 202
-
-    if request.method == 'DELETE':
-        db_iteraction.del_cashbox(
-            id=id)                      # int - id записи - полное совпаден
-        return {'success': True, 'message': f'{id} deleted'}, 202
-
-@app.route('/get_payrolls', methods=['POST'])
-@jwt_required()
-def get_payrolls():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    direction = request_body.get('direction')
-    if direction and type(direction) != int:
-        return {'success': False, 'message': "direction is not integer"}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    reimburse = request_body.get('reimburse')
-    if reimburse and type(reimburse) != bool:
-        return {'success': False, 'message': 'reimburse is not boolean'}, 400
-
-    custom_created_at = request_body.get('custom_created_at')
-    if custom_created_at:
-        if type(custom_created_at) != list:
-            return {'success': False, 'message': "custom_created_at is not list"}, 400
-        if len(custom_created_at) != 2:
-            return {'success': False, 'message': "custom_created_at is not correct"}, 400
-        if type(custom_created_at[0]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-        if type(custom_created_at[1]) and type(custom_created_at[1]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-
-    relation_type = request_body.get('relation_type')
-    if relation_type and type(relation_type) != int:
-        return {'success': False, 'message': "relation_type is not integer"}, 400
-
-    relation_id = request_body.get('relation_id')
-    if relation_id and type(relation_id) != int:
-        return {'success': False, 'message': "relation_id is not integer"}, 400
-
-    employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
-        return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
-        return {'success': False, 'message': 'employee_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)[0]['count'] == 0:
-            return {'success': False, 'message': 'order_id is not defined'}, 400
-
-
-    result = db_iteraction.get_payrolls(
-        id=id,                                      # int - id  - полное совпадение
-        direction=direction,
-        deleted=deleted,
-        reimburse=reimburse,
-        custom_created_at=custom_created_at,
-        relation_type=relation_type,
-        relation_id=relation_id,
-        employee_id=employee_id,
-        order_id=order_id
-    )
-    return result, 200
-
-@app.route('/get_payroll_sum', methods=['POST'])
-@jwt_required()
-def get_payroll_sum():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    custom_created_at = request_body.get('custom_created_at')
-    if custom_created_at:
-        if type(custom_created_at) != list:
-            return {'success': False, 'message': "custom_created_at is not list"}, 400
-        if len(custom_created_at) != 2:
-            return {'success': False, 'message': "custom_created_at is not correct"}, 400
-        if type(custom_created_at[0]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-        if type(custom_created_at[1]) and type(custom_created_at[1]) != int:
-            return {'success': False, 'message': "custom_created_at has not integers"}, 400
-
-    employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
-        return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
-        return {'success': False, 'message': 'employee_id is not defined'}, 400
-
-    result = db_iteraction.get_payroll_sum(
-        custom_created_at=custom_created_at,
-        employee_id=employee_id
-    )
-    return {'success': True, 'sum': result}, 200
-
-@app.route('/payroll', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def payroll():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    description = request_body.get('description')
-    if description:
-        description = str(description)
-
-    income = request_body.get('income')
-    if income:
-        try:
-            income = float(income)
-        except:
-            return {'success': False, 'message': 'income is not number'}, 400
-
-    outcome = request_body.get('outcome')
-    if outcome:
-        try:
-            outcome = float(outcome)
-        except:
-            return {'success': False, 'message': 'balance is not number'}, 400
-
-    direction = request_body.get('direction')
-    if direction and type(direction) != int:
-        return {'success': False, 'message': "direction is not integer"}, 400
-
-    deleted = request_body.get('deleted')
-    if deleted and type(deleted) != bool:
-        return {'success': False, 'message': 'deleted is not boolean'}, 400
-
-    reimburse = request_body.get('reimburse')
-    if reimburse and type(reimburse) != bool:
-        return {'success': False, 'message': 'reimburse is not boolean'}, 400
-
-    created_at = request_body.get('created_at')
-    if created_at and type(created_at) != int:
-        return {'success': False, 'message': "created_at is not integer"}, 400
-
-    custom_created_at = request_body.get('custom_created_at')
-    if custom_created_at and type(custom_created_at) != int:
-        return {'success': False, 'message': "custom_created_at is not integer"}, 400
-
-    relation_type = request_body.get('relation_type')
-    if relation_type and type(relation_type) != int:
-        return {'success': False, 'message': "relation_type is not integer"}, 400
-
-    relation_id = request_body.get('relation_id')
-    if relation_id and type(relation_id) != int:
-        return {'success': False, 'message': "relation_id is not integer"}, 400
-
-    employee_id = request_body.get('employee_id')
-    if employee_id and type(employee_id) != int:
-        return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
-        return {'success': False, 'message': 'employee_id is not defined'}, 400
-
-    order_id = request_body.get('order_id')
-    if order_id and type(order_id) != int:
-        return {'success': False, 'message': "order_id is not integer"}, 400
-    if order_id and db_iteraction.get_orders(id=order_id)[0]['count'] == 0:
-        return {'success': False, 'message': 'order_id is not defined'}, 400
-
-
-    if request.method == 'POST':
-        id = db_iteraction.add_payroll(
-            description=description,
-            income=income,
-            outcome=outcome,
-            direction=direction,
-            deleted=deleted,
-            reimburse=reimburse,
-            created_at=created_at,
-            custom_created_at=custom_created_at,
-            relation_type=relation_type,
-            relation_id=relation_id,
-            employee_id=employee_id,
-            order_id=order_id
-        )
-
-        return {'success': True, 'message': f'{id} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_payrolls(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-
-    if request.method == 'PUT':
-        db_iteraction.edit_payroll(
-            id=id,                          # int - id записи - полное совпаден
-            description=description,
-            income=income,
-            outcome=outcome,
-            direction=direction,
-            deleted=deleted,
-            reimburse=reimburse,
-            custom_created_at=custom_created_at,
-            relation_id=relation_id,
-            relation_type=relation_type,
-            employee_id=employee_id,
-            order_id=order_id
-        )
-
-        return {'success': True, 'message': f'{id} changed'}, 202
-
-    if request.method == 'DELETE':
-
-        db_iteraction.del_payroll(
-            id=id)  # int - id записи - полное совпаден
-
-        return {'success': True, 'message': f'{id} deleted'}, 202
 
 @app.route('/get_payrules', methods=['POST'])
 @jwt_required()
@@ -2887,13 +2542,14 @@ def get_payrules():
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
     result = db_iteraction.get_payrules(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         title=title,
         type_rule=type_rule,
         deleted=deleted,
         employee_id=employee_id
     )
     return result, 200
+
 
 @app.route('/payrule', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -2951,7 +2607,6 @@ def payrule():
     if employee_id and db_iteraction.get_employee(id=employee_id)['count'] == 0:
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
-
     if request.method == 'POST':
         id = db_iteraction.add_payrule(
             title=title,
@@ -2972,10 +2627,9 @@ def payrule():
     if db_iteraction.get_payrules(id=id)['count'] == 0:
         return {'success': False, 'message': 'id is not defined'}, 400
 
-
     if request.method == 'PUT':
         db_iteraction.edit_payrule(
-            id=id,                          # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             type_rule=type_rule,
             order_type=order_type,
@@ -2991,11 +2645,11 @@ def payrule():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_payrule(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_group_dict_service', methods=['POST'])
 @jwt_required()
@@ -3019,11 +2673,12 @@ def get_group_dict_service():
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
     result = db_iteraction.get_group_dict_service(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         title=title,
         deleted=deleted
     )
     return result, 200
+
 
 @app.route('/group_dict_service', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3063,10 +2718,9 @@ def group_dict_service():
     if db_iteraction.get_group_dict_service(id=id)['count'] == 0:
         return {'success': False, 'message': 'id is not defined'}, 400
 
-
     if request.method == 'PUT':
         db_iteraction.edit_group_dict_service(
-            id=id,                          # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             icon=icon,
             deleted=deleted
@@ -3075,11 +2729,11 @@ def group_dict_service():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_group_dict_service(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_dict_service', methods=['POST'])
 @jwt_required()
@@ -3117,7 +2771,7 @@ def get_dict_service():
         return {'success': False, 'message': 'category_id is not defined'}, 400
 
     result = db_iteraction.get_dict_service(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         title=title,
         warranty=warranty,
         code=code,
@@ -3125,6 +2779,7 @@ def get_dict_service():
         category_id=category_id
     )
     return result, 200
+
 
 @app.route('/dict_service', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3210,7 +2865,7 @@ def dict_service():
 
     if request.method == 'PUT':
         db_iteraction.edit_dict_service(
-            id=id,                          # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             price=price,
             cost=cost,
@@ -3225,11 +2880,11 @@ def dict_service():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_dict_service(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_service_prices', methods=['POST'])
 @jwt_required()
@@ -3261,12 +2916,13 @@ def get_service_prices():
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
     result = db_iteraction.get_service_prices(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         discount_margin_id=discount_margin_id,
         service_id=service_id,
         deleted=deleted
     )
     return result, 200
+
 
 @app.route('/service_prices', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3325,7 +2981,6 @@ def service_prices():
 
             return {'success': True, 'message': f'{id} added'}, 201
 
-
     if db_iteraction.get_service_prices(id=id)['count'] == 0:
         return {'success': False, 'message': 'id is not defined'}, 400
 
@@ -3340,11 +2995,11 @@ def service_prices():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_service_prices(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_parts', methods=['POST'])
 @jwt_required()
@@ -3359,7 +3014,7 @@ def get_parts():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -3394,7 +3049,7 @@ def get_parts():
         return {'success': False, 'message': 'warehouse_category_id is not defined'}, 400
 
     result = db_iteraction.get_parts(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         title=title,
         marking=marking,
         article=article,
@@ -3405,6 +3060,7 @@ def get_parts():
         page=page
     )
     return result, 200
+
 
 @app.route('/parts', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3493,7 +3149,6 @@ def parts():
         # создаем ссылку для для занесения ее в БД
         doc_url = f'data/Datasheets/datasheet_{title}_{id}.pdf'
 
-
     if request.method == 'POST':
         id = db_iteraction.add_parts(
             title=title,
@@ -3515,10 +3170,9 @@ def parts():
     if db_iteraction.get_parts(id=id)['count'] == 0:
         return {'success': False, 'message': 'id is not defined'}, 400
 
-
     if request.method == 'PUT':
         db_iteraction.edit_parts(
-            id=id,                          # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             description=description,
             marking=marking,
@@ -3535,11 +3189,11 @@ def parts():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_parts(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_warehouse', methods=['POST'])
 @jwt_required()
@@ -3554,7 +3208,7 @@ def get_warehouse():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -3577,7 +3231,7 @@ def get_warehouse():
         return {'success': False, 'message': 'deleted is not boolean'}, 400
 
     result = db_iteraction.get_warehouse(
-        id=id,                                      # int - id  - полное совпадение
+        id=id,  # int - id  - полное совпадение
         title=title,
         branch_id=branch_id,
         isGlobal=isGlobal,
@@ -3585,6 +3239,7 @@ def get_warehouse():
         page=page
     )
     return result, 200
+
 
 @app.route('/warehouse', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3649,7 +3304,7 @@ def warehouse():
 
     if request.method == 'PUT':
         db_iteraction.edit_warehouse(
-            id=id,                          # int - id записи - полное совпаден
+            id=id,  # int - id записи - полное совпаден
             title=title,
             description=description,
             isGlobal=isGlobal,
@@ -3662,11 +3317,11 @@ def warehouse():
         return {'success': True, 'message': f'{id} changed'}, 202
 
     if request.method == 'DELETE':
-
         db_iteraction.del_warehouse(
             id=id)  # int - id записи - полное совпаден
 
         return {'success': True, 'message': f'{id} deleted'}, 202
+
 
 @app.route('/get_warehouse_category', methods=['POST'])
 @jwt_required()
@@ -3681,7 +3336,7 @@ def get_warehouse_category():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -3727,6 +3382,7 @@ def get_warehouse_category():
         cat['categories'] = getcat(cat, categories)
 
     return result, 200
+
 
 @app.route('/warehouse_category', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3792,6 +3448,7 @@ def warehouse_category():
 
         return {'success': True, 'message': f'{id} deleted'}, 202
 
+
 @app.route('/get_warehouse_parts', methods=['POST'])
 @jwt_required()
 def get_warehouse_parts():
@@ -3805,7 +3462,7 @@ def get_warehouse_parts():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -3865,6 +3522,7 @@ def get_warehouse_parts():
         page=page
     )
     return result, 200
+
 
 @app.route('/warehouse_parts', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -3968,6 +3626,7 @@ def warehouse_parts():
 
         return {'success': True, 'message': f'{id} deleted'}, 202
 
+
 @app.route('/get_notification_template', methods=['POST'])
 @jwt_required()
 def get_notification_template():
@@ -3981,7 +3640,7 @@ def get_notification_template():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -4000,6 +3659,7 @@ def get_notification_template():
         page=page
     )
     return result, 200
+
 
 @app.route('/notification_template', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -4055,6 +3715,7 @@ def notification_template():
 
         return {'success': True, 'message': f'{id} deleted'}, 202
 
+
 @app.route('/get_notification_events', methods=['POST'])
 @jwt_required()
 def get_notification_events():
@@ -4068,7 +3729,7 @@ def get_notification_events():
     if id and type(id) != int:
         return {'success': False, 'message': "id is not integer"}, 400
 
-    page = request_body.get('page',  0)
+    page = request_body.get('page', 0)
     if page and type(page) != int:
         return {'success': False, 'message': "page is not integer"}, 400
 
@@ -4104,6 +3765,7 @@ def get_notification_events():
         page=page
     )
     return result, 200
+
 
 @app.route('/notification_events', methods=['POST', 'PUT', 'DELETE'])
 @jwt_required()
@@ -4183,14 +3845,10 @@ def notification_events():
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
-
-
 app.add_url_rule('/shutdown', view_func=shutdown)
 app.register_error_handler(404, page_not_found)
 
 app.add_url_rule('/login', view_func=login, methods=['POST'])
-
-
 
 
 class UserLogin:
@@ -4220,12 +3878,8 @@ class UserLogin:
         return str(self.__user['id'])
 
 
-
 run_server()
 # app.run(debug=True)
-
-
-
 
 
 '''
