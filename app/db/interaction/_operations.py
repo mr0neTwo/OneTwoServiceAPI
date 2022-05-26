@@ -142,7 +142,7 @@ def get_operations(
         if engineer_id is not None: query = query.filter(Operations.engineer_id == engineer_id)
         if title is not None: query = query.filter(Operations.title.like(f'%{title}%'))
         if warranty is not None: query = query.filter((Operations.created_at + Operations.warranty_period) > time_now())
-        if deleted is not None: query = query.filter((deleted or Operations.deleted.is_(False)))
+        if deleted is not None: query = query.filter(deleted or Operations.deleted.is_(False))
         if order_id is not None: query = query.filter(Operations.order_id == order_id)
         if dict_id is not None: query = query.filter(Operations.dict_id == dict_id)
         if created_at is not None:

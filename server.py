@@ -13,6 +13,7 @@ from flask_jwt_extended import JWTManager, jwt_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_apscheduler import APScheduler
 
+from app.API_requests.branches import branches_api
 from app.API_requests.cashboxes import cashboxes_api
 from app.API_requests.change_order_status import change_status_api
 from app.API_requests.equipments import equipments_api
@@ -46,6 +47,7 @@ app.register_blueprint(order_parts_api)
 app.register_blueprint(cashboxes_api)
 app.register_blueprint(payrolls_api)
 app.register_blueprint(daily_report)
+app.register_blueprint(branches_api)
 
 jwt = JWTManager(app)
 
@@ -740,163 +742,6 @@ def attachments():
     if request.method == 'DELETE':
         db_iteraction.del_attachments(id=id)  # int - id записи - полное совпадение
         return {'success': True, 'message': f"{id} deleted"}, 202
-
-
-@app.route('/get_branch', methods=['POST'])
-@jwt_required()
-def get_branch():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    name = request_body.get('name')
-    if name:
-        name = str(name)
-
-    deleted = request_body.get('deleted')
-
-    result = db_iteraction.get_branch(
-        id=id,  # int - id филиала - полное совпадение
-        name=name,  # str - Имя филиала - частичное совпадение
-        deleted=deleted,
-        page=page  # int - Старница погинации
-    )
-    return result, 200
-
-
-@app.route('/branch', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def branch():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    name = request_body.get('name')
-    if name:
-        name = str(name)
-
-    color = request_body.get('color')
-    if color:
-        color = str(color)
-
-    address = request_body.get('address')
-    if address:
-        address = str(address)
-
-    phone = request_body.get('phone')
-    if phone:
-        phone = str(phone)
-
-    icon = request_body.get('icon')
-    if icon:
-        icon = str(icon)
-
-    orders_type_id = request_body.get('orders_type_id')
-    if orders_type_id and type(orders_type_id) != int:
-        return {'success': False, 'message': "orders_type_id is not integer"}, 400
-
-    orders_type_strategy = request_body.get('orders_type_strategy')
-    if orders_type_strategy:
-        orders_type_strategy = str(orders_type_strategy)
-
-    orders_prefix = request_body.get('orders_prefix')
-    if orders_prefix:
-        orders_prefix = str(orders_prefix)
-
-    documents_prefix = request_body.get('documents_prefix')
-    if documents_prefix:
-        documents_prefix = str(documents_prefix)
-
-    employees = request_body.get('employees')
-    if employees and type(employees) != list:
-        return {'success': False, 'message': "employees is not list"}, 400
-    if employees:
-        if not all([type(employee) == int for employee in employees]):
-            return {'success': False, 'message': "employees has not integer"}, 400
-
-    deleted = request_body.get('deleted')
-
-    schedule = request_body.get('schedule')
-
-    if request.method == 'POST':
-
-        if not name:
-            return {'success': False, 'message': 'name required'}, 400
-
-        branch_id = db_iteraction.add_branch(
-            name=name,  # str - Название филиала - обязательное поле
-            color=color,
-            address=address,
-            phone=phone,
-            icon=icon,
-            orders_type_id=orders_type_id,
-            orders_type_strategy=orders_type_strategy,
-            orders_prefix=orders_prefix,
-            documents_prefix=documents_prefix,
-            employees=employees,
-            deleted=deleted
-        )
-        for day in schedule:
-            db_iteraction.add_schedule(
-                start_time=day['start_time'],
-                end_time=day['end_time'],
-                work_day=day['work_day'],
-                week_day=day['week_day'],
-                branch_id=branch_id
-            )
-        return {'success': True, 'message': f'{name} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_branch(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-        db_iteraction.edit_branch(
-            id=id,  # int - id записи - полное совпаден
-            name=name,  # str - Новое название филиала
-            color=color,
-            address=address,
-            phone=phone,
-            icon=icon,
-            orders_type_id=orders_type_id,
-            orders_type_strategy=orders_type_strategy,
-            orders_prefix=orders_prefix,
-            documents_prefix=documents_prefix,
-            employees=employees,
-            deleted=deleted
-        )
-        if schedule:
-            for day in schedule:
-                db_iteraction.edit_schedule(
-                    id=day['id'],
-                    start_time=day['start_time'],
-                    end_time=day['end_time'],
-                    work_day=day['work_day'],
-                    week_day=day['week_day'],
-                    branch_id=day['branch_id']
-                )
-        return {'success': True, 'message': f'{name} changed'}, 202
-
-    if request.method == 'DELETE':
-        db_iteraction.del_branch(
-            id=id)  # int - id записи - полное совпаден
-        return {'success': True, 'message': f'{id} deleted'}, 202
 
 
 @app.route('/get_discount_margin', methods=['POST'])
@@ -2117,7 +1962,7 @@ def get_main_data():
     result['generally_info'] = generally_info['data']
 
     branches = db_iteraction.get_branch()
-    result['branch'] = branches['data']
+    result['branch'] = branches[0]['data']
 
     order_type = db_iteraction.get_order_type()
     result['order_type'] = order_type['data']

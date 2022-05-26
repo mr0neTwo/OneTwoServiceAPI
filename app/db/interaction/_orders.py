@@ -1,19 +1,190 @@
 import inspect
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pprint
 
 from sqlalchemy import or_, desc, func
 
-from app.db.models.models import Orders, time_now, Clients, Phones, Events, Employees, Branch, AdCampaign, OrderType
+from app.db.models.models import Orders, time_now, Clients, Phones, Events, Employees, Branch, AdCampaign, OrderType, \
+    Schedule
 from app.db.models.models import Status, EquipmentType, EquipmentBrand, EquipmentSubtype, EquipmentModel
 from app.events import event_create_order
+
+
+def get_estimate_work_time(estimated_done_at, schedule):
+    # Расчитаем дедлайн
+    now = datetime.now()
+    done_at = datetime.fromtimestamp(estimated_done_at)
+
+    # Если статус не просрочен
+    if estimated_done_at - now.timestamp() > 0:
+        # Количество дней
+        days = done_at.toordinal() - now.toordinal()
+        # Найдем количество рабочих дней
+        work_days = 0
+        current_day = datetime.now()
+        for day in range(days):
+            week_day = current_day.isoweekday()
+            if schedule[week_day]['work_day']:
+                work_days += 1
+            current_day += timedelta(days=1)
+        if work_days >= 3:
+            return timedelta(days=work_days).total_seconds()
+        # Если день окончания - текущий день
+        if days == 0:
+            # Если сегодня не рабочий день
+            week_day = done_at.isoweekday()
+            if not schedule[week_day]['work_day']:
+                return 0
+            # Если сегодня рабочий день - рассчитаем
+            else:
+                start = schedule[week_day]['start_time'].split(':')
+                end = schedule[week_day]['end_time'].split(':')
+                start_time = datetime.now().replace(hour=int(start[0]), minute=int(start[1]))
+                end_time = datetime.now().replace(hour=int(end[0]), minute=int(end[1]))
+                # Если рабочее время не настало и дата оканчания находится в пределах рабочего времени
+                if now < start_time and done_at >= start_time and done_at <= end_time:
+                    return (done_at - start_time).total_seconds()
+                # Если рабочие време не настало и дата окончания за предалими рабочего времени
+                if now < start_time and done_at > end_time:
+                    return (end_time - start_time).total_seconds()
+                # Если сейчас рабочее время и дата окончания в предалах рабочего времени
+                if now >= start_time and now <= end_time and done_at <= end_time:
+                    return (done_at - now).total_seconds()
+                # Если сейчас рабочее время и дата окончания за пределами рабочего времени
+                if now >= start_time and now <= end_time and done_at > end_time:
+                    return (end_time - now).total_seconds()
+                # Если сейчас за пределами рабочего времени и дата окончания за пределами рабочего времени
+                if now > end_time and done_at > end_time:
+                    return 0
+        # Если день окончания ранее одного дня
+        else:
+            estimate_work_time = 0
+
+            for n in range(days + 1):
+                week_day = now.isoweekday()
+                if schedule[week_day]['work_day']:
+                    start = schedule[week_day]['start_time'].split(':')
+                    end = schedule[week_day]['end_time'].split(':')
+                    start_time = now.replace(hour=int(start[0]), minute=int(start[1]))
+                    end_time = now.replace(hour=int(end[0]), minute=int(end[1]))
+                    # Считаем первый день
+                    if n == 0:
+                        # Если текущее время до рабочего дня
+                        if now < start_time:
+                            estimate_work_time += (end_time - start_time).total_seconds()
+                        # Если текущее время это рабочее время
+                        if now >= start_time and now <= end_time:
+                            estimate_work_time += (end_time - now).total_seconds()
+                    # Считаем последний день
+                    if n == days:
+                        # Если срок заканчивается во время рабочего дня рабочего дня
+                        if done_at >= start_time and done_at <= end_time:
+                            estimate_work_time += (done_at - start_time).total_seconds()
+                        # Если срок заканчивается после рабочего дня
+                        if done_at > end_time:
+                            estimate_work_time += (end_time - start_time).total_seconds()
+                    # Считаем промежуточные дни
+                    if n > 0 and n < days:
+                        estimate_work_time += (end_time - start_time).total_seconds()
+
+                now += timedelta(days=1)
+
+            return estimate_work_time
+    # Если статус просрочен
+    else:
+        # Количество дней
+        days = now.toordinal() - done_at.toordinal()
+        # Найдем количество рабочих дней
+        work_days = 0
+        current_day = datetime.fromtimestamp(estimated_done_at)
+        for day in range(days):
+            week_day = current_day.isoweekday()
+            if schedule[week_day]['work_day']:
+                work_days += 1
+            current_day += timedelta(days=1)
+        if work_days >= 3:
+            return -timedelta(days=work_days).total_seconds()
+        # Если день окончания - текущий день
+        if days == 0:
+            # Если сегодня не рабочий день
+            week_day = done_at.isoweekday()
+            if not schedule[week_day]['work_day']:
+                return 0
+            # Если сегодня рабочий день - рассчитаем
+            else:
+                start = schedule[week_day]['start_time'].split(':')
+                end = schedule[week_day]['end_time'].split(':')
+                start_time = datetime.now().replace(hour=int(start[0]), minute=int(start[1]))
+                end_time = datetime.now().replace(hour=int(end[0]), minute=int(end[1]))
+                # Если рабочее время не настало и дата окончания до рабочего времени
+                if now < start_time and done_at < start_time:
+                    return 0
+                # Если сейчас рабочее время и дата окончания находится в предалах рабочего времени
+                if now > start_time and now < end_time and done_at > start_time and done_at < end_time:
+                    return -(now - done_at).total_seconds()
+                # Если уже за пределами рабочего времени и дата окончания в рабочем времени
+                if now > end_time and done_at > start_time and done_at < end_time:
+                    return -(end_time - done_at).total_seconds()
+                # Если уже за предалими рабочего времени и дата окончания до начала рабочего времени
+                if now > end_time and done_at < start_time:
+                    return -(end_time - start_time).total_seconds()
+                # Если уже за пределами рабочего времени и дата окончания за пределами рабочего времени
+                if now > end_time and done_at > end_time:
+                    return 0
+        # Если день позже ранее одного дня
+        else:
+            estimate_work_time = 0
+
+            for n in range(days + 1):
+                week_day = done_at.isoweekday()
+                if schedule[week_day]['work_day']:
+                    start = schedule[week_day]['start_time'].split(':')
+                    end = schedule[week_day]['end_time'].split(':')
+                    start_time = done_at.replace(hour=int(start[0]), minute=int(start[1]))
+                    end_time = done_at.replace(hour=int(end[0]), minute=int(end[1]))
+                    # Считаем первый день
+                    if n == 0:
+                        # Если срок заканчивается до рабочего дня
+                        if done_at < start_time:
+                            estimate_work_time += (end_time - start_time).total_seconds()
+                        # Если срок заканчивается во время рабочего дня
+                        if done_at >= start_time and done_at <= end_time:
+                            estimate_work_time += (end_time - done_at).total_seconds()
+                    # Считаем последний день
+                    if n == days:
+                        # Если сейчас рабочее время
+                        if now >= start_time and now <= end_time:
+                            estimate_work_time += (now - start_time).total_seconds()
+                        # Если сейчас уже после рабочего времени
+                        if now > end_time:
+                            estimate_work_time += (end_time - start_time).total_seconds()
+                    # Считаем промежуточные дни
+                    if n > 0 and n < days:
+                        estimate_work_time += (end_time - start_time).total_seconds()
+
+                done_at += timedelta(days=1)
+
+            return -estimate_work_time
+
 
 
 def get_order_by_id(self, id):
     try:
         order = self.pgsql_connetction.session.query(Orders).get(id)
+
+        branch_id = order.branch_id
+        query = self.pgsql_connetction.session.query(Schedule)
+        query = query.filter(Schedule.branch_id == branch_id)
+        data_schedule = query.all()
+        schedule = {}
+        for day in data_schedule:
+            schedule[day.week_day] = {
+                'work_day': day.work_day,
+                'start_time': day.start_time,
+                'end_time': day.end_time
+            }
 
         data_order = {
             'id': order.id,
@@ -44,7 +215,7 @@ def get_order_by_id(self, id):
             'discount_sum': order.discount_sum,
             'payed': order.payed,
             'price': order.price,
-            'remaining': order.estimated_done_at - time_now() if order.estimated_done_at else None,
+            'remaining': get_estimate_work_time(order.estimated_done_at, schedule),
             'remaining_status': order.status_deadline - time_now() if order.status_deadline else None,
             'remaining_warranty': order.warranty_date - time_now() if order.warranty_date else None,
 
@@ -384,6 +555,18 @@ def get_orders_by_filter(self, filter_order):
 
         orders = query.all()
 
+        branch_id = 1   # todo: прописать маршрут
+        query = self.pgsql_connetction.session.query(Schedule)
+        query = query.filter(Schedule.branch_id == branch_id)
+        data_schedule = query.all()
+        schedule = {}
+        for day in data_schedule:
+            schedule[day.week_day] = {
+                'work_day': day.work_day,
+                'start_time': day.start_time,
+                'end_time': day.end_time
+            }
+
         data = []
         for row in orders:
             data.append({
@@ -414,7 +597,7 @@ def get_orders_by_filter(self, filter_order):
                 'discount_sum': row.discount_sum,
                 'payed': row.payed,
                 'price': row.price,
-                'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
+                'remaining': get_estimate_work_time(row.estimated_done_at, schedule),
                 'remaining_status': row.status_deadline - time_now() if row.status_deadline else None,
                 'remaining_warranty': row.warranty_date - time_now() if row.warranty_date else None,
 
@@ -824,7 +1007,7 @@ def get_orders(
             query = query.outerjoin(EquipmentSubtype, EquipmentSubtype.id == Orders.subtype_id)
             query = query.outerjoin(EquipmentModel, EquipmentModel.id == Orders.model_id)
             query = query.filter(or_(
-                        Orders.id_label.like(f'%{search}%'),
+                        Orders.id_label.ilike(f'%{search}%'),
                         Orders.serial.ilike(f'%{search}%'),
                         Clients.name.ilike(f'%{search}%'),
                         Phones.number.ilike(f'%{search}%'),
@@ -873,8 +1056,22 @@ def get_orders(
 
         orders = query.all()
 
+        branch_id = 1 # todo: прописать маршрут
+        query = self.pgsql_connetction.session.query(Schedule)
+        query = query.filter(Schedule.branch_id == branch_id)
+        data_schedule = query.all()
+        schedule = {}
+        for day in data_schedule:
+            schedule[day.week_day] = {
+                'work_day': day.work_day,
+                'start_time': day.start_time,
+                'end_time': day.end_time
+            }
+
         data = []
         for row in orders:
+
+
             data.append({
                 'id': row.id,
                 'created_at': row.created_at,
@@ -903,7 +1100,8 @@ def get_orders(
                 'discount_sum': row.discount_sum,
                 'payed': row.payed,
                 'price': row.price,
-                'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
+                # 'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
+                'remaining': get_estimate_work_time(row.estimated_done_at, schedule),
                 'remaining_status': row.status_deadline - time_now() if row.status_deadline else None,
                 'remaining_warranty': row.warranty_date - time_now() if row.warranty_date else None,
 

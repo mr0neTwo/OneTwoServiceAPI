@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime
 from pprint import pprint
 
 import requests
@@ -35,6 +36,9 @@ def bot_send_message(employee_id, text):
     # Подключаемся к боту
     bot = TeleBot(token)
     bot.send_message(dict_id[employee_id], text)
+
+
+
 
 my_api_key = "94ee4e09d9e247edaeab77e7ac63f368"
 

@@ -72,6 +72,7 @@ class DbInteraction():
     from ._order_parts import add_oder_parts, get_oder_parts, edit_oder_parts, del_oder_parts
     from ._cashboxes import add_cashbox, get_cashbox, edit_cashbox, del_cashbox
     from ._payrolls import add_payroll, get_payrolls, get_payroll_sum, edit_payroll, del_payroll
+    from ._branches import add_branch, get_branch, edit_branch, del_branch
 
 
     def create_all_tables(self):
@@ -1072,129 +1073,6 @@ class DbInteraction():
             self.pgsql_connetction.session.delete(attachments)
             self.pgsql_connetction.session.commit()
             return self.get_attachments()
-
-    # Таблица ФИЛИФЛОВ ==================================================================================
-
-    def add_branch(self,
-                   name,
-                   color,
-                   address,
-                   phone,
-                   icon,
-                   orders_type_id,
-                   orders_type_strategy,
-                   orders_prefix,
-                   documents_prefix,
-                   employees,
-                   deleted):
-
-        branch = Branch(
-            name=name,
-            color=color,
-            address=address,
-            phone=phone,
-            icon=icon,
-            orders_type_id=orders_type_id,
-            orders_type_strategy=orders_type_strategy,
-            orders_prefix=orders_prefix,
-            documents_prefix=documents_prefix,
-            employees=employees,
-            deleted=deleted
-        )
-        self.pgsql_connetction.session.add(branch)
-        self.pgsql_connetction.session.commit()
-        self.pgsql_connetction.session.refresh(branch)
-        return branch.id
-
-    def get_branch(self, id=None, name=None, deleted=None, page=0):
-
-        if any([id, name, deleted != None]):
-            branch = self.pgsql_connetction.session.query(Branch).filter(
-                and_(
-                    Branch.id == id if id else True,
-                    Branch.name.like(f'%{name}%') if name else True,
-                    (Branch.deleted if deleted else not Branch.deleted) if deleted != None else True
-                )
-            )
-        else:
-            branch = self.pgsql_connetction.session.query(Branch)
-
-        self.pgsql_connetction.session.expire_all()
-        result = {'success': True}
-        count = branch.count()
-        result['count'] = count
-
-        max_page = count // 50 if count % 50 > 0 else count // 50 - 1
-
-        if page > max_page and max_page != -1:
-            return {'success': False, 'message': 'page is not defined'}, 400
-
-        data = []
-        for row in branch[50 * page: 50 * (page + 1)]:
-            data.append({
-                'id': row.id,
-                'name': row.name,
-                'address': row.address,
-                'phone': row.phone,
-                'color': row.color,
-                'icon': row.icon,
-                'orders_type_id': row.orders_type_id,
-                'orders_type_strategy': row.orders_type_strategy,
-                'orders_prefix': row.orders_prefix,
-                'documents_prefix': row.documents_prefix,
-                'employees': row.employees,
-                'deleted': row.deleted,
-                'schedule': [{
-                    'id': shed.id,
-                    'start_time': shed.start_time,
-                    'end_time': shed.end_time,
-                    'work_day': shed.work_day,
-                    'week_day': shed.week_day,
-                    'branch_id': shed.branch_id
-                } for shed in row.schedule] if row.schedule else []
-            })
-
-        result['data'] = data
-        result['page'] = page
-        return result
-
-    def edit_branch(self,
-                    id,
-                    name,
-                    address,
-                    phone,
-                    color,
-                    icon,
-                    orders_type_id,
-                    orders_type_strategy,
-                    orders_prefix,
-                    documents_prefix,
-                    employees,
-                    deleted):
-
-        self.pgsql_connetction.session.query(Branch).filter_by(id=id).update({
-            'name': name if name is not None else Branch.name,
-            'address': address if address is not None else Branch.address,
-            'phone': phone if phone is not None else Branch.phone,
-            'color': color if color is not None else Branch.color,
-            'icon': icon if icon is not None else Branch.icon,
-            'orders_type_id': orders_type_id if orders_type_id is not None else Branch.orders_type_id,
-            'orders_type_strategy': orders_type_strategy if orders_type_strategy is not None else Branch.orders_type_strategy,
-            'orders_prefix': orders_prefix if orders_prefix is not None else Branch.orders_prefix,
-            'documents_prefix': documents_prefix if documents_prefix is not None else Branch.documents_prefix,
-            'employees': employees if employees is not None else Branch.employees,
-            'deleted': deleted if deleted is not None else Branch.deleted
-        })
-        self.pgsql_connetction.session.commit()
-        return self.get_branch(id=id)
-
-    def del_branch(self, id):
-
-        branch = self.pgsql_connetction.session.query(Branch).get(id)
-        if branch:
-            self.pgsql_connetction.session.delete(branch)
-            self.pgsql_connetction.session.commit()
-            return self.get_branch(id=id)
 
     # Таблица ДНЕЙ РАСПИСАНИЯ =========================================================================
 

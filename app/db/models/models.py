@@ -50,7 +50,7 @@ class Employees(Base):
     email = Column(TEXT, unique=True, nullable=False)                           # Электронная почта
     phone = Column(TEXT)                                                        # Телефон
     notes = Column(TEXT)                                                        # Заметки
-    deleted = Column(BOOLEAN)                                                   # Сотрудник удален
+    deleted = Column(BOOLEAN, default=False)                                                   # Сотрудник удален
     inn = Column(TEXT)
     doc_name = Column(TEXT)
     post = Column(TEXT)
@@ -100,7 +100,7 @@ class Branch(Base):
     orders_prefix = Column(TEXT)
     documents_prefix = Column(TEXT)
     employees = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
 
     schedule = relationship('Schedule', backref='schedule', passive_deletes=True)
 
@@ -128,7 +128,7 @@ class DiscountMargin(Base):
     margin = Column(FLOAT)                                                         # Значение наценки
     title = Column(TEXT)                                                           # Имя наценки
     margin_type = Column(INTEGER)                                                  # Тип наценки (1 - работа, 2 - материал)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
 
 # Таблица типов заказов
 class OrderType(Base):
@@ -179,7 +179,7 @@ class Clients(Base):
     discount_good_type = Column(BOOLEAN)
     discount_materials_type = Column(BOOLEAN)
     discount_service_type = Column(BOOLEAN)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
 
     name = Column(TEXT)                                                             # Имя
     name_doc = Column(TEXT)                                                         # Имя в документах (обращение)
@@ -238,7 +238,7 @@ class EquipmentType(Base):
     icon = Column(TEXT)                                                         # иконка поля
     url = Column(TEXT)                                                          # ссылка на изображение
     branches = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     equipment_brand = relationship(
         'EquipmentBrand',
         backref='equipment_brand',
@@ -255,7 +255,7 @@ class EquipmentBrand(Base):
     icon = Column(TEXT)                                                         # иконка поля
     url = Column(TEXT)                                                          # ссылка на изображение
     branches = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     id_ref = f'{EquipmentType.__tablename__}.{EquipmentType.id.name}'
     equipment_type_id = Column(INTEGER, ForeignKey(id_ref), nullable=True)     # id типа изделия
     equipment_subtype = relationship(
@@ -274,7 +274,7 @@ class EquipmentSubtype(Base):
     icon = Column(TEXT)                                                         # иконка поля
     url = Column(TEXT)                                                          # ссылка на изображение
     branches = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     id_ref = f'{EquipmentBrand.__tablename__}.{EquipmentBrand.id.name}'
     equipment_brand_id = Column(INTEGER, ForeignKey(id_ref), nullable=False)    # id бренда изделия
     equipment_model = relationship(
@@ -293,7 +293,7 @@ class EquipmentModel(Base):
     icon = Column(TEXT)                                                         # иконка поля
     url = Column(TEXT)                                                          # ссылка на изображение
     branches = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     id_ref = f'{EquipmentSubtype.__tablename__}.{EquipmentSubtype.id.name}'
     equipment_subtype_id = Column(INTEGER, ForeignKey(id_ref), nullable=False)  # id модификации изделия
 
@@ -381,7 +381,7 @@ class GroupDictService(Base):
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     title = Column(TEXT)
     icon = Column(TEXT)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
 
     dict_service = relationship('DictService', backref='dict_service', passive_deletes=True)
 
@@ -396,7 +396,7 @@ class DictService(Base):
     code = Column(TEXT)                     # Код
     earnings_percent = Column(FLOAT)
     earnings_summ = Column(FLOAT)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     category_id_ref = f'{GroupDictService.__tablename__}.{GroupDictService.id.name}'
     category_id = Column(INTEGER, ForeignKey(category_id_ref), nullable=False)  # Сотрудник
 
@@ -405,7 +405,7 @@ class ServicePrices(Base):
 
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     cost = Column(FLOAT)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     id_discount_margin_ref = f'{DiscountMargin.__tablename__}.{DiscountMargin.id.name}'
     discount_margin_id = Column(INTEGER, ForeignKey(id_discount_margin_ref), nullable=False)
     category_id_ref = f'{DictService.__tablename__}.{DictService.id.name}'
@@ -428,7 +428,7 @@ class Operations(Base):
     comment = Column(TEXT)                                                      # Сумма к оплате
     percent = Column(BOOLEAN)                                                   # Процент или сумма (True - процент)
     discount = Column(FLOAT)                                                    # Значение скидки
-    deleted = Column(BOOLEAN)                                                   # Сумма к оплате
+    deleted = Column(BOOLEAN, default=False)                                                   # Сумма к оплате
     warranty_period = Column(INTEGER)                                           # Период гарантии
     created_at = Column(INTEGER, default=time_now)                              # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)           # Дата обновления
@@ -456,7 +456,7 @@ class OrderParts(Base):
     comment = Column(TEXT)                                                      # Сумма к оплате
     percent = Column(BOOLEAN)                                                   # Процент или сумма (True - процент)
     discount = Column(FLOAT)                                                    # Значение скидки
-    deleted = Column(BOOLEAN)                                                   # Сумма к оплате
+    deleted = Column(BOOLEAN, default=False)                                                   # Сумма к оплате
     warranty_period = Column(INTEGER)                                           # Период гарантии
     created_at = Column(INTEGER, default=time_now)                              # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)           # Дата обновления
@@ -592,7 +592,7 @@ class Cashboxs(Base):
     type = Column(INTEGER)
     isGlobal = Column(BOOLEAN)
     isVirtual = Column(BOOLEAN)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     permissions = Column(ARRAY(TEXT))
     employees = Column(JSON)
     id_branch_ref = f'{Branch.__tablename__}.{Branch.id.name}'
@@ -613,7 +613,7 @@ class Payments(Base):
     direction = Column(INTEGER)                                                     # Направление платежа
 
     can_print_fiscal = Column(BOOLEAN)                                              # Возможно печатать чек
-    deleted = Column(BOOLEAN)                                                       # Платеж удален
+    deleted = Column(BOOLEAN, default=False)                                                       # Платеж удален
     is_fiscal = Column(BOOLEAN)                                                     # Чек напечатан
 
     created_at = Column(INTEGER, default=time_now)                                  # Дата создания
@@ -696,7 +696,7 @@ class Payrules(Base):
     coefficient = Column(FLOAT)           # Коэффициет при начаслении за работы или запчасти
     count_coeff = Column(ARRAY(JSON))              # Условия начисления
     fix_salary =Column(INTEGER)             # Оклад
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     created_at = Column(INTEGER, default=time_now)  # Дата создания
     updated_at = Column(INTEGER, default=time_now, onupdate=time_now)  # Дата обновления
     check_status = Column(INTEGER)          # 4 По статусу готов, 6 по статусу закрыт
@@ -722,7 +722,7 @@ class Warehouse(Base):
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     title = Column(TEXT)                                                        # Наименование
     description = Column(TEXT)                                                  # Описание
-    deleted = Column(BOOLEAN)                                                   # Удален
+    deleted = Column(BOOLEAN, default=False)                                                   # Удален
     isGlobal = Column(BOOLEAN)                                                  # Склад компании (общий)
     permissions = Column(ARRAY(TEXT))                                           # Разрешиния
     employees = Column(JSON)                                                    # Специальные разрешения для сотрудников
@@ -737,7 +737,7 @@ class WarehouseCategory(Base):
 
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     title = Column(TEXT)                    # Наименование
-    deleted = Column(BOOLEAN)               # Удален
+    deleted = Column(BOOLEAN, default=False)               # Удален
     parent_category_id = Column(INTEGER)  # Родельская категория
 
     id_warehouse_ref = f'{Warehouse.__tablename__}.{Warehouse.id.name}'
@@ -756,7 +756,7 @@ class Parts(Base):
     image_url = Column(TEXT)  # Ссылка на изображение
     doc_url = Column(TEXT)  # Ссылка на документацию
     specifications = Column(JSON)  # Характеристики
-    deleted = Column(BOOLEAN)  # Удален
+    deleted = Column(BOOLEAN, default=False)  # Удален
 
     id_warehouse_category_ref = f'{WarehouseCategory.__tablename__}.{WarehouseCategory.id.name}'
     warehouse_category_id = Column(INTEGER, ForeignKey(id_warehouse_category_ref), nullable=True)  # Категория товара
@@ -774,7 +774,7 @@ class WarehouseParts(Base):
     min_residue = Column(INTEGER)               # Минимально допустимое количество
     warranty_period = Column(INTEGER)           # Гарантийный период
     necessary_amount = Column(INTEGER)          # Необходимое количество для заказа
-    deleted = Column(BOOLEAN)                   # Удален
+    deleted = Column(BOOLEAN, default=False)                   # Удален
 
     id_part_ref = f'{Parts.__tablename__}.{Parts.id.name}'
     part_id = Column(INTEGER,  ForeignKey(id_part_ref), nullable=True)                              # Деталь
@@ -792,7 +792,7 @@ class NotificationTemplate(Base):
     id = Column(INTEGER, primary_key=True, autoincrement=True, nullable=False)  # ID строчки
     title = Column(TEXT)
     template = Column(TEXT)
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
 
 class NotificationEvents(Base):
     __tablename__ = 'notification_events'
@@ -801,7 +801,7 @@ class NotificationEvents(Base):
     event = Column(TEXT)
     target_audience = Column(INTEGER)
     statuses = Column(ARRAY(INTEGER))
-    deleted = Column(BOOLEAN)
+    deleted = Column(BOOLEAN, default=False)
     notification_type = Column(INTEGER)
     id_notification_template_ref = f'{NotificationTemplate.__tablename__}.{NotificationTemplate.id.name}'
     notification_template_id = Column(INTEGER, ForeignKey(id_notification_template_ref), nullable=True)

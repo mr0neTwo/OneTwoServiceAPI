@@ -161,6 +161,10 @@ def payments():
         if not all([type(tag) == str for tag in tags]):
             return {'success': False, 'message': "tags has not string"}, 400
 
+    relation_type = request_body.get('relation_type')
+    if relation_type is not None and type(relation_type) != int:
+        return {'success': False, 'message': "relation_type is not integer"}, 400
+
     relation_id = request_body.get('relation_id')
     if relation_id is not None and type(relation_id) != int:
         return {'success': False, 'message': "relation_id is not integer"}, 400
@@ -330,6 +334,7 @@ def payments():
             created_at=created_at,
             custom_created_at=custom_created_at,
             tags=tags,
+            relation_type=relation_type,
             relation_id=None,
             cashbox_id=cashbox_id,
             client_id=client_id,
@@ -365,6 +370,7 @@ def payments():
             created_at=created_at,
             custom_created_at=custom_created_at,
             tags=tags,
+            relation_type=relation_type,
             relation_id=relation_id,
             cashbox_id=cashbox_id,
             client_id=client_id,
