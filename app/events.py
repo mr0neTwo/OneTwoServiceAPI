@@ -1,10 +1,10 @@
+import os
 from datetime import datetime
 import json
 import requests
 from num2words import num2words
 
 from app.db.models.models import NotificationEvents, GenerallyInfo, Employees, Events
-from config import config
 
 
 def timestamp_to_string(timestamp):
@@ -144,7 +144,7 @@ def send_sms(session, number, text, order, user_id):
     session.add(order_event)
     session.flush()
 
-    if config['SEND_SMS']:
+    if os.environ['SEND_SMS']:
         result = requests.post(url, data=json.dumps(body), headers=headers)
         print(f'send SMS to: {number} text: {text} status: {result.status_code}')
     else:

@@ -1,14 +1,14 @@
 from flask import Blueprint
-from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required
 
 from app.db.interaction.db_iteraction import db_iteraction
-from app.db.models.models import Branch, Cashboxs, Employees
+from app.db.models.models import Branch, Employees
 
 branches_api = Blueprint('branches_api', __name__)
 
 @branches_api.route('/get_branch', methods=['POST'])
-@jwt_required()
+@login_required
 def get_branch():
     # Проверим содежит ли запрос тело json
     try:
@@ -45,7 +45,7 @@ def get_branch():
 
 
 @branches_api.route('/branch', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def branch():
     # Проверим содежит ли запрос тело json
     try:

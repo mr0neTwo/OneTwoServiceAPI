@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Branch, Cashboxs
@@ -8,12 +9,9 @@ from app.db.models.models import Branch, Cashboxs
 cashboxes_api = Blueprint('cashboxes_api', __name__)
 
 @cashboxes_api.route('/get_cashbox', methods=['POST'])
-@jwt_required()
+@login_required
 def get_cashbox():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:
@@ -45,12 +43,9 @@ def get_cashbox():
 
 
 @cashboxes_api.route('/cashbox', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def cashbox():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:

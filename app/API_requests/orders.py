@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Orders, Status, Branch
@@ -8,7 +9,7 @@ from app.db.models.models import Orders, Status, Branch
 orders_api = Blueprint('orders_api', __name__)
 
 @orders_api.route('/get_order', methods=['POST'])
-@jwt_required()
+@login_required
 def get_order():
     # Проверим содежит ли запрос тело json
     try:
@@ -25,12 +26,9 @@ def get_order():
     return result
 
 @orders_api.route('/order_comment', methods=['POST'])
-@jwt_required()
+@login_required
 def order_comment():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:
@@ -71,7 +69,7 @@ def order_comment():
     return result
 
 @orders_api.route('/get_orders', methods=['POST'])
-@jwt_required()
+@login_required
 def get_orders():
     # Проверим содежит ли запрос тело json
     try:
@@ -171,12 +169,11 @@ def get_orders():
     #     if not all([type(ad_cam) == int for ad_cam in ad_campaign_id]):
     #         return {'success': False, 'message': "ad_campaign_id has not integer"}, 400
 
-    # branch_id = request_body.get('branch_id')
-    # if branch_id is not None and type(branch_id) != list:
-    #     return {'success': False, 'message': "branch_id is not list"}, 400
-    # if branch_id  is not None:
-    #     if not all([type(branch) == int for branch in branch_id]):
-    #         return {'success': False, 'message': "branch_id has not integer"}, 400
+    branch_id = request_body.get('branch_id')
+    if branch_id is not None and type(branch_id) != int:
+        return {'success': False, 'message': "branch_id is not integer"}, 400
+    if branch_id is not None and not db_iteraction.pgsql_connetction.session.query(Branch).get(branch_id):
+        return {'success': False, 'message': 'branch_id is not defined'}, 400
 
     status_id = request_body.get('status_id')
     if status_id is not None and type(status_id) != list:
@@ -305,7 +302,7 @@ def get_orders():
         # warranty_date=warranty_date,            # [int - int] - даты горании до - промежуток
 
         # ad_campaign_id=ad_campaign_id,          # list - id рекламной копании - полное совпадение одного из списка
-        # branch_id=branch_id,                    # list - id филиала - полное совпадение одного из списка
+        branch_id=branch_id,                    # int - id филиала - полное совпадение
         status_id=status_id,                    # list - id статуса - полное совпадение одного из списка
         client_id=client_id,                    # list - id клиента - полное совпадение одного из списка
         order_type_id=order_type_id,            # list - id типа заказа - полное совпадение одного из списка
@@ -334,12 +331,9 @@ def get_orders():
 
 
 @orders_api.route('/orders', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def orders():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:
@@ -400,8 +394,8 @@ def orders():
     branch_id = request_body.get('branch_id')
     if branch_id is not None and type(branch_id) != int:
         return {'success': False, 'message': "branch_id is not integer"}, 400
-    # if branch_id is not None and db_iteraction.get_branch(id=branch_id)['count'] == 0:
-    #     return {'success': False, 'message': 'branch_id is not defined'}, 400
+    if branch_id is not None and not db_iteraction.pgsql_connetction.session.query(Branch).get(branch_id):
+        return {'success': False, 'message': 'branch_id is not defined'}, 400
 
     status_id = request_body.get('status_id')
     if status_id is not None and type(status_id) != int:
@@ -533,66 +527,71 @@ def orders():
             r_filter['search'] = str(r_filter['search'])
 
         if r_filter.get('page') is not None and type(r_filter['page']) != int:
-            return {'success': False, 'message': "page is not integer"}, 400
+            return {'success': False, 'message': "page is not integer in order filter"}, 400
 
         if r_filter.get('kindof_good_id') is not None and type(r_filter['kindof_good_id']) != int:
-            return {'success': False, 'message': "kindof_good_id is not integer"}, 400
+            return {'success': False, 'message': "kindof_good_id is not integer in order filter"}, 400
 
         if r_filter.get('brand_id') is not None and type(r_filter['brand_id']) != int:
-            return {'success': False, 'message': "brand_id is not integer"}, 400
+            return {'success': False, 'message': "brand_id is not integer in order filter"}, 400
 
         if r_filter.get('subtype_id') is not None and type(r_filter['subtype_id']) != int:
-            return {'success': False, 'message': "subtype_id is not integer"}, 400
+            return {'success': False, 'message': "subtype_id is not integer in order filter"}, 400
 
         if r_filter.get('client_id') is not None and type(r_filter['client_id']) != int:
-            return {'success': False, 'message': "client_id is not integer"}, 400
+            return {'success': False, 'message': "client_id is not integer in order filter"}, 400
 
         if r_filter.get('update_order') is not None and type(r_filter['update_order']) != int:
-            return {'success': False, 'message': "update_order is not integer"}, 400
+            return {'success': False, 'message': "update_order is not integer in order filter"}, 400
 
         if r_filter.get('created_at') is not None:
             if type(r_filter['created_at']) != list:
-                return {'success': False, 'message': "created_at is not list"}, 400
+                return {'success': False, 'message': "created_at is not list in order filter"}, 400
             if len(r_filter['created_at']) != 2:
-                return {'success': False, 'message': "created_at is not correct"}, 400
+                return {'success': False, 'message': "created_at is not correct in order filter"}, 400
             if (type(r_filter['created_at'][0]) != int) or (type(r_filter['created_at'][1]) != int):
-                return {'success': False, 'message': "created_at has not integers"}, 400
+                return {'success': False, 'message': "created_at has not integers in order filter"}, 400
 
         if r_filter.get('engineer_id') is not None:
             if type(r_filter['engineer_id']) != list:
-                return {'success': False, 'message': "engineer_id is not list"}, 400
+                return {'success': False, 'message': "engineer_id is not list in order filter"}, 400
             if not all([type(engineer) == int for engineer in r_filter['engineer_id']]):
-                return {'success': False, 'message': "engineer_id has not integer"}, 400
+                return {'success': False, 'message': "engineer_id has not integer in order filter"}, 400
 
         if r_filter.get('status_id') is not None:
             if type(r_filter['status_id']) != list:
-                return {'success': False, 'message': "status_id is not list"}, 400
+                return {'success': False, 'message': "status_id is not list in order filter"}, 400
             if not all([type(status) == int for status in r_filter['status_id']]):
-                return {'success': False, 'message': "status_id has not integer"}, 400
+                return {'success': False, 'message': "status_id has not integer in order filter"}, 400
 
         if r_filter.get('order_type_id') is not None:
             if type(r_filter['order_type_id']) != list:
                 return {'success': False, 'message': "order_type_id is not list"}, 400
             if not all([type(order_type) == int for order_type in r_filter['order_type_id']]):
-                return {'success': False, 'message': "order_type_id has not integer"}, 400
+                return {'success': False, 'message': "order_type_id has not integer in order filter"}, 400
 
         if r_filter.get('manager_id') is not None:
             if type(r_filter['manager_id']) != list:
-                return {'success': False, 'message': "manager_id is not list"}, 400
+                return {'success': False, 'message': "manager_id is not list in order filter"}, 400
             if not all([type(manager) == int for manager in r_filter['manager_id']]):
-                return {'success': False, 'message': "manager_id has not integer"}, 400
+                return {'success': False, 'message': "manager_id has not integer in order filter"}, 400
 
         if r_filter.get('overdue') is not None and type(r_filter['overdue']) != bool:
-            return {'success': False, 'message': "overdue is not boolean"}, 400
+            return {'success': False, 'message': "overdue is not boolean in order filter"}, 400
 
         if r_filter.get('status_overdue') is not None and type(r_filter['status_overdue']) != bool:
-            return {'success': False, 'message': "status_overdue is not boolean"}, 400
+            return {'success': False, 'message': "status_overdue is not boolean in order filter"}, 400
+
+        if r_filter.get('branch_id') is not None and type(r_filter['branch_id']) != int:
+            return {'success': False, 'message': "branch_id is not integer in order filter"}, 400
+        if r_filter.get('branch_id') is not None and not db_iteraction.pgsql_connetction.session.query(Branch).get(r_filter['branch_id']):
+            return {'success': False, 'message': 'branch_id is not defined in order filter'}, 400
 
         if r_filter.get('urgent') is not None and type(r_filter['urgent']) != bool:
-            return {'success': False, 'message': "urgent is not boolean"}, 400
+            return {'success': False, 'message': "urgent is not boolean in order filter"}, 400
 
         if r_filter.get('update_badges') is not None and type(r_filter['update_badges']) != bool:
-            return {'success': False, 'message': "update_badges is not boolean"}, 400
+            return {'success': False, 'message': "update_badges is not boolean in order filter"}, 400
 
 
     if request.method == 'POST':
@@ -652,8 +651,8 @@ def orders():
 
 
     # Проверим сущестует ли запись по данному id
-    # if db_iteraction.get_orders(id=id)[0]['count'] == 0:
-    #     return {'success': False, 'message': 'id is not defined'}, 400
+    if not db_iteraction.pgsql_connetction.session.query(Orders).get(id):
+        return {'success': False, 'message': 'id is not defined'}, 400
 
     if request.method == 'PUT':
 

@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Employees, Orders, OrderParts
@@ -8,7 +9,7 @@ from app.db.models.models import Employees, Orders, OrderParts
 order_parts_api = Blueprint('order_parts_api', __name__)
 
 @order_parts_api.route('/get_order_parts', methods=['POST'])
-@jwt_required()
+@login_required
 def get_order_parts():
     # Проверим содежит ли запрос тело json
     try:
@@ -66,12 +67,9 @@ def get_order_parts():
     return result
 
 @order_parts_api.route('/order_parts', methods=['POST', 'GET', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def order_parts():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:

@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Employees, Orders, Payrolls
@@ -8,7 +9,7 @@ from app.db.models.models import Employees, Orders, Payrolls
 payrolls_api = Blueprint('payrolls_api', __name__)
 
 @payrolls_api.route('/get_payrolls', methods=['POST'])
-@jwt_required()
+@login_required
 def get_payrolls():
     # Проверим содежит ли запрос тело json
     try:
@@ -51,7 +52,7 @@ def get_payrolls():
 
 
 @payrolls_api.route('/get_payroll_sum', methods=['POST'])
-@jwt_required()
+@login_required
 def get_payroll_sum():
     # Проверим содежит ли запрос тело json
     try:
@@ -84,7 +85,7 @@ def get_payroll_sum():
 
 
 @payrolls_api.route('/payroll', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def payroll():
     # Проверим содежит ли запрос тело json
     try:

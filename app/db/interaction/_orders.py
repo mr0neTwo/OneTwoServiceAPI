@@ -555,7 +555,7 @@ def get_orders_by_filter(self, filter_order):
 
         orders = query.all()
 
-        branch_id = 1   # todo: прописать маршрут
+        branch_id = filter_order.get('branch_id')
         query = self.pgsql_connetction.session.query(Schedule)
         query = query.filter(Schedule.branch_id == branch_id)
         data_schedule = query.all()
@@ -973,6 +973,7 @@ def get_orders(
     overdue=None,
     status_overdue=None,
     urgent=None,
+    branch_id=None,
 
     search=None,
 
@@ -994,7 +995,7 @@ def get_orders(
         if kindof_good_id is not None: query = query.filter(Orders.kindof_good_id == kindof_good_id)
         if brand_id is not None: query = query.filter(Orders.brand_id == brand_id)
         if subtype_id is not None: query = query.filter(Orders.subtype_id == subtype_id)
-        if client_id is not None: query = query.filter(Orders.client_id == client_id)
+        if client_id is not None: query = query.filter(Orders.client_id.in_(client_id))
         if overdue is not None: query = query.filter(Orders.estimated_done_at < time_now())
         if status_overdue is not None: query = query.filter(Orders.status_deadline < time_now())
         if urgent is not None: query = query.filter(Orders.urgent.is_(urgent))
@@ -1056,7 +1057,6 @@ def get_orders(
 
         orders = query.all()
 
-        branch_id = 1 # todo: прописать маршрут
         query = self.pgsql_connetction.session.query(Schedule)
         query = query.filter(Schedule.branch_id == branch_id)
         data_schedule = query.all()
@@ -1070,7 +1070,6 @@ def get_orders(
 
         data = []
         for row in orders:
-
 
             data.append({
                 'id': row.id,
@@ -1100,7 +1099,6 @@ def get_orders(
                 'discount_sum': row.discount_sum,
                 'payed': row.payed,
                 'price': row.price,
-                # 'remaining': row.estimated_done_at - time_now() if row.estimated_done_at else None,
                 'remaining': get_estimate_work_time(row.estimated_done_at, schedule),
                 'remaining_status': row.status_deadline - time_now() if row.status_deadline else None,
                 'remaining_warranty': row.warranty_date - time_now() if row.warranty_date else None,

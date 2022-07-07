@@ -50,7 +50,8 @@ class Employees(Base):
     email = Column(TEXT, unique=True, nullable=False)                           # Электронная почта
     phone = Column(TEXT)                                                        # Телефон
     notes = Column(TEXT)                                                        # Заметки
-    deleted = Column(BOOLEAN, default=False)                                                   # Сотрудник удален
+    avatar = Column(TEXT)
+    deleted = Column(BOOLEAN, default=False)                                    # Сотрудник удален
     inn = Column(TEXT)
     doc_name = Column(TEXT)
     post = Column(TEXT)
@@ -64,7 +65,7 @@ class Employees(Base):
     table_headers = relationship('TableHeaders', backref='table_headers', passive_deletes=True)
     payrules = relationship('Payrules', backref='payrules', passive_deletes=True, cascade="all, delete, delete-orphan")
 
-# Таблица полей таблицы заказо
+# Таблица полей таблицы заказов
 class TableHeaders(Base):
     __tablename__ = 'table_headers'
 

@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Cashboxs, Clients, Employees, Orders, Payments, Status
@@ -8,7 +9,7 @@ from app.db.models.models import Cashboxs, Clients, Employees, Orders, Payments,
 payment_api = Blueprint('payment_api', __name__)
 
 @payment_api.route('/get_payments', methods=['POST'])
-@jwt_required()
+@login_required
 def get_payments():
 
     # Проверим содежит ли запрос тело json
@@ -83,13 +84,9 @@ def get_payments():
     return result
 
 @payment_api.route('/payments', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def payments():
-
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:

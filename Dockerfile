@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 CMD ["python", "server.py"]
 
-EXPOSE 5005
+EXPOSE 80

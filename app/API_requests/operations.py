@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Employees, Orders, DictService, Operations
@@ -9,7 +10,7 @@ operation_api = Blueprint('operation_api', __name__)
 
 
 @operation_api.route('/get_operations', methods=['POST'])
-@jwt_required()
+@login_required
 def get_operations():
     # Проверим содежит ли запрос тело json
     try:
@@ -126,12 +127,9 @@ def get_operations():
 
 
 @operation_api.route('/operations', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def operations():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:

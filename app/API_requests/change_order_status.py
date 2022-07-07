@@ -1,19 +1,17 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, decode_token
 from flask import request
+from flask_login import login_required, current_user
 
 from app.db.interaction.db_iteraction import db_iteraction
 
 change_status_api = Blueprint('change_status_api', __name__)
 
 @change_status_api.route('/change_order_status', methods=['POST'])
-@jwt_required()
+@login_required
 def change_order_status():
 
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
+    user_id = current_user.get_id()
 
     # Проверим содежит ли запрос тело json
     try:

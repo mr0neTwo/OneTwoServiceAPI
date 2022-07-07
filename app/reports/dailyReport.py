@@ -1,10 +1,10 @@
+import os
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint
 from sqlalchemy import func
 
 from app.db.interaction.db_iteraction import db_iteraction, scheduler
 from app.db.models.models import Orders, Payments, Operations, Payrolls, Employees
-from config import config
 from utils import bot_send_message
 
 daily_report = Blueprint('daily_report', __name__)
@@ -146,7 +146,7 @@ def job1():
         # посчитаем денежный поток по кассам
 
         # Оценим результат
-        if config['SEND_SMS']:
+        if os.environ['SEND_SMS']:
             bot_send_message(1, text)
         else:
             print(text)
@@ -163,7 +163,7 @@ def job1():
                 text += f"Закрыл заказов: {employee['closed']}\n"
             if employee['payroll_sum']:
                 text += f"Начислено ЗП: {int(employee['payroll_sum'])} руб.\n"
-            if config['SEND_SMS']:
+            if os.environ['SEND_SMS']:
                 bot_send_message(employee['id'], text)
                 # bot_send_message(1, employee['name'])
                 # bot_send_message(1, text)

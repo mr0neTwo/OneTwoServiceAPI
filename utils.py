@@ -6,14 +6,14 @@ import requests
 from telebot import TeleBot
 from tqdm import tqdm
 
-def config_parser(config_path):
-    with open(config_path, 'r') as config_file:
-        config = dict()
-        lines = config_file.readlines()
-        for line in lines:
-            key, value = line.split(' = ')
-            config[key] = value.split('\n')[0]
-        return config
+# def config_parser(config_path):
+#     with open(config_path, 'r') as config_file:
+#         config = dict()
+#         lines = config_file.readlines()
+#         for line in lines:
+#             key, value = line.split(' = ')
+#             config[key] = value.split('\n')[0]
+#         return config
 
 
 

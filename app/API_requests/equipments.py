@@ -2,6 +2,7 @@ from urllib.request import urlopen
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from flask import request
+from flask_login import login_required
 
 from app.db.interaction.db_iteraction import db_iteraction
 
@@ -9,7 +10,7 @@ equipments_api = Blueprint('equipments_api', __name__)
 
 
 @equipments_api.route('/get_equipment_type', methods=['POST'])
-@jwt_required()
+@login_required
 def get_equipment_type():
     # Проверим содежит ли запрос тело json
     try:
@@ -43,7 +44,7 @@ def get_equipment_type():
 
 
 @equipments_api.route('/equipment_type', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def equipment_type():
     # Проверим содежит ли запрос тело json
     try:
@@ -129,7 +130,7 @@ def equipment_type():
 
 
 @equipments_api.route('/get_equipment_brand', methods=['POST'])
-@jwt_required()
+@login_required
 def get_equipment_brand():
     # Проверим содежит ли запрос тело json
     try:
@@ -170,7 +171,7 @@ def get_equipment_brand():
 
 
 @equipments_api.route('/equipment_brand', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def equipment_brand():
     # Проверим содежит ли запрос тело json
     try:
@@ -266,7 +267,7 @@ def equipment_brand():
 
 
 @equipments_api.route('/get_equipment_subtype', methods=['POST'])
-@jwt_required()
+@login_required
 def get_equipment_subtype():
     # Проверим содежит ли запрос тело json
     try:
@@ -307,7 +308,7 @@ def get_equipment_subtype():
 
 
 @equipments_api.route('/equipment_subtype', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def equipment_subtype():
     # Проверим содежит ли запрос тело json
     try:
@@ -410,7 +411,7 @@ def equipment_subtype():
 
 
 @equipments_api.route('/get_equipment_model', methods=['POST'])
-@jwt_required()
+@login_required
 def get_equipment_model():
     # Проверим содежит ли запрос тело json
     try:
@@ -451,7 +452,7 @@ def get_equipment_model():
 
 
 @equipments_api.route('/equipment_model', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def equipment_model():
     # Проверим содежит ли запрос тело json
     try:

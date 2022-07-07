@@ -3,14 +3,16 @@ import traceback
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
 from flask import request
+from flask_login import login_required
 
 from app.db.interaction.db_iteraction import db_iteraction
+from app.db.models.models import Employees
 
 filters_api = Blueprint('filters_api', __name__)
 
 
 @filters_api.route('/bagges', methods=['POST'])
-@jwt_required()
+@login_required
 def get_babges():
     # Проверим содежит ли запрос тело json
     try:
@@ -33,7 +35,7 @@ def get_babges():
 
 
 @filters_api.route('/get_custom_filters', methods=['POST'])
-@jwt_required()
+@login_required
 def get_custom_filters():
     # Проверим содежит ли запрос тело json
     try:
@@ -50,7 +52,7 @@ def get_custom_filters():
         return {'success': False, 'message': 'employee_id required'}, 400
     if type(employee_id) != int:
         return {'success': False, 'message': "employee_id is not integer"}, 400
-    if db_iteraction.get_employee(id=employee_id)['count'] == 0:
+    if not db_iteraction.pgsql_connetction.session.query(Employees).get(employee_id):
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
     result = db_iteraction.get_custom_filters(
@@ -61,7 +63,7 @@ def get_custom_filters():
 
 
 @filters_api.route('/custom_filters', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def custom_filters():
     # Проверим содежит ли запрос тело json
     try:
@@ -76,7 +78,7 @@ def custom_filters():
     employee_id = request_body.get('employee_id')
     if employee_id is not None and type(employee_id) != int:
         return {'success': False, 'message': "employee_id is not integer"}, 400
-    if employee_id is not None and db_iteraction.get_employee(id=employee_id)['count'] == 0:
+    if employee_id is not None and not db_iteraction.pgsql_connetction.session.query(Employees).get(employee_id):
         return {'success': False, 'message': 'employee_id is not defined'}, 400
 
     filters = request_body.get('filters')

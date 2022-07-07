@@ -4,11 +4,12 @@ import time
 import os
 from urllib.request import urlopen
 
-from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
-from flask_cors import CORS
-
+from flask import Flask, request, jsonify, render_template, make_response, send_from_directory, flash, redirect, url_for
+from flask_cors import CORS, cross_origin
 from flask_jwt_extended import create_access_token, decode_token
 from flask_jwt_extended import JWTManager, jwt_required
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_apscheduler import APScheduler
@@ -16,23 +17,27 @@ from flask_apscheduler import APScheduler
 from app.API_requests.branches import branches_api
 from app.API_requests.cashboxes import cashboxes_api
 from app.API_requests.change_order_status import change_status_api
+from app.API_requests.employees import employees_api
 from app.API_requests.equipments import equipments_api
 from app.API_requests.filters import filters_api
+from app.API_requests.get_main_data import main_data
 from app.API_requests.operations import operation_api
 from app.API_requests.order_parts import order_parts_api
 from app.API_requests.orders import orders_api
 from app.API_requests.payments import payment_api
 from app.API_requests.payrolls import payrolls_api
-from app.db.interaction.db_iteraction import db_iteraction, config, scheduler
+from app.db.interaction.db_iteraction import db_iteraction, scheduler
+from app.db.models.models import Employees
 
 from app.reports.dailyReport import daily_report
 
 import ssl
 
 # pip freeze > requirements.txt
+from app.user_login import UserLogin
 
-host = config['SERVER_HOST']
-port = config['SERVER_PORT']
+host = os.environ['SERVER_HOST']
+port = os.environ['SERVER_PORT']
 
 print_logs = False
 
@@ -48,42 +53,50 @@ app.register_blueprint(cashboxes_api)
 app.register_blueprint(payrolls_api)
 app.register_blueprint(daily_report)
 app.register_blueprint(branches_api)
+app.register_blueprint(main_data)
+app.register_blueprint(employees_api)
 
 jwt = JWTManager(app)
 
-app.config['SECRET_KEY'] = '07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79'
-app.config['SCHEDULER_API_ENABLED'] = True
-# app.permanent_session_lifetime = timedelta(days=1)
-# app.config.update(
-#     FLASK_ENV = 'development',
-#     # SESSION_TYPE = 'redis',
-#     SESSION_COOKIE_SAMESITE = "Strict",
-#     PERMANENT_SESSION_LIFETIME = 86400,
-#     SECRET_KEY = '07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79')
-
-# sess = Session()
-# sess.init_app(app)
 
 
-CORS(app, supports_credentials=True)
-# cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
+app.config.update(
+    DEBUG=False,
+    SECRET_KEY='07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79',
+    SESSION_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE=os.environ['SESSION_COOKIE_SAMESITE'],
+    SCHEDULER_API_ENABLED=True
+)
+
+
+
+csrf = CSRFProtect(app)
+cors = CORS(
+    app,
+    # resources={r"*": {"origins": "http://localhost:3000"}},
+    resources={r"*": {"origins": "*"}},
+    expose_headers=["Content-Type", "X-CSRFToken"],
+    supports_credentials=True,
+)
 
 
 scheduler.init_app(app)
 scheduler.start()
 
-
-# cors = CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5000"}})
-# logging.getLogger('flask_cors').level = logging.DEBUG
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.session_protection = "strong"
+# login_manager.login_view = 'flogin'
 
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    # print(request.headers)
+    # response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+    # response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    # response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    # response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
 
@@ -96,8 +109,9 @@ def run_server():
     # server.start()
     app.run(
         debug=False,
-        host=host,
-        port=port,
+        load_dotenv=True,
+        host=os.environ['SERVER_HOST'],
+        port=os.environ['SERVER_PORT']
         # ssl_context=context
         # ssl_context='adhoc'
         # ssl_context=('cert.pem', 'key.pem')
@@ -114,14 +128,41 @@ def shutdown():
     if terminate_func:
         terminate_func()
 
+@app.route("/getcsrf", methods=["GET"])
+def get_csrf():
+    token = generate_csrf()
+    response = jsonify({"detail": "CSRF cookie set"})
+    response.headers.set("X-CSRFToken", token)
+    return response
+
+
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
+# @login_required
 def serve(path):
     if path != "" and os.path.exists(app.static_folder + '/' + path):
         return send_from_directory(app.static_folder, path)
     else:
         return render_template('index.html')
+
+@app.route('/flogin', methods=['GET', 'POST'])
+def flogin():
+    if request.method == 'POST':
+
+        request_body = dict(request.json)
+        username = request_body.get('email')
+        password = request_body.get('password')
+        user = db_iteraction.pgsql_connetction.session.query(Employees).filter_by(email=username).first()
+        if user:
+            if check_password_hash(user.password, password):
+                userlogin = UserLogin().create(user)
+                login_user(userlogin)
+                return {'success': True, 'message': "login success"}, 200
+            else:
+                return {'success': False, 'message': "Неверный пароль пользователя"}, 400
+        else:
+            return {'success': False, 'message': "Пользователь с таким логином не найден"}, 400
 
 
 @app.route('/start12', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -139,27 +180,56 @@ def get_start():
     print(f'Обновление завершено за {hours}:{minutes:02}:{seconds:02}')
     return {'success': True}, 200
 
+@app.route("/getsession", methods=["GET"])
+def check_session():
+    if current_user.is_authenticated:
+        return jsonify({"login": True})
 
-@app.route('/login')
-def login():
-    request_body = dict(request.json)
-    if request.method == 'POST':
-        user = db_iteraction.get_employee(email=request_body['email'])['data'][0] if \
-        db_iteraction.get_employee(email=request_body['email'])['data'] else None
-        if user:
-            if check_password_hash(user['password'], request_body['password']):
-                expire_delta = timedelta(hours=12)
-                token = create_access_token(identity=user['id'], expires_delta=expire_delta)
+    return jsonify({"login": False})
 
-                response = make_response({'success': True, 'access_token': token, 'user': user}, 200)
-                response.headers['Content-Type'] = 'application/json'
-                return response
-            return {'success': False, 'message': 'Неверный пароль пользователя'}, 400
-        return {'success': False, 'message': 'Пользователь не найден'}, 400
+@app.route("/data", methods=["POST"])
+@login_required
+def user_data():
+
+    return jsonify({"username": 'Джейме Ланистер'})
+
+# @app.route('/login')
+# def login():
+#     request_body = dict(request.json)
+#     if request.method == 'POST':
+#         user = db_iteraction.get_employee(email=request_body['email'])['data'][0] if \
+#         db_iteraction.get_employee(email=request_body['email'])['data'] else None
+#         if user:
+#             if check_password_hash(user['password'], request_body['password']):
+#                 expire_delta = timedelta(hours=12)
+#                 token = create_access_token(identity=user['id'], expires_delta=expire_delta)
+#
+#                 response = make_response({'success': True, 'access_token': token, 'user': user}, 200)
+#                 response.headers['Content-Type'] = 'application/json'
+#                 return response
+#             return {'success': False, 'message': 'Неверный пароль пользователя'}, 400
+#         return {'success': False, 'message': 'Пользователь не найден'}, 400
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return UserLogin().fromDB(user_id)
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    print('loguot')
+    return jsonify({"logout": True})
+
+
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 @app.route('/get_ad_campaign', methods=['POST'])
-@jwt_required()
+@login_required
 def get_ad_campaign():
     # Проверим содежит ли запрос тело json
     try:
@@ -187,7 +257,7 @@ def get_ad_campaign():
 
 
 @app.route('/ad_campaign', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def ad_campaign():
     # Проверим содежит ли запрос тело json
     try:
@@ -234,263 +304,11 @@ def ad_campaign():
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
-@app.route('/get_employee', methods=['POST'])
-@jwt_required()
-def get_employee():
-    token = request.headers['Authorization'][7:]
-    user_id = decode_token(token)['sub']
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
 
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    first_name = request_body.get('first_name')
-    if first_name:
-        first_name = str(first_name)
-
-    last_name = request_body.get('last_name')
-    if last_name:
-        last_name = str(last_name)
-
-    email = request_body.get('email')
-    if email:
-        email = str(email)
-
-    phone = request_body.get('phone')
-    if phone:
-        phone = str(phone)
-
-    notes = request_body.get('notes')
-    if notes:
-        notes = str(notes)
-
-    post = request_body.get('post')
-    if post:
-        post = str(post)
-
-    deleted = request_body.get('deleted', False)
-    if deleted:
-        deleted = bool(deleted)
-
-    role_id = request_body.get('role_id')
-    if role_id and type(role_id) != int:
-        return {'success': False, 'message': "role_id is not integer"}, 400
-
-    login = request_body.get('login')
-    if login:
-        login = str(login)
-
-    result = db_iteraction.get_employee(
-        id=id,  # int - id сотрудника - полное совпадение
-        first_name=first_name,  # str - Имя сотрудника - частичное совпадение
-        last_name=last_name,  # str - Фамилия сотрудника - частичное совпадение
-        email=email,  # str - Электронная почта сотрудника - частичное совпадение
-        phone=phone,  # str - Телефон сотрудника - частичное совпадение
-        notes=notes,  # str - Заметки о сотруднике - частичное совпадение
-        post=post,
-        deleted=deleted,  # bool - Статус удален сотрудника
-        role_id=role_id,  # str - Роль сотрудника - частичное совпадение
-        login=login,  # str - Логин
-        page=page  # int - Старница погинации
-
-    )
-    return result, 200
-
-
-@app.route('/employee', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
-def employee():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    page = request_body.get('page', 0)
-    if page and type(page) != int:
-        return {'success': False, 'message': "page is not integer"}, 400
-
-    first_name = request_body.get('first_name')
-    if first_name:
-        first_name = str(first_name)
-
-    last_name = request_body.get('last_name')
-    if last_name:
-        last_name = str(last_name)
-
-    email = request_body.get('email')
-    if email:
-        email = str(email)
-
-    login = request_body.get('login')
-    if login:
-        login = str(login)
-
-    phone = request_body.get('phone')
-    if phone:
-        phone = str(phone)
-
-    notes = request_body.get('notes')
-    if notes:
-        notes = str(notes)
-
-    inn = request_body.get('inn')
-    if inn:
-        inn = str(inn)
-
-    doc_name = request_body.get('doc_name')
-    if doc_name:
-        doc_name = str(doc_name)
-
-    post = request_body.get('post')
-    if post:
-        post = str(post)
-
-    deleted = request_body.get('deleted', False)
-    if deleted:
-        deleted = bool(deleted)
-
-    permissions = request_body.get('permissions')
-    if permissions and type(permissions) != list:
-        return {'success': False, 'message': "permissions is not list"}, 400
-    if permissions:
-        if not all([type(permission) == str for permission in permissions]):
-            return {'success': False, 'message': "permissions has not string"}, 400
-
-    role_id = request_body.get('role_id')
-    if role_id and type(role_id) != int:
-        return {'success': False, 'message': "role_id is not integer"}, 400
-
-    password = request_body.get('password')
-    if password:
-        password = str(password)
-
-    if request.method == 'POST':
-
-        if not email:
-            return {'success': False, 'message': 'email required'}, 400
-        if db_iteraction.get_employee(email=email)['data']:
-            return {'success': False, 'message': 'there is the same email'}, 400
-
-        if not login:
-            return {'success': False, 'message': 'login required'}, 400
-        if db_iteraction.get_employee(login=login)['data']:
-            return {'success': False, 'message': 'there is the same login'}, 400
-
-        if not password:
-            return {'success': False, 'message': 'Password required'}, 400
-
-        if len(password) < 4:
-            return {'success': False, 'message': 'password is short'}, 400
-
-        db_iteraction.add_employee(
-            first_name=first_name,  # str - Имя сотрудника
-            last_name=last_name,  # str - Фамилия сотрудника
-            email=email,  # str - Электронная почта сотрудника - уникальное значение
-            phone=phone,  # str - Телфон сотрудника
-            notes=notes,  # str - Заметки
-            deleted=deleted,  # bool - Статус удален
-            inn=inn,
-            doc_name=doc_name,
-            post=post,
-            permissions=permissions,
-            role_id=role_id,  # str - Роль сотрудника
-            login=login,  # str - Логин сотрудника - уникальное значение
-            password=generate_password_hash(password)  # str - Пароль сотрудника - обязательное поле,
-        )
-        return {'success': True, 'message': f'{first_name} added'}, 201
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_employee(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    if request.method == 'PUT':
-
-        # if not email:
-        #     return {'success': False, 'message': 'email required'}, 400
-        if email and db_iteraction.get_employee(id=id)['data'][0]['email'] != email:
-            if db_iteraction.get_employee(email=email)['data']:
-                return {'success': False, 'message': 'there is the same email'}, 400
-
-        # if not login:
-        #     return {'success': False, 'message': 'login required'}, 400
-        if login and db_iteraction.get_employee(id=id)['data'][0]['login'] != login:
-            if db_iteraction.get_employee(login=login)['data']:
-                return {'success': False, 'message': 'there is the same login'}, 400
-
-        db_iteraction.edit_employee(
-            id=id,  # int - ID сотрудника -  полное совпадение
-            first_name=first_name,  # str - Новое имя сотрудника
-            last_name=last_name,  # str - Новая фамилия сотрудника
-            email=email,  # str - Новый email сотрудника
-            phone=phone,  # str - Новый телефон сотрудника
-            notes=notes,  # str - Новый коментарий к сотруднику
-            deleted=deleted,  # str - Статус удален сотрудника
-            inn=inn,
-            doc_name=doc_name,
-            post=post,
-            login=login,  # str - Новый логин
-            role_id=role_id,  # str - Новая роль сотрудника
-            permissions=permissions
-            # password=generate_password_hash(password)   # str - Пароль сотрудника - обязательное поле,
-        )
-        return {'success': True, 'message': f'{id} changed'}, 202
-
-    if request.method == 'DELETE':
-        db_iteraction.del_employee(id=id)  # int - id сотрудника - полное совпадение
-        return {'success': True, 'message': f'{id} deleted'}, 202
-
-
-@app.route('/change_userpassword', methods=['PUT'])
-# @jwt_required()
-def change_userpassword():
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    # Проверим является ли id числом
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    # Проверим сущестует ли запись по данному id
-    if db_iteraction.get_employee(id=id)['count'] == 0:
-        return {'success': False, 'message': 'id is not defined'}, 400
-
-    password = request_body.get('password')
-    if not password:
-        return {'success': False, 'message': 'password required'}, 400
-
-    password = str(password)
-
-    if len(password) < 6:
-        return {'success': False, 'message': 'password is short'}, 400
-
-    if request.method == 'PUT':
-        db_iteraction.cange_userpassword(
-            id=id,
-            password=password
-        )
-        return {'success': True, 'message': f'{request_body.get("id")} changed'}, 202
 
 
 @app.route('/get_table_headers', methods=['POST'])
-@jwt_required()
+@login_required
 def get_table_headers():
     # Проверим содежит ли запрос тело json
     try:
@@ -536,7 +354,7 @@ def get_table_headers():
 
 
 @app.route('/table_headers', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def table_headers():
     # Проверим содежит ли запрос тело json
     try:
@@ -616,7 +434,7 @@ def table_headers():
 
 
 @app.route('/get_attachments', methods=['POST'])
-@jwt_required()
+@login_required
 def get_attachments():
     # Проверим содежит ли запрос тело json
     try:
@@ -667,7 +485,7 @@ def get_attachments():
 
 
 @app.route('/attachments', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def attachments():
     # Проверим содежит ли запрос тело json
     try:
@@ -745,7 +563,7 @@ def attachments():
 
 
 @app.route('/get_discount_margin', methods=['POST'])
-@jwt_required()
+@login_required
 def get_discount_margin():
     # Проверим содежит ли запрос тело json
     try:
@@ -784,7 +602,7 @@ def get_discount_margin():
 
 
 @app.route('/discount_margin', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def discount_margin():
     # Проверим содежит ли запрос тело json
     try:
@@ -856,7 +674,7 @@ def discount_margin():
 
 
 @app.route('/get_order_type', methods=['POST'])
-@jwt_required()
+@login_required
 def get_order_type():
     # Проверим содежит ли запрос тело json
     try:
@@ -885,7 +703,7 @@ def get_order_type():
 
 
 @app.route('/order_type', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def order_type():
     # Проверим содежит ли запрос тело json
     try:
@@ -933,7 +751,7 @@ def order_type():
 
 
 @app.route('/get_status_group', methods=['POST'])
-@jwt_required()
+@login_required
 def get_status_group():
     # Проверим содежит ли запрос тело json
     try:
@@ -967,7 +785,7 @@ def get_status_group():
 
 
 @app.route('/status_group', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def status_group():
     # Проверим содежит ли запрос тело json
     try:
@@ -1034,7 +852,7 @@ def status_group():
 
 
 @app.route('/get_status', methods=['POST'])
-@jwt_required()
+@login_required
 def get_status():
     # Проверим содежит ли запрос тело json
     try:
@@ -1077,7 +895,7 @@ def get_status():
 
 
 @app.route('/status', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def status():
     # Проверим содежит ли запрос тело json
     try:
@@ -1173,7 +991,7 @@ def status():
 
 
 @app.route('/get_clients', methods=['POST'])
-@jwt_required()
+@login_required
 def get_clients():
     # Проверим содежит ли запрос тело json
     try:
@@ -1286,7 +1104,7 @@ def get_clients():
 
 
 @app.route('/clients', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def clients():
     # Проверим содежит ли запрос тело json
     try:
@@ -1591,7 +1409,7 @@ def clients():
 
 
 @app.route('/get_menu_rows', methods=['POST'])
-@jwt_required()
+@login_required
 def get_menu_rows():
     # Проверим содежит ли запрос тело json
     try:
@@ -1624,7 +1442,7 @@ def get_menu_rows():
 
 
 @app.route('/get_setting_menu', methods=['POST'])
-@jwt_required()
+@login_required
 def get_setting_menu():
     # Проверим содежит ли запрос тело json
     try:
@@ -1657,7 +1475,7 @@ def get_setting_menu():
 
 
 @app.route('/get_roles', methods=['POST'])
-@jwt_required()
+@login_required
 def get_roles():
     # Проверим содежит ли запрос тело json
     try:
@@ -1686,7 +1504,7 @@ def get_roles():
 
 
 @app.route('/roles', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def roles():
     # Проверим содежит ли запрос тело json
     try:
@@ -1788,7 +1606,7 @@ def roles():
 
 
 @app.route('/get_generally_info', methods=['POST'])
-@jwt_required()
+@login_required
 def get_generally_info():
     # Проверим содежит ли запрос тело json
     try:
@@ -1807,7 +1625,7 @@ def get_generally_info():
 
 
 @app.route('/generally_info', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def generally_info():
     # Проверим содежит ли запрос тело json
     try:
@@ -1938,62 +1756,8 @@ def generally_info():
         return {'success': True, 'message': f'{id} deleted'}, 202
 
 
-@app.route('/get_main_data', methods=['POST'])
-@jwt_required()
-def get_main_data():
-    # Достанем токен
-    token = request.headers['Authorization'][7:]
-    # Извлечем id пользователя из токена
-    user_id = decode_token(token)['sub']
-
-    # Проверим содежит ли запрос тело json
-    try:
-        request_body = dict(request.json)
-    except:
-        return {'success': False, 'message': "Request don't has json body"}, 400
-
-    id = request_body.get('id')
-    if id and type(id) != int:
-        return {'success': False, 'message': "id is not integer"}, 400
-
-    result = {}
-
-    generally_info = db_iteraction.get_generally_info(id=1)
-    result['generally_info'] = generally_info['data']
-
-    branches = db_iteraction.get_branch()
-    result['branch'] = branches[0]['data']
-
-    order_type = db_iteraction.get_order_type()
-    result['order_type'] = order_type['data']
-
-    counts = db_iteraction.get_counts()
-    result['counts'] = counts['data']
-
-    ad_campaign = db_iteraction.get_adCampaign()
-    result['ad_campaign'] = ad_campaign['data']
-
-    item_payments = db_iteraction.get_item_payments()
-    result['item_payments'] = item_payments['data']
-
-    status_group = db_iteraction.get_status_group()
-    result['status_group'] = status_group['data']
-
-    cashboxes = db_iteraction.get_cashbox(user_id=user_id)
-    result['cashboxes'] = cashboxes[0]['data']
-
-    item_payments = db_iteraction.get_item_payments()
-    result['item_payments'] = item_payments['data']
-
-    service_prices = db_iteraction.get_service_prices()
-    result['service_prices'] = service_prices['data']
-
-    result['success'] = True
-    return result, 200
-
-
 @app.route('/get_counts', methods=['POST'])
-@jwt_required()
+@login_required
 def get_counts():
     # Проверим содежит ли запрос тело json
     try:
@@ -2012,7 +1776,7 @@ def get_counts():
 
 
 @app.route('/counts', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def counts():
     # Проверим содежит ли запрос тело json
     try:
@@ -2065,7 +1829,7 @@ def counts():
 
 
 @app.route('/get_malfunction', methods=['POST'])
-@jwt_required()
+@login_required
 def get_malfunction():
     # Проверим содежит ли запрос тело json
     try:
@@ -2094,7 +1858,7 @@ def get_malfunction():
 
 
 @app.route('/malfunction', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def malfunction():
     # Проверим содежит ли запрос тело json
     try:
@@ -2164,7 +1928,7 @@ def malfunction():
 
 
 @app.route('/get_packagelist', methods=['POST'])
-@jwt_required()
+@login_required
 def get_packagelist():
     # Проверим содежит ли запрос тело json
     try:
@@ -2193,7 +1957,7 @@ def get_packagelist():
 
 
 @app.route('/packagelist', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def packagelist():
     # Проверим содежит ли запрос тело json
     try:
@@ -2262,7 +2026,7 @@ def packagelist():
 
 
 @app.route('/get_item_payments', methods=['POST'])
-@jwt_required()
+@login_required
 def get_item_payments():
     # Проверим содежит ли запрос тело json
     try:
@@ -2295,7 +2059,7 @@ def get_item_payments():
 
 
 @app.route('/item_payments', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def item_payments():
     # Проверим содежит ли запрос тело json
     try:
@@ -2356,7 +2120,7 @@ def item_payments():
 
 
 @app.route('/get_payrules', methods=['POST'])
-@jwt_required()
+@login_required
 def get_payrules():
     # Проверим содежит ли запрос тело json
     try:
@@ -2397,7 +2161,7 @@ def get_payrules():
 
 
 @app.route('/payrule', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def payrule():
     # Проверим содежит ли запрос тело json
     try:
@@ -2497,7 +2261,7 @@ def payrule():
 
 
 @app.route('/get_group_dict_service', methods=['POST'])
-@jwt_required()
+@login_required
 def get_group_dict_service():
     # Проверим содежит ли запрос тело json
     try:
@@ -2526,7 +2290,7 @@ def get_group_dict_service():
 
 
 @app.route('/group_dict_service', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def group_dict_service():
     # Проверим содежит ли запрос тело json
     try:
@@ -2581,7 +2345,7 @@ def group_dict_service():
 
 
 @app.route('/get_dict_service', methods=['POST'])
-@jwt_required()
+@login_required
 def get_dict_service():
     # Проверим содежит ли запрос тело json
     try:
@@ -2627,7 +2391,7 @@ def get_dict_service():
 
 
 @app.route('/dict_service', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def dict_service():
     # Проверим содежит ли запрос тело json
     try:
@@ -2732,7 +2496,7 @@ def dict_service():
 
 
 @app.route('/get_service_prices', methods=['POST'])
-@jwt_required()
+@login_required
 def get_service_prices():
     # Проверим содежит ли запрос тело json
     try:
@@ -2770,7 +2534,7 @@ def get_service_prices():
 
 
 @app.route('/service_prices', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def service_prices():
     # Проверим содежит ли запрос тело json
     try:
@@ -2847,7 +2611,7 @@ def service_prices():
 
 
 @app.route('/get_parts', methods=['POST'])
-@jwt_required()
+@login_required
 def get_parts():
     # Проверим содежит ли запрос тело json
     try:
@@ -2908,7 +2672,7 @@ def get_parts():
 
 
 @app.route('/parts', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def parts():
     # Проверим содежит ли запрос тело json
     try:
@@ -3041,7 +2805,7 @@ def parts():
 
 
 @app.route('/get_warehouse', methods=['POST'])
-@jwt_required()
+@login_required
 def get_warehouse():
     # Проверим содежит ли запрос тело json
     try:
@@ -3087,7 +2851,7 @@ def get_warehouse():
 
 
 @app.route('/warehouse', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def warehouse():
     # Проверим содежит ли запрос тело json
     try:
@@ -3169,7 +2933,7 @@ def warehouse():
 
 
 @app.route('/get_warehouse_category', methods=['POST'])
-@jwt_required()
+@login_required
 def get_warehouse_category():
     # Проверим содежит ли запрос тело json
     try:
@@ -3230,7 +2994,7 @@ def get_warehouse_category():
 
 
 @app.route('/warehouse_category', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def warehouse_category():
     # Проверим содежит ли запрос тело json
     try:
@@ -3295,7 +3059,7 @@ def warehouse_category():
 
 
 @app.route('/get_warehouse_parts', methods=['POST'])
-@jwt_required()
+@login_required
 def get_warehouse_parts():
     # Проверим содежит ли запрос тело json
     try:
@@ -3370,7 +3134,7 @@ def get_warehouse_parts():
 
 
 @app.route('/warehouse_parts', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def warehouse_parts():
     # Проверим содежит ли запрос тело json
     try:
@@ -3473,7 +3237,7 @@ def warehouse_parts():
 
 
 @app.route('/get_notification_template', methods=['POST'])
-@jwt_required()
+@login_required
 def get_notification_template():
     # Проверим содежит ли запрос тело json
     try:
@@ -3507,7 +3271,7 @@ def get_notification_template():
 
 
 @app.route('/notification_template', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def notification_template():
     # Проверим содежит ли запрос тело json
     try:
@@ -3562,7 +3326,7 @@ def notification_template():
 
 
 @app.route('/get_notification_events', methods=['POST'])
-@jwt_required()
+@login_required
 def get_notification_events():
     # Проверим содежит ли запрос тело json
     try:
@@ -3613,7 +3377,7 @@ def get_notification_events():
 
 
 @app.route('/notification_events', methods=['POST', 'PUT', 'DELETE'])
-@jwt_required()
+@login_required
 def notification_events():
     # Проверим содежит ли запрос тело json
     try:
@@ -3693,34 +3457,10 @@ def notification_events():
 app.add_url_rule('/shutdown', view_func=shutdown)
 app.register_error_handler(404, page_not_found)
 
-app.add_url_rule('/login', view_func=login, methods=['POST'])
+# app.add_url_rule('/login', view_func=login, methods=['POST'])
 
 
-class UserLogin:
 
-    def __init__(self):
-        self.db_iteraction = db_iteraction
-
-    def fromDB(self, user_id):
-        self.__user = self.db_iteraction.get_employee(id=user_id)['data'][0]
-        print(self.__user)
-        return self
-
-    def create(self, user):
-        self.__user = user
-        return self
-
-    def is_authenticated(self):
-        return True
-
-    def is_active(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        return str(self.__user['id'])
 
 
 run_server()
