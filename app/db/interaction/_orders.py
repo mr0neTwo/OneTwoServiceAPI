@@ -92,6 +92,7 @@ def get_estimate_work_time(estimated_done_at, schedule):
                         estimate_work_time += end_time - start_time
 
                 now_ts += 24*60*60
+                now += timedelta(days=1)
 
             return estimate_work_time
     # Если статус просрочен
@@ -166,6 +167,7 @@ def get_estimate_work_time(estimated_done_at, schedule):
                         estimate_work_time += end_time - start_time
 
                 estimated_done_at += 24*60*60
+                done_at += timedelta(days=1)
 
             return -estimate_work_time
 
