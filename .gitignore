@@ -9,14 +9,14 @@ __pycache__/
 *.so
 
 # my files
-alfa.yml
+docker-compose/alfa.yml
 Dockerfile
-local.yml
+docker-compose/local.yml
 test_config.txt
 
 # Distribution / packaging
 .Python
-build/
+#build/
 develop-eggs/
 dist/
 downloads/
@@ -33,6 +33,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+docker-compose/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

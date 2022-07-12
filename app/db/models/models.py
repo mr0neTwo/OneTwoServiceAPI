@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pprint import pprint
 
 from sqlalchemy import Column, Integer, ForeignKey, VARCHAR, UniqueConstraint, SMALLINT, DateTime, JSON
@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()
 
 def time_now():
-    return datetime.now().timestamp()
+    return datetime.now(timezone(timedelta(hours=3))).timestamp()
 
 # таблица рекламных компаний
 class AdCampaign(Base):

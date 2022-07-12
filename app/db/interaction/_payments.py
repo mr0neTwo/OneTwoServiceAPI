@@ -222,8 +222,11 @@ def add_payments(
 
         if filter_cashboxes:
             query = self.pgsql_connetction.session.query(Cashboxs)
-            if filter_cashboxes.get('deleted'):
+            if filter_cashboxes.get('deleted') is not None:
                 query = query.filter(filter_cashboxes['deleted'] or Cashboxs.deleted.is_(False))
+            if filter_cashboxes.get('branch_id') is not None:
+                query = query.filter(Cashboxs.branch_id == filter_cashboxes['branch_id'])
+
 
             cashboxes = query.all()
 
@@ -558,6 +561,8 @@ def edit_payments(
             query = self.pgsql_connetction.session.query(Cashboxs)
             if filter_cashboxes.get('deleted'):
                 query = query.filter(filter_cashboxes['deleted'] or Cashboxs.deleted.is_(False))
+            if filter_cashboxes.get('branch_id') is not None:
+                query = query.filter(Cashboxs.branch_id == filter_cashboxes['branch_id'])
 
             cashboxes = query.all()
 

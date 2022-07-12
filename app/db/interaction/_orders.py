@@ -1,7 +1,7 @@
 import inspect
 import time
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pprint import pprint
 
 from sqlalchemy import or_, desc, func
@@ -14,16 +14,18 @@ from app.events import event_create_order
 
 def get_estimate_work_time(estimated_done_at, schedule):
     # Расчитаем дедлайн
-    now = datetime.now()
+    tz = timezone(timedelta(hours=3))
+    now = datetime.now(tz)
+    now_ts = now.timestamp()
     done_at = datetime.fromtimestamp(estimated_done_at)
 
     # Если статус не просрочен
-    if estimated_done_at - now.timestamp() > 0:
+    if estimated_done_at > now_ts:
         # Количество дней
         days = done_at.toordinal() - now.toordinal()
         # Найдем количество рабочих дней
         work_days = 0
-        current_day = datetime.now()
+        current_day = datetime.now(tz)
         for day in range(days):
             week_day = current_day.isoweekday()
             if schedule[week_day]['work_day']:
@@ -41,22 +43,22 @@ def get_estimate_work_time(estimated_done_at, schedule):
             else:
                 start = schedule[week_day]['start_time'].split(':')
                 end = schedule[week_day]['end_time'].split(':')
-                start_time = datetime.now().replace(hour=int(start[0]), minute=int(start[1]))
-                end_time = datetime.now().replace(hour=int(end[0]), minute=int(end[1]))
+                start_time = datetime.now(tz).replace(hour=int(start[0]), minute=int(start[1])).timestamp()
+                end_time = datetime.now(tz).replace(hour=int(end[0]), minute=int(end[1])).timestamp()
                 # Если рабочее время не настало и дата оканчания находится в пределах рабочего времени
-                if now < start_time and done_at >= start_time and done_at <= end_time:
-                    return (done_at - start_time).total_seconds()
+                if now_ts < start_time and estimated_done_at >= start_time and estimated_done_at <= end_time:
+                    return estimated_done_at - start_time
                 # Если рабочие време не настало и дата окончания за предалими рабочего времени
-                if now < start_time and done_at > end_time:
-                    return (end_time - start_time).total_seconds()
+                if now_ts < start_time and estimated_done_at > end_time:
+                    return end_time - start_time
                 # Если сейчас рабочее время и дата окончания в предалах рабочего времени
-                if now >= start_time and now <= end_time and done_at <= end_time:
-                    return (done_at - now).total_seconds()
+                if now_ts >= start_time and now_ts <= end_time and estimated_done_at <= end_time:
+                    return estimated_done_at - now_ts
                 # Если сейчас рабочее время и дата окончания за пределами рабочего времени
-                if now >= start_time and now <= end_time and done_at > end_time:
-                    return (end_time - now).total_seconds()
+                if now_ts >= start_time and now_ts <= end_time and estimated_done_at > end_time:
+                    return end_time - now_ts
                 # Если сейчас за пределами рабочего времени и дата окончания за пределами рабочего времени
-                if now > end_time and done_at > end_time:
+                if now_ts > end_time and estimated_done_at > end_time:
                     return 0
         # Если день окончания ранее одного дня
         else:
@@ -67,29 +69,29 @@ def get_estimate_work_time(estimated_done_at, schedule):
                 if schedule[week_day]['work_day']:
                     start = schedule[week_day]['start_time'].split(':')
                     end = schedule[week_day]['end_time'].split(':')
-                    start_time = now.replace(hour=int(start[0]), minute=int(start[1]))
-                    end_time = now.replace(hour=int(end[0]), minute=int(end[1]))
+                    start_time = now.replace(hour=int(start[0]), minute=int(start[1])).timestamp()
+                    end_time = now.replace(hour=int(end[0]), minute=int(end[1])).timestamp()
                     # Считаем первый день
                     if n == 0:
                         # Если текущее время до рабочего дня
-                        if now < start_time:
-                            estimate_work_time += (end_time - start_time).total_seconds()
+                        if now_ts < start_time:
+                            estimate_work_time += end_time - start_time
                         # Если текущее время это рабочее время
-                        if now >= start_time and now <= end_time:
-                            estimate_work_time += (end_time - now).total_seconds()
+                        if now_ts >= start_time and now_ts <= end_time:
+                            estimate_work_time += end_time - now_ts
                     # Считаем последний день
                     if n == days:
                         # Если срок заканчивается во время рабочего дня рабочего дня
-                        if done_at >= start_time and done_at <= end_time:
-                            estimate_work_time += (done_at - start_time).total_seconds()
+                        if estimated_done_at >= start_time and estimated_done_at <= end_time:
+                            estimate_work_time += estimated_done_at - start_time
                         # Если срок заканчивается после рабочего дня
-                        if done_at > end_time:
-                            estimate_work_time += (end_time - start_time).total_seconds()
+                        if estimated_done_at > end_time:
+                            estimate_work_time += end_time - start_time
                     # Считаем промежуточные дни
                     if n > 0 and n < days:
-                        estimate_work_time += (end_time - start_time).total_seconds()
+                        estimate_work_time += end_time - start_time
 
-                now += timedelta(days=1)
+                now_ts += 24*60*60
 
             return estimate_work_time
     # Если статус просрочен
@@ -116,55 +118,54 @@ def get_estimate_work_time(estimated_done_at, schedule):
             else:
                 start = schedule[week_day]['start_time'].split(':')
                 end = schedule[week_day]['end_time'].split(':')
-                start_time = datetime.now().replace(hour=int(start[0]), minute=int(start[1]))
-                end_time = datetime.now().replace(hour=int(end[0]), minute=int(end[1]))
+                start_time = datetime.now(tz).replace(hour=int(start[0]), minute=int(start[1])).timestamp()
+                end_time = datetime.now(tz).replace(hour=int(end[0]), minute=int(end[1])).timestamp()
                 # Если рабочее время не настало и дата окончания до рабочего времени
-                if now < start_time and done_at < start_time:
+                if now_ts < start_time and estimated_done_at < start_time:
                     return 0
                 # Если сейчас рабочее время и дата окончания находится в предалах рабочего времени
-                if now > start_time and now < end_time and done_at > start_time and done_at < end_time:
-                    return -(now - done_at).total_seconds()
+                if now_ts > start_time and now_ts < end_time and estimated_done_at > start_time and estimated_done_at < end_time:
+                    return estimated_done_at - now_ts
                 # Если уже за пределами рабочего времени и дата окончания в рабочем времени
-                if now > end_time and done_at > start_time and done_at < end_time:
-                    return -(end_time - done_at).total_seconds()
+                if now_ts > end_time and estimated_done_at > start_time and estimated_done_at < end_time:
+                    return estimated_done_at - end_time
                 # Если уже за предалими рабочего времени и дата окончания до начала рабочего времени
-                if now > end_time and done_at < start_time:
-                    return -(end_time - start_time).total_seconds()
+                if now_ts > end_time and estimated_done_at < start_time:
+                    return start_time - end_time
                 # Если уже за пределами рабочего времени и дата окончания за пределами рабочего времени
-                if now > end_time and done_at > end_time:
+                if now_ts > end_time and estimated_done_at > end_time:
                     return 0
         # Если день позже ранее одного дня
         else:
             estimate_work_time = 0
-
             for n in range(days + 1):
                 week_day = done_at.isoweekday()
                 if schedule[week_day]['work_day']:
                     start = schedule[week_day]['start_time'].split(':')
                     end = schedule[week_day]['end_time'].split(':')
-                    start_time = done_at.replace(hour=int(start[0]), minute=int(start[1]))
-                    end_time = done_at.replace(hour=int(end[0]), minute=int(end[1]))
+                    start_time = done_at.replace(hour=int(start[0]), minute=int(start[1])).timestamp()
+                    end_time = done_at.replace(hour=int(end[0]), minute=int(end[1])).timestamp()
                     # Считаем первый день
                     if n == 0:
                         # Если срок заканчивается до рабочего дня
-                        if done_at < start_time:
-                            estimate_work_time += (end_time - start_time).total_seconds()
+                        if estimated_done_at < start_time:
+                            estimate_work_time += end_time - start_time
                         # Если срок заканчивается во время рабочего дня
-                        if done_at >= start_time and done_at <= end_time:
-                            estimate_work_time += (end_time - done_at).total_seconds()
+                        if estimated_done_at >= start_time and estimated_done_at <= end_time:
+                            estimate_work_time += end_time - estimated_done_at
                     # Считаем последний день
                     if n == days:
                         # Если сейчас рабочее время
-                        if now >= start_time and now <= end_time:
-                            estimate_work_time += (now - start_time).total_seconds()
+                        if now_ts >= start_time and now_ts <= end_time:
+                            estimate_work_time += now_ts - start_time
                         # Если сейчас уже после рабочего времени
-                        if now > end_time:
-                            estimate_work_time += (end_time - start_time).total_seconds()
+                        if now_ts > end_time:
+                            estimate_work_time += end_time - start_time
                     # Считаем промежуточные дни
                     if n > 0 and n < days:
-                        estimate_work_time += (end_time - start_time).total_seconds()
+                        estimate_work_time += end_time - start_time
 
-                done_at += timedelta(days=1)
+                estimated_done_at += 24*60*60
 
             return -estimate_work_time
 

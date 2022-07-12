@@ -82,6 +82,7 @@ def add_employee(self,
                     'doc_name': row.doc_name,
                     'post': row.post,
                     'permissions': row.permissions,
+                    'avatar': row.avatar,
                     'role': {
                         'id': row.role.id,
                         'title': row.role.title,
@@ -166,6 +167,7 @@ def get_employee(self, id=None, deleted=None, page=0):
                 'doc_name': row.doc_name,
                 'post': row.post,
                 'permissions': row.permissions,
+                'avatar': row.avatar,
                 'role': {
                     'id': row.role.id,
                     'title': row.role.title,
@@ -178,7 +180,7 @@ def get_employee(self, id=None, deleted=None, page=0):
                     'settable_discount_margin': row.role.settable_discount_margin
                 },
                 'login': row.login,
-                'password': row.password,
+                # 'password': row.password,
                 'table_headers': [{
                     'id': head.id,
                     'title': head.title,
@@ -275,6 +277,7 @@ def edit_employee(
                     'doc_name': row.doc_name,
                     'post': row.post,
                     'permissions': row.permissions,
+                    'avatar': row.avatar,
                     'role': {
                         'id': row.role.id,
                         'title': row.role.title,
@@ -378,6 +381,8 @@ def change_avatar(self, employee_id, left, top, size, img):
             chanal_b.fill(color[2])
             arr_top = numpy.concatenate((chanal_r, chanal_g, chanal_b), axis=2)
             # Добавим к текущей картинке
+            print(arr_top.shape)
+            print(img.shape)
             img = numpy.concatenate((arr_top, img), axis=0)
         # Если слева есть пустая полоса
         if left > 0:
@@ -446,6 +451,7 @@ def change_avatar(self, employee_id, left, top, size, img):
             'doc_name': employee.doc_name,
             'post': employee.post,
             'permissions': employee.permissions,
+            'avatar': employee.avatar,
             'role': {
                 'id': employee.role.id,
                 'title': employee.role.title,

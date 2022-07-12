@@ -62,11 +62,12 @@ jwt = JWTManager(app)
 
 app.config.update(
     DEBUG=False,
-    SECRET_KEY='07446af7da2e08c395ac7d7a65c2d1e85b7610bbab79',
+    SECRET_KEY=os.environ['SECRET_KEY'],
     SESSION_COOKIE_HTTPONLY=True,
     REMEMBER_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE=os.environ['SESSION_COOKIE_SAMESITE'],
-    SCHEDULER_API_ENABLED=True
+    SCHEDULER_API_ENABLED=True,
+    WTF_CSRF_TIME_LIMIT=20*60*60
 )
 
 
@@ -139,7 +140,6 @@ def get_csrf():
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-# @login_required
 def serve(path):
     if path != "" and os.path.exists(app.static_folder + '/' + path):
         return send_from_directory(app.static_folder, path)

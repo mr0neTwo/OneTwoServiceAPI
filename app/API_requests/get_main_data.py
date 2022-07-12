@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from app.db.interaction.db_iteraction import db_iteraction
 from app.db.models.models import Branch, GenerallyInfo, OrderType, Counts, AdCampaign, ItemPayments, \
-    StatusGroup, Cashboxs, Payments, ServicePrices
+    StatusGroup, Cashboxs, Payments, ServicePrices, Employees
 
 main_data = Blueprint('main_data', __name__)
 
@@ -42,6 +42,7 @@ def get_main_data():
         'post': user.post,
         'permissions': user.permissions,
         'login': user.login,
+        'avatar': user.avatar,
         'role': {
             'id': user.role.id,
             'title': user.role.title,
@@ -205,6 +206,37 @@ def get_main_data():
             'deleted': row.deleted
         })
     result['service_prices'] = data
+
+    employees = db_iteraction.pgsql_connetction.session.query(Employees).all()
+    data = []
+    for row in employees:
+        data.append({
+            'id': row.id,
+            'first_name': row.first_name,
+            'last_name': row.last_name,
+            'email': row.email,
+            'phone': row.phone,
+            'notes': row.notes,
+            'deleted': row.deleted,
+            'inn': row.inn,
+            'doc_name': row.doc_name,
+            'post': row.post,
+            'permissions': row.permissions,
+            'login': row.login,
+            'avatar': row.avatar,
+            'role': {
+                'id': row.role.id,
+                'title': row.role.title,
+                'earnings_visibility': row.role.earnings_visibility,
+                'leads_visibility': row.role.leads_visibility,
+                'orders_visibility': row.role.orders_visibility,
+                'permissions': row.role.permissions,
+                'settable_statuses': row.role.settable_statuses,
+                'visible_statuses': row.role.visible_statuses,
+                'settable_discount_margin': row.role.settable_discount_margin
+            }
+        })
+    result['employees'] = data
 
     result['success'] = True
     return result, 200
