@@ -153,6 +153,7 @@ def add_payments(
             )
             self.pgsql_connetction.session.add_all([order, order_event])
             self.pgsql_connetction.session.flush()
+            self.pgsql_connetction.session.refresh(order)
 
         result = {'success': True}
 
